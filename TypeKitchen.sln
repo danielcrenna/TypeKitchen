@@ -1,0 +1,65 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{87ADF0E0-4844-492A-95E2-759301A1001B}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{2C33BEFD-7873-4046-8D05-5D87C5F5CEC6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen", "src\TypeKitchen\TypeKitchen.csproj", "{93CEAF73-691F-409E-B06C-DFEB2FA74776}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.Benchmarks", "test\TypeKitchen.Benchmarks\TypeKitchen.Benchmarks.csproj", "{62B5A476-463C-4B79-A712-80C237F6A81A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.Tests", "test\TypeKitchen.Tests\TypeKitchen.Tests.csproj", "{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{935C07AD-0FEA-4E89-9427-43A812718D4C}"
+	ProjectSection(SolutionItems) = preProject
+		build\build.props = build\build.props
+		build\package.props = build\package.props
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Package|Any CPU = Package|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776}.Package|Any CPU.ActiveCfg = Package|Any CPU
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776}.Package|Any CPU.Build.0 = Package|Any CPU
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62B5A476-463C-4B79-A712-80C237F6A81A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62B5A476-463C-4B79-A712-80C237F6A81A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62B5A476-463C-4B79-A712-80C237F6A81A}.Package|Any CPU.ActiveCfg = Release|Any CPU
+		{62B5A476-463C-4B79-A712-80C237F6A81A}.Package|Any CPU.Build.0 = Release|Any CPU
+		{62B5A476-463C-4B79-A712-80C237F6A81A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62B5A476-463C-4B79-A712-80C237F6A81A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}.Package|Any CPU.ActiveCfg = Release|Any CPU
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}.Package|Any CPU.Build.0 = Release|Any CPU
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{93CEAF73-691F-409E-B06C-DFEB2FA74776} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
+		{62B5A476-463C-4B79-A712-80C237F6A81A} = {2C33BEFD-7873-4046-8D05-5D87C5F5CEC6}
+		{BA1B7B7B-D738-4EFE-8FCC-17E89D83E05D} = {2C33BEFD-7873-4046-8D05-5D87C5F5CEC6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AEB5448C-8744-4BB1-B425-DA558A8D0962}
+	EndGlobalSection
+EndGlobal

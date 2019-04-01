@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <LangVersion>7.1</LangVersion>
+    <Configurations>Debug;Release;Package</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.4" />
+    <PackageReference Include="DotLiquid" Version="2.0.298" />
+    <PackageReference Include="FastMember" Version="1.4.1" />
+    <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TypeKitchen\TypeKitchen.csproj" />
+    <ProjectReference Include="..\TypeKitchen.Tests\TypeKitchen.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

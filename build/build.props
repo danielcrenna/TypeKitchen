@@ -1,0 +1,22 @@
+<Project>
+
+  <PropertyGroup>
+    <Configurations>Debug;Release;Package</Configurations>
+    <Version>0.0.3-pre</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'!='Debug'">
+    <Optimize>true</Optimize>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Package'">
+    <IncludeSymbols>true</IncludeSymbols>
+  </PropertyGroup>
+
+  <Target Name="PublishBinariesToNuGet" AfterTargets="Pack" Condition="'$(Configuration)'=='Package'">
+    <Exec Command="dotnet nuget push &quot;$(TargetDir)..\$(PackageId).$(PackageVersion).nupkg&quot; -s https://www.nuget.org/api/v2/package" />
+  </Target>
+
+</Project>
