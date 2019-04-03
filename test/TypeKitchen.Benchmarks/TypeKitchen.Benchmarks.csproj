@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.11.4" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
     <PackageReference Include="DotLiquid" Version="2.0.298" />
     <PackageReference Include="FastMember" Version="1.4.1" />
     <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
