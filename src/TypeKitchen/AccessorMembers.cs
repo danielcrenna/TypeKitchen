@@ -60,6 +60,10 @@ namespace TypeKitchen
         private Dictionary<string, AccessorMember> NameToMember { get; }
 
         public AccessorMember this[string name] => NameToMember[name];
+        public int Count => NameToMember.Count;
+        public IEnumerable<string> Names => NameToMember.Keys;
+        public bool ContainsKey(string key) => NameToMember.ContainsKey(key);
+
 
         public IEnumerator<AccessorMember> GetEnumerator()
         {

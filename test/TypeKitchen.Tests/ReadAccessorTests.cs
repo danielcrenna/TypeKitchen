@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Blowdart, Inc. All rights reserved.
 
+using System.Collections.Generic;
 using TypeKitchen.Tests.Fakes;
 using Xunit;
 
@@ -66,6 +67,16 @@ namespace TypeKitchen.Tests
         public object GetOutOfMethodTarget()
         {
             return new { Foo = "Bar", Bar = "Baz" };
+        }
+
+        [Fact]
+        public void GetTests_DictionaryWrapper()
+        {
+            var target = new OnePropertyOneField { Foo = "Bar", Bar = "Baz" };
+            var accessor = ReadAccessor.Create(target.GetType());
+            var dict = accessor.AsReadOnlyDictionary(target);
+            Assert.Equal("Bar", dict["Foo"]);
+            Assert.Equal("Baz", dict["Bar"]);
         }
     }
 }
