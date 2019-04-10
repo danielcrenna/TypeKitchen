@@ -30,6 +30,24 @@ namespace TypeKitchen
             tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));
 
             //
+            // Type Type =>:
+            //
+            {
+                var getType = tb.DefineMethod($"get_{nameof(ITypeWriteAccessor.Type)}",
+                    MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
+                    MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(Type), Type.EmptyTypes);
+                var il = getType.GetILGeneratorInternal();
+                il.Ldtoken(type);
+                il.Call(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
+                il.Ret();
+
+                var getTypeProperty = tb.DefineProperty(nameof(ITypeWriteAccessor.Type), PropertyAttributes.None, typeof(object), new[] { typeof(string) });
+                getTypeProperty.SetGetMethod(getType);
+
+                tb.DefineMethodOverride(getType, typeof(ITypeWriteAccessor).GetMethod($"get_{nameof(ITypeWriteAccessor.Type)}"));
+            }
+
+            //
             // bool TryGetValue(object target, string key, out object value):
             //
             {

@@ -32,6 +32,13 @@ namespace TypeKitchen
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
 
             //
+            // Type Type =>:
+            //
+            {
+                EmitTypeProperty(type, tb);
+            }
+
+            //
             // bool TryGetValue(object target, string key, out object value):
             //
             {
@@ -135,8 +142,8 @@ namespace TypeKitchen
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
                 il.Throw();
 
-                var item = tb.DefineProperty("Item", PropertyAttributes.SpecialName, typeof(object), new[] {typeof(string)});
-                item.SetGetMethod(getItem);
+                var getItemProperty = tb.DefineProperty("Item", PropertyAttributes.SpecialName, typeof(object), new[] {typeof(string)});
+                getItemProperty.SetGetMethod(getItem);
 
                 tb.DefineMethodOverride(getItem, typeof(ITypeReadAccessor).GetMethod("get_Item"));
             }
@@ -185,6 +192,13 @@ namespace TypeKitchen
 
                 staticFieldsByMethod.Add(setField, backingFieldDelegate);
                 staticFieldsByMember.Add(member, getField);
+            }
+
+            //
+            // Type Type =>:
+            //
+            {
+                EmitTypeProperty(type, tb);
             }
 
             //
@@ -293,6 +307,24 @@ namespace TypeKitchen
             }
 
             return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
+        }
+
+        private static void EmitTypeProperty(Type type, TypeBuilder tb)
+        {
+            var getType = tb.DefineMethod($"get_{nameof(ITypeReadAccessor.Type)}",
+                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
+                MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(Type),
+                Type.EmptyTypes);
+            var il = getType.GetILGeneratorInternal();
+            il.Ldtoken(type);
+            il.Call(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
+            il.Ret();
+
+            var getTypeProperty = tb.DefineProperty(nameof(ITypeReadAccessor.Type), PropertyAttributes.None, typeof(object),
+                new[] {typeof(string)});
+            getTypeProperty.SetGetMethod(getType);
+
+            tb.DefineMethodOverride(getType, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
         }
     }
 }

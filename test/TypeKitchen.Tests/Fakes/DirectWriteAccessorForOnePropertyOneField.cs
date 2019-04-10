@@ -13,6 +13,8 @@ namespace TypeKitchen.Tests.Fakes
         {
         }
 
+        public Type Type => typeof(OnePropertyOneField);
+
         public bool TrySetValue(object target, string key, object value)
         {
             switch (key)

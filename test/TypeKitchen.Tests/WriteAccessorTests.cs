@@ -34,6 +34,8 @@ namespace TypeKitchen.Tests
 
             Assert.Equal("Bar", get[target, "Foo"]);
             Assert.Equal("Baz", get[target, "Bar"]);
+
+            Assert.Equal(typeof(OnePropertyOneField), set.Type);
         }
     }
 }

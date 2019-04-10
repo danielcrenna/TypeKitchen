@@ -11,26 +11,26 @@ namespace TypeKitchen.Tests
         public void GetTests_AnonymousType()
         {
             var target = GetOutOfMethodTarget();
-            var hash = ReadAccessor.Create(target.GetType());
-            var foo = hash[target, "Foo"];
-            var bar = hash[target, "Bar"];
+            var accessor = ReadAccessor.Create(target.GetType());
+            var foo = accessor[target, "Foo"];
+            var bar = accessor[target, "Bar"];
             Assert.Equal("Bar", foo);
             Assert.Equal("Baz", bar);
 
-            Assert.True(hash.TryGetValue(target, "Bar", out var value));
+            Assert.True(accessor.TryGetValue(target, "Bar", out var value));
             Assert.Equal("Baz", value);
 
             target = new {Foo = "Fizz", Bar = "Buzz"};
             var other = ReadAccessor.Create(target.GetType());
-            Assert.Equal(hash, other);
-            hash = other;
+            Assert.Equal(accessor, other);
+            accessor = other;
 
-            foo = hash[target, "Foo"];
-            bar = hash[target, "Bar"];
+            foo = accessor[target, "Foo"];
+            bar = accessor[target, "Bar"];
             Assert.Equal("Fizz", foo);
             Assert.Equal("Buzz", bar);
 
-            Assert.True(hash.TryGetValue(target, "Bar", out value));
+            Assert.True(accessor.TryGetValue(target, "Bar", out value));
             Assert.Equal("Buzz", value);
         }
 
@@ -38,27 +38,29 @@ namespace TypeKitchen.Tests
         public void GetTests_PropertiesAndFields()
         {
             var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
-            var hash = ReadAccessor.Create(target.GetType());
-            var foo = hash[target, "Foo"];
-            var bar = hash[target, "Bar"];
+            var accessor = ReadAccessor.Create(target.GetType());
+            var foo = accessor[target, "Foo"];
+            var bar = accessor[target, "Bar"];
             Assert.Equal("Bar", foo);
             Assert.Equal("Baz", bar);
 
-            Assert.True(hash.TryGetValue(target, "Bar", out var value));
+            Assert.True(accessor.TryGetValue(target, "Bar", out var value));
             Assert.Equal("Baz", value);
 
             target = new OnePropertyOneField {Foo = "Fizz", Bar = "Buzz"};
             var other = ReadAccessor.Create(target.GetType());
-            Assert.Equal(hash, other);
-            hash = other;
+            Assert.Equal(accessor, other);
+            accessor = other;
 
-            foo = hash[target, "Foo"];
-            bar = hash[target, "Bar"];
+            foo = accessor[target, "Foo"];
+            bar = accessor[target, "Bar"];
             Assert.Equal("Fizz", foo);
             Assert.Equal("Buzz", bar);
 
-            Assert.True(hash.TryGetValue(target, "Bar", out value));
+            Assert.True(accessor.TryGetValue(target, "Bar", out value));
             Assert.Equal("Buzz", value);
+
+            Assert.Equal(typeof(OnePropertyOneField), accessor.Type);
         }
 
         public object GetOutOfMethodTarget()

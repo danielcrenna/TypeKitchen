@@ -71,6 +71,12 @@ namespace TypeKitchen.Internal
             return this;
         }
 
+        public ILSugar Ldtoken(Type type)
+        {
+            _il.Emit(OpCodes.Ldtoken, type);
+            return this;
+        }
+
         public ILSugar Ldsfld(FieldInfo field)
         {
             _il.Emit(OpCodes.Ldsfld, field);

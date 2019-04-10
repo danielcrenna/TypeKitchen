@@ -6,6 +6,8 @@ namespace TypeKitchen.Tests.Fakes
 {
     public sealed class DirectReadAccessorForOnePropertyOneField : ITypeReadAccessor
     {
+
+
         public static DirectReadAccessorForOnePropertyOneField
             Instance = new DirectReadAccessorForOnePropertyOneField();
 
@@ -28,6 +30,8 @@ namespace TypeKitchen.Tests.Fakes
                     return false;
             }
         }
+
+        public Type Type => typeof(OnePropertyOneField);
 
         public object this[object target, string key]
         {

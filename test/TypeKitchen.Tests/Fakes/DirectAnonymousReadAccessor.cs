@@ -19,6 +19,8 @@ namespace TypeKitchen.Tests.Fakes
             Bar = o => ((TwoProperties) o).Bar;
         }
 
+        public Type Type => typeof(TwoProperties);
+
         public bool TryGetValue(object target, string key, out object value)
         {
             switch (key)
