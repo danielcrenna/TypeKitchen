@@ -107,7 +107,7 @@ namespace TypeKitchen
             //
             {
                 var setItem = tb.DefineMethod("set_Item", MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(void),                     new[] {typeof(object), typeof(string), typeof(object)});
-                var il = setItem.GetILGenerator();
+                var il = setItem.GetILGeneratorInternal();
 
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
@@ -115,41 +115,42 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Emit(OpCodes.Ldarg_2);                                                                               // key
-                    il.Emit(OpCodes.Ldstr, member.Name);                                                                    // "Foo"
-                    il.Emit(OpCodes.Call, typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)}));
-                    il.Emit(OpCodes.Brtrue_S, branches[member]);
+                    il.Ldarg_2();                                                                             // key
+                    il.Ldstr(member.Name);                                                                    // "Foo"
+                    il.Call(typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)}));
+                    il.Brtrue_S(branches[member]);
                 }
 
                 foreach (var member in members)
                 {
-                    il.MarkLabel(branches[member]);         // found:
-                    il.Emit(OpCodes.Ldarg_1);               //     target
-                    il.Emit(OpCodes.Castclass, type);       //     ({Type}) target
-                    il.Emit(OpCodes.Ldarg_3);               //     value
+                    il.MarkLabel(branches[member]);     // found:
+                    il.Ldarg_1();                       //     target
+                    il.Castclass(type);                 //     ({Type}) target
+                    il.Ldarg_3();                       //     value
 
-                    switch (member.MemberInfo)              //     result = target.{member.Name}
+                    switch (member.MemberInfo)          //     result = target.{member.Name}
                     {
                         case PropertyInfo property:
-                            il.Emit(OpCodes.Castclass, property.PropertyType);
-                            il.Emit(OpCodes.Callvirt, property.GetSetMethod());
+                            il.Castclass(property.PropertyType);
+                            il.Callvirt(property.GetSetMethod());
                             break;
                         case FieldInfo field:
-                            il.Emit(OpCodes.Castclass, field.FieldType);
-                            il.Emit(OpCodes.Stfld, field);
+                            il.Castclass(field.FieldType);
+                            il.Stfld(field);
                             break;
                     }
 
                     if (member.Type.IsValueType)
-                        il.Emit(OpCodes.Box, member.Type);  //     (object) result
-                    il.Emit(OpCodes.Ret);                   // return result;
+                        il.Box(member.Type);            //     (object) result
+                    il.Ret();                           // return result;
                 }
 
                 var fail = il.DefineLabel();
-                il.Emit(OpCodes.Br_S, fail);
-                il.MarkLabel(fail);
-                il.Emit(OpCodes.Newobj, typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
-                il.Emit(OpCodes.Throw);
+
+                il.Br_S(fail)
+                  .MarkLabel(fail)
+                  .Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes))
+                  .Throw();
 
                 var item = tb.DefineProperty("Item", PropertyAttributes.SpecialName, typeof(object),
                     new[] {typeof(string)});
