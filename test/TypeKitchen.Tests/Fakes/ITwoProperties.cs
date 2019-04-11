@@ -6,4 +6,12 @@ namespace TypeKitchen.Tests.Fakes
         string Foo { get; }
         string Bar { get; }
     }
+
+
+    public interface ITwoMethodsAndProperty
+    {
+        void Foo();
+        void Bar(int i);
+        string Baz { get; }
+    }
 }
