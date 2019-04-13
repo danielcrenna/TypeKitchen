@@ -6,6 +6,7 @@ namespace TypeKitchen
     public enum AccessorMemberType : byte
     {
         Field,
-        Property
+        Property,
+        Method
     }
 }

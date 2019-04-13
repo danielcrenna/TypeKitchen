@@ -31,8 +31,7 @@ namespace TypeKitchen
                 PropertyInfo = type.GetProperties(flags);
                 foreach (var property in PropertyInfo)
                     NameToMember.Add(property.Name,
-                        new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite,
-                            scope, AccessorMemberType.Property, property));
+                        new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite, false, scope, AccessorMemberType.Property, property));
             }
 
             if (memberTypes.HasFlagFast(AccessorMemberTypes.Fields))
@@ -40,20 +39,30 @@ namespace TypeKitchen
                 FieldInfo = type.GetFields(flags);
                 foreach (var field in FieldInfo)
                     NameToMember.Add(field.Name,
-                        new AccessorMember(field.Name, field.FieldType, true, true, scope, AccessorMemberType.Field,
-                            field));
+                        new AccessorMember(field.Name, field.FieldType, true, true, false, scope, AccessorMemberType.Field, field));
+            }
+
+            if (memberTypes.HasFlagFast(AccessorMemberTypes.Methods))
+            {
+                MethodInfo = type.GetMethods();
+                foreach (var method in MethodInfo)
+                    NameToMember.Add(method.Name,
+                        new AccessorMember(method.Name, method.ReturnType, false, false, true, scope, AccessorMemberType.Field,
+                            method));
             }
 
             var fields = FieldInfo ?? Enumerable.Empty<FieldInfo>();
             var properties = PropertyInfo ?? Enumerable.Empty<PropertyInfo>();
-            MemberInfo = fields.Cast<MemberInfo>().Concat(properties).ToArray();
+            var methods = MethodInfo ?? Enumerable.Empty<MethodInfo>();
 
+            MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).ToArray();
             Members = NameToMember.Values.ToArray();
         }
 
         public Type DeclaringType { get; }
         public PropertyInfo[] PropertyInfo { get; }
         public FieldInfo[] FieldInfo { get; }
+        public MethodInfo[] MethodInfo { get; }
         public MemberInfo[] MemberInfo { get; }
         public AccessorMember[] Members { get; }
 

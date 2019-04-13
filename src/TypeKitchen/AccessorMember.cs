@@ -8,7 +8,7 @@ namespace TypeKitchen
 {
     public sealed class AccessorMember
     {
-        public AccessorMember(string name, Type type, bool canRead, bool canWrite, AccessorMemberScope scope,
+        public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall, AccessorMemberScope scope,
             AccessorMemberType memberType, MemberInfo info)
         {
             Name = name;
@@ -24,6 +24,7 @@ namespace TypeKitchen
         public Type Type { get; }
         public bool CanRead { get; }
         public bool CanWrite { get; }
+        public bool CanCall { get; }
         public AccessorMemberScope Scope { get; }
         public AccessorMemberType MemberType { get; }
         public MemberInfo MemberInfo { get; }
