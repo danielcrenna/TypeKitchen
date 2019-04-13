@@ -22,26 +22,42 @@ namespace TypeKitchen.Internal
             return il;
         }
 
-        /// <summary> Creates a property with the specified name and fixed value, known at runtime.</summary>
+        /// <summary> Creates a property with the specified name and a fixed value, known at runtime.</summary>
         public static void Property(this TypeBuilder tb, string propertyName, MemberInfo value, MethodInfo overrides = null)
         {
+            Type type;
+            switch (value)
+            {
+                case Type _:
+                    type = typeof(Type);
+                    break;
+                case MethodInfo _:
+                    type = typeof(MethodInfo);
+                    break;
+                case FieldInfo _:
+                    type = typeof(FieldInfo);
+                    break;
+                case ConstructorInfo _:
+                    type = typeof(ConstructorInfo);
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+
             var getMethod = tb.DefineMethod($"get_{propertyName}",
                 MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
-                MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(T),
+                MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, type,
                 Type.EmptyTypes);
 
             if (overrides != null)
                 tb.DefineMethodOverride(getMethod, overrides);
 
-            var propertyWithGet = tb.DefineProperty(propertyName, PropertyAttributes.None, typeof(object), new Type[] { });
+            var propertyWithGet = tb.DefineProperty(propertyName, PropertyAttributes.None, typeof(object), Type.EmptyTypes);
             propertyWithGet.SetGetMethod(getMethod);
 
             var il = getMethod.GetILGeneratorInternal();
-            if (value is MemberInfo member)
-            {
-                il.Ldtoken(member);
-                il.Call(Methods.GetTypeFromHandle);
-            }
+            il.Ldtoken(value);
+            il.Call(Methods.GetTypeFromHandle);
             il.Ret();
         }
     }

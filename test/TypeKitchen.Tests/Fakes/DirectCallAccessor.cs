@@ -29,7 +29,7 @@ namespace TypeKitchen.Tests.Fakes
         public object Call(object target, params object[] args)
         {
             ((ClassWithTwoMethodsAndProperty)target).Foo();
-            return typeof(void);
+            return null;
         }
     }
 }
