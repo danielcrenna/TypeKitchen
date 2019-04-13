@@ -14,8 +14,8 @@ namespace TypeKitchen.Benchmarks
             //BenchmarkRunner.Run<ReadAccessorBenchmarks>();
             //BenchmarkRunner.Run<WriteAccessorBenchmarks>();
             //BenchmarkRunner.Run<SingletonTypeResolverBenchmarks>();
-            //BenchmarkRunner.Run<MethodExecutionBenchmarks>();
-            BenchmarkRunner.Run<DuckCastingBenchmarks>();
+            //BenchmarkRunner.Run<DuckCastingBenchmarks>();
+            BenchmarkRunner.Run<CallAccessorBenchmarks>();
         }
     }
 }

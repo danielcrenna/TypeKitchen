@@ -17,14 +17,14 @@ namespace TypeKitchen
         {
             if (AccessorCache.TryGetValue(type.MetadataToken, out var accessor))
                 return accessor;
-            accessor = type.IsAnonymous() ? CreateAnonymousTypeAccessor(type) : CreateReadAccessor(type);
+            accessor = type.IsAnonymous() ? CreateAnonymousReadAccessor(type) : CreateReadAccessor(type);
             AccessorCache[type.MetadataToken] = accessor;
             return accessor;
         }
 
         private static ITypeReadAccessor CreateReadAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
         {
-            var members = AccessorMembers.Create(type, scope);
+            var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
 
             var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_{type.MetadataToken}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
@@ -34,9 +34,7 @@ namespace TypeKitchen
             //
             // Type Type =>:
             //
-            {
-                EmitTypeProperty(type, tb);
-            }
+            tb.Property(nameof(ITypeReadAccessor.Type), type, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
 
             //
             // bool TryGetValue(object target, string key, out object value):
@@ -54,11 +52,8 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                                   // key
-                    il.Ldstr(member.Name);                          // "Foo"
-                    il.Call(typeof(string).GetMethod("op_Equality",
-                        new[] {typeof(string), typeof(string)}));   // if(key == $"{member.Name}")
-                    il.Brtrue_S(branches[member]);                  //     goto found
+                    il.Ldarg_2();                                         // key
+                    il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
                 }
 
                 foreach (var member in members)
@@ -109,19 +104,17 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                                                                               // key
-                    il.Ldstr(member.Name);                                                                      // "Foo"
-                    il.Call(typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)}));   // key == "Foo"
-                    il.Brtrue_S(branches[member]);                                                              // if(key == "Foo")
+                    il.Ldarg_2();                                         // key
+                    il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
                 }
 
                 foreach (var member in members)
                 {
                     il.MarkLabel(branches[member]);
-                    il.Ldarg_1();                                                                               // target
-                    il.Castclass(type);                                                                         // ({Type}) target
+                    il.Ldarg_1();                      // target
+                    il.Castclass(type);                // ({Type}) target
 
-                    switch (member.MemberInfo)                                                                  // result = target.Foo
+                    switch (member.MemberInfo)         // result = target.Foo
                     {
                         case PropertyInfo property:
                             il.Callvirt(property.GetGetMethod());
@@ -132,8 +125,8 @@ namespace TypeKitchen
                     }
 
                     if (member.Type.IsValueType)
-                        il.Box(member.Type);                                                                    // (object) result
-                    il.Ret();                                                                                   // return result;
+                        il.Box(member.Type);          // (object) result
+                    il.Ret();                         // return result;
                 }
 
                 var fail = il.DefineLabel();
@@ -156,7 +149,7 @@ namespace TypeKitchen
         ///     Anonymous types only have private readonly properties with no logic before their backing fields, so we can do
         ///     a lot to optimize access to them, though we must delegate the access itself due to private reflection rules.
         /// </summary>
-        private static ITypeReadAccessor CreateAnonymousTypeAccessor(Type type)
+        private static ITypeReadAccessor CreateAnonymousReadAccessor(Type type)
         {
             var members = AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
 
@@ -198,7 +191,7 @@ namespace TypeKitchen
             // Type Type =>:
             //
             {
-                EmitTypeProperty(type, tb);
+                tb.Property(nameof(ITypeReadAccessor.Type), type, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
             }
 
             //
@@ -214,17 +207,15 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                   // key
-                    il.Ldstr(member.Name);          // "Foo"
-                    il.Call(typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)}));
-                    il.Brtrue_S(branches[member]);
+                    il.Ldarg_2();                                           // key
+                    il.GotoIfStringEquals(member.Name, branches[member]);   // if(key == "Foo") goto found;
                 }
 
                 foreach (var member in members)
                 {
                     var fb = staticFieldsByMember[member];
 
-                    il.MarkLabel(branches[member]);                     // key == "Foo":
+                    il.MarkLabel(branches[member]);                     // found:
                     il.Ldarg_3();                                       //     value
                     il.Ldsfld(fb);                                      //     _GetFoo
                     il.Ldarg_1();                                       //     target
@@ -263,20 +254,18 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                                                                             // key
-                    il.Ldstr(member.Name);                                                                    // "Foo"
-                    il.Call(typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)})); // key == "Foo"
-                    il.Brtrue_S(branches[member]);                                                            // if(key == "Foo")
+                    il.Ldarg_2();                                           // key
+                    il.GotoIfStringEquals(member.Name, branches[member]);   // if(key == "Foo") goto found;
                 }
 
                 foreach (var member in members)
                 {
                     var fb = staticFieldsByMember[member];
 
-                    il.MarkLabel(branches[member]);
+                    il.MarkLabel(branches[member]);                    // found:
                     il.Ldsfld(fb);                                     // _GetFoo
                     il.Ldarg_1();                                      // target
-                    il.Callvirt(fb.FieldType.GetMethod("Invoke"));     //     result = _GetFoo.Invoke(target)
+                    il.Call(fb.FieldType.GetMethod("Invoke"));         //     result = _GetFoo.Invoke(target)
                     if (member.Type.IsValueType) il.Box( member.Type); //     (object) result
                     il.Ret();                                          // return result;
                 }
@@ -307,24 +296,6 @@ namespace TypeKitchen
             }
 
             return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
-        }
-
-        private static void EmitTypeProperty(Type type, TypeBuilder tb)
-        {
-            var getType = tb.DefineMethod($"get_{nameof(ITypeReadAccessor.Type)}",
-                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
-                MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(Type),
-                Type.EmptyTypes);
-            var il = getType.GetILGeneratorInternal();
-            il.Ldtoken(type);
-            il.Call(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
-            il.Ret();
-
-            var getTypeProperty = tb.DefineProperty(nameof(ITypeReadAccessor.Type), PropertyAttributes.None, typeof(object),
-                new[] {typeof(string)});
-            getTypeProperty.SetGetMethod(getType);
-
-            tb.DefineMethodOverride(getType, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
         }
     }
 }

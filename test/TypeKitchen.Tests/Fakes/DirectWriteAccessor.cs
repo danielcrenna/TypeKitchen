@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 
 namespace TypeKitchen.Tests.Fakes
 {
-    public sealed class DirectWriteAccessorForOnePropertyOneField : ITypeWriteAccessor
+    public sealed class DirectWriteAccessor : ITypeWriteAccessor
     {
-        public static DirectWriteAccessorForOnePropertyOneField Instance =
-            new DirectWriteAccessorForOnePropertyOneField();
+        public static DirectWriteAccessor Instance = new DirectWriteAccessor();
 
-        private DirectWriteAccessorForOnePropertyOneField()
+        private DirectWriteAccessor()
         {
         }
 

@@ -24,7 +24,7 @@ namespace TypeKitchen
 
         private static ITypeWriteAccessor CreateWriteAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
         {
-            var members = AccessorMembers.Create(type, scope);
+            var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
 
             var tb = DynamicAssembly.Module.DefineType($"WriteAccessor_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));
@@ -60,10 +60,10 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                                                                             // key
-                    il.Ldstr(member.Name);                                                                    // "Foo"
-                    il.Call(typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)})); // key == "Foo"
-                    il.Brtrue_S(branches[member]);                                                            // if(key == "Foo")
+                    il.Ldarg_2();                   // key
+                    il.Ldstr(member.Name);          // "Foo"
+                    il.Call(Methods.StringEquals);  // key == "Foo"
+                    il.Brtrue_S(branches[member]);  // if(key == "Foo")
                 }
 
                 foreach (var member in members)
@@ -115,9 +115,9 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                                                                             // key
-                    il.Ldstr(member.Name);                                                                    // "Foo"
-                    il.Call(typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)}));
+                    il.Ldarg_2();                   // key
+                    il.Ldstr(member.Name);          // "Foo"
+                    il.Call(Methods.StringEquals);
                     il.Brtrue_S(branches[member]);
                 }
 

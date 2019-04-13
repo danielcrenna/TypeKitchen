@@ -190,9 +190,25 @@ namespace TypeKitchen.Internal
         }
 
         /// <summary>Converts a metadata token to its runtime representation, pushing it onto the evaluation stack.</summary>
-        public ILSugar Ldtoken(Type type)
+        public ILSugar Ldtoken(MemberInfo member)
         {
-            _il.Emit(OpCodes.Ldtoken, type);
+            switch (member)
+            {
+                case Type type:
+                    _il.Emit(OpCodes.Ldtoken, type);
+                    break;
+                case MethodInfo method:
+                    _il.Emit(OpCodes.Ldtoken, method);
+                    break;
+                case FieldInfo field:
+                    _il.Emit(OpCodes.Ldtoken, field);
+                    break;
+                case ConstructorInfo ctor:
+                    _il.Emit(OpCodes.Ldtoken, ctor);
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
             return this;
         }
 

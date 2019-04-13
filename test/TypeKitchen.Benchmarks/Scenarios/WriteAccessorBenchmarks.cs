@@ -62,8 +62,8 @@ namespace TypeKitchen.Benchmarks.Scenarios
         public void Contrived_Direct_Access()
         {
             var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
-            var bar = DirectWriteAccessorForOnePropertyOneField.Instance[target, "Foo"] = "Fizz";
-            var baz = DirectWriteAccessorForOnePropertyOneField.Instance[target, "Bar"] = "Buzz";
+            var bar = DirectWriteAccessor.Instance[target, "Foo"] = "Fizz";
+            var baz = DirectWriteAccessor.Instance[target, "Bar"] = "Buzz";
         }
     }
 }

@@ -3,6 +3,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace TypeKitchen.Internal
 {
@@ -37,13 +38,13 @@ namespace TypeKitchen.Internal
         public object this[string key] => _accessor[_instance, key];
         public IEnumerable<string> Keys => _members.Names;
 
-        public IEnumerable<object> Values
+        public IEnumerable<object> Values => YieldValues();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IEnumerable<object> YieldValues()
         {
-            get
-            {
-                foreach (var member in _members) 
-                    yield return _accessor[_instance, member.Name];
-            }
+            foreach (var member in _members)
+                yield return _accessor[_instance, member.Name];
         }
     }
 }
