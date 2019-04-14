@@ -155,9 +155,9 @@ namespace TypeKitchen.Internal
         }
 
         /// <summary>Pushes the supplied int8 value onto the evaluation stack as an int32, short form.</summary>
-        public ILSugar Ldc_I4_S(int value)
+        public ILSugar Ldc_I4_S(byte value)
         {
-            _il.Emit(OpCodes.Ldc_I4_S, value);
+            _il.Emit(OpCodes.Ldc_I4_S, (int) value);
             return this;
         }
 
@@ -430,7 +430,7 @@ namespace TypeKitchen.Internal
         }
 
         /// <summary>Converts the boxed representation of a type specified in the instruction to its unboxed form.</summary>
-        public ILSugar UnboxAny(Type type)
+        public ILSugar Unbox_Any(Type type)
         {
             _il.Emit(OpCodes.Unbox_Any, type);
             return this;

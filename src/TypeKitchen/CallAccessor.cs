@@ -94,9 +94,9 @@ namespace TypeKitchen
                     if (parameters.Length > 0)
                     {
                         il.Ldarg_3();
-                        il.Ldc_I4_S(parameters.Length);
+                        il.Ldc_I4_S((byte) parameters.Length);
                         il.Ldelem_Ref();
-                        il.UnboxAny(parameterTypes[0]);
+                        il.Unbox_Any(parameterTypes[0]);
                     }
 
                     il.Callvirt(method);
