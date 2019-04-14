@@ -7,6 +7,13 @@ namespace TypeKitchen.Tests.Fakes
     {
         public int Count;
 
+        public ClassWithTwoMethodsAndProperty() { }
+
+        public ClassWithTwoMethodsAndProperty(int i)
+        {
+            Count = i;
+        }
+
         public void Foo()
         {
             Count++;
