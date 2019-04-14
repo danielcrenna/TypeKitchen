@@ -14,6 +14,11 @@ namespace TypeKitchen.Internal
             return new ILSugar(b.GetILGenerator());
         }
 
+        public static ILSugar GetILGeneratorInternal(this DynamicMethod dm)
+        {
+            return new ILSugar(dm.GetILGenerator());
+        }
+
         public static ILSugar GotoIfStringEquals(this ILSugar il, string name, Label @goto)
         {
             il.Ldstr(name);
