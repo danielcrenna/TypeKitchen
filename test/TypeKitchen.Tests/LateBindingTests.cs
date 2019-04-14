@@ -73,16 +73,16 @@ namespace TypeKitchen.Tests
             switch (strategy)
             {
                 case LateBindingStrategy.CallSite:
-                    map = LateBinding.CallSiteBindingGet(members);
+                    map = LateBinding.CallSiteBindGet(members);
                     break;
                 case LateBindingStrategy.DynamicMethod:
-                    map = LateBinding.DynamicMethodBindingGet(members);
+                    map = LateBinding.DynamicMethodBindGet(members);
                     break;
                 case LateBindingStrategy.Expression:
                     map = LateBinding.ExpressionBindGet(members);
                     break;
                 case LateBindingStrategy.MethodInvoke:
-                    map = LateBinding.MethodInvokeBindingGet(members);
+                    map = LateBinding.MethodInvokeBindGet(members);
                     break;
                 case LateBindingStrategy.OpenDelegate:
                     map = LateBinding.OpenDelegateBindGet<OnePropertyOneField>(members);
@@ -102,16 +102,16 @@ namespace TypeKitchen.Tests
             switch (strategy)
             {
                 case LateBindingStrategy.CallSite:
-                    map = LateBinding.CallSiteBindingSet(members);
+                    map = LateBinding.CallSiteBindSet(members);
                     break;
                 case LateBindingStrategy.DynamicMethod:
-                    map = LateBinding.DynamicMethodBindingSet(members);
+                    map = LateBinding.DynamicMethodBindSet(members);
                     break;
                 case LateBindingStrategy.Expression:
                     map = LateBinding.ExpressionBindSet(members);
                     break;
                 case LateBindingStrategy.MethodInvoke:
-                    map = LateBinding.MethodInvokeBindingSet(members);
+                    map = LateBinding.MethodInvokeBindSet(members);
                     break;
                 case LateBindingStrategy.OpenDelegate:
                     map = LateBinding.OpenDelegateBindSet<OnePropertyOneField>(members);

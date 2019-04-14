@@ -16,7 +16,7 @@ namespace TypeKitchen
     {
         #region CallSite 
 
-        public static Dictionary<string, Func<object, object>> CallSiteBindingGet(AccessorMembers members)
+        public static Dictionary<string, Func<object, object>> CallSiteBindGet(AccessorMembers members)
         {
             var map = new Dictionary<string, Func<object, object>>();
             foreach (var member in members.Members)
@@ -32,7 +32,7 @@ namespace TypeKitchen
             return map;
         }
 
-        public static Dictionary<string, Action<object, object>> CallSiteBindingSet(AccessorMembers members)
+        public static Dictionary<string, Action<object, object>> CallSiteBindSet(AccessorMembers members)
         {
             var map = new Dictionary<string, Action<object, object>>();
             foreach (var member in members.Members)
@@ -56,7 +56,7 @@ namespace TypeKitchen
 
         #region DynamicMethod
 
-        public static Dictionary<string, Func<object, object>> DynamicMethodBindingGet(AccessorMembers members)
+        public static Dictionary<string, Func<object, object>> DynamicMethodBindGet(AccessorMembers members)
         {
             var map = new Dictionary<string, Func<object, object>>();
             foreach (var member in members.Members)
@@ -103,7 +103,7 @@ namespace TypeKitchen
             return map;
         }
 
-        public static Dictionary<string, Action<object, object>> DynamicMethodBindingSet(AccessorMembers members)
+        public static Dictionary<string, Action<object, object>> DynamicMethodBindSet(AccessorMembers members)
         {
             var map = new Dictionary<string, Action<object, object>>();
             foreach (var member in members.Members)
@@ -423,7 +423,7 @@ namespace TypeKitchen
 
         #region Method Invoke
 
-        public static Dictionary<string, Func<object, object>> MethodInvokeBindingGet(AccessorMembers members)
+        public static Dictionary<string, Func<object, object>> MethodInvokeBindGet(AccessorMembers members)
         {
             var map = new Dictionary<string, Func<object, object>>();
             foreach (var member in members.Members)
@@ -449,7 +449,7 @@ namespace TypeKitchen
             return map;
         }
 
-        public static Dictionary<string, Action<object, object>> MethodInvokeBindingSet(AccessorMembers members)
+        public static Dictionary<string, Action<object, object>> MethodInvokeBindSet(AccessorMembers members)
         {
             var map = new Dictionary<string, Action<object, object>>();
             foreach (var member in members.Members)
