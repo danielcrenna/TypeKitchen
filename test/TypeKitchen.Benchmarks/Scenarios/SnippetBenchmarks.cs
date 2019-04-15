@@ -16,6 +16,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
         private MethodInfo _method;
         private MethodInfo _invoke;
         private Func<int> _emit;
+        private Func<object, object[], object> _lateBound;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -24,6 +25,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
             _wrapped = CallAccessor.Create(_method);
             _invoke = typeof(SnippetBenchmarks).GetMethod("Method");
             _emit = CreateAnonymousMethod();
+            _lateBound = LateBinding.DynamicMethodBindCall(_method);
         }
         
         [Benchmark(Baseline = false)]
@@ -42,6 +44,12 @@ namespace TypeKitchen.Benchmarks.Scenarios
         public void Invoke_MethodInfo()
         {
             _invoke.Invoke(null, null);
+        }
+
+        [Benchmark(Baseline = false)]
+        public void Invoke_LateBound_DynamicMethod()
+        {
+            _lateBound.Invoke(null, null);
         }
 
         [Benchmark(Baseline = true)]

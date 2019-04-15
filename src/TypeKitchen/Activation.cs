@@ -25,17 +25,17 @@ namespace TypeKitchen
 
         public static CreateInstance DynamicMethodWeakTyped(ConstructorInfo ctor)
         {
-            var parameters = ctor.GetParameters();
-
             var dm = new DynamicMethod($"Construct_{ctor.MetadataToken}", ctor.DeclaringType, new[] { typeof(object[]) });
             var il = dm.GetILGeneratorInternal();
-
-            for (var i = 0; i < parameters.Length; i++)
+            
+            var parameters = ctor.GetParameters();
+            for (byte i = 0; i < parameters.Length; i++)
             {
-                var parameter = parameters[i];
-                il.Ldarg_0();
-                NextParameterIndex(i);
+                il.LoadArgument(i);
+                il.LoadConstant(i);
                 il.Ldelem_Ref();
+
+                var parameter = parameters[i];
                 if (parameter.ParameterType.IsValueType)
                     il.Unbox_Any(parameter.ParameterType);
                 else
@@ -45,43 +45,6 @@ namespace TypeKitchen
             il.Newobj(ctor);
             il.Ret();
             return (CreateInstance)dm.CreateDelegate(typeof(CreateInstance));
-
-            void NextParameterIndex(int i)
-            {
-                switch (i)
-                {
-                    case 0:
-                        il.Ldc_I4_0();
-                        break;
-                    case 1:
-                        il.Ldc_I4_1();
-                        break;
-                    case 2:
-                        il.Ldc_I4_2();
-                        break;
-                    case 3:
-                        il.Ldc_I4_3();
-                        break;
-                    case 4:
-                        il.Ldc_I4_4();
-                        break;
-                    case 5:
-                        il.Ldc_I4_5();
-                        break;
-                    case 6:
-                        il.Ldc_I4_6();
-                        break;
-                    case 7:
-                        il.Ldc_I4_7();
-                        break;
-                    case 8:
-                        il.Ldc_I4_8();
-                        break;
-                    default:
-                        il.Ldc_I4_S((byte) i);
-                        break;
-                }
-            }
         }
 
         public static CreateInstance ExpressionWeakTyped(ConstructorInfo ctor)
@@ -95,5 +58,7 @@ namespace TypeKitchen
             var compiled = (CreateInstance)lambda.Compile();
             return compiled;
         }
+
+        
     }
 }

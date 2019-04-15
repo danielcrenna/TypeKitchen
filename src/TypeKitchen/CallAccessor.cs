@@ -126,7 +126,6 @@ namespace TypeKitchen
         {
             return member.CanCall && 
                    member.MemberInfo is MethodInfo method &&
-                   !method.IsStatic &&
                    !method.Name.StartsWith("get_") &&
                    !method.Name.StartsWith("set_") &&
                    method.DeclaringType != typeof(object);
