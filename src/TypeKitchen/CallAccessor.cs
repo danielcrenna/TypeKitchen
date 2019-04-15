@@ -168,9 +168,9 @@ namespace TypeKitchen
                     il.Ldtoken(method);
                     il.Call(Methods.GetMethodFromHandle);
 
-                    il.Ldnull();                        // this
-                    il.Ldnull();                        // args
-                    il.Call(Methods.InvokeMethod);      // var r = method.Invoke(this, args);
+                    il.Ldnull();                        // null
+                    il.Ldnull();                        // (object[]) args
+                    il.Call(Methods.InvokeMethod);      // var r = method.Invoke(null, args);
                     il.Ret();                           // return r;
                 }
                 else

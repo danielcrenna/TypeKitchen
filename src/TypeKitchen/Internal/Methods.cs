@@ -10,5 +10,9 @@ namespace TypeKitchen.Internal
     {
         public static readonly MethodInfo StringEquals = typeof(string).GetMethod("op_Equality", new[] { typeof(string), typeof(string) });
         public static readonly MethodInfo GetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public);
+
+        public static MethodInfo GetMethodFromHandle = typeof(MethodBase).GetMethod(nameof(MethodBase.GetMethodFromHandle), new[] { typeof(RuntimeMethodHandle) });
+        public static MethodInfo GetMethodByName = typeof(Type).GetMethod(nameof(Type.GetMethod), new[] { typeof(string) });
+        public static MethodInfo InvokeMethod = typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), new [] { typeof(object), typeof(object[])});
     }
 }

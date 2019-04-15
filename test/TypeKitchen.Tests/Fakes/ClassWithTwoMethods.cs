@@ -25,5 +25,7 @@ namespace TypeKitchen.Tests.Fakes
         }
 
         public string Baz => "ABC";
+        
+        public static int Method() { return 1; }
     }
 }

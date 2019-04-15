@@ -20,6 +20,8 @@ namespace TypeKitchen.Tests.Fakes
                 case "Bar":
                     ((ClassWithTwoMethodsAndProperty)target).Bar((int) args[0]);
                     return typeof(void);
+                case "Method":
+                    return typeof(ClassWithTwoMethodsAndProperty).GetMethod("Method").Invoke(null, null);
                 default:
                     throw new ArgumentNullException();
             }
