@@ -1,10 +1,14 @@
 ﻿// Copyright (c) Blowdart, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
+using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Scripting.Hosting;
@@ -24,9 +28,14 @@ namespace TypeKitchen
             Loader = new InteractiveAssemblyLoader();
 
             DefaultOptions = ScriptOptions.Default
-                .Add<DynamicObject>()
-                .Add<CSharpArgumentInfo>()
-                .Add<FileInfo>();
+                .Add<Guid>()                // System
+                .Add<List<object>>()        // System.Collections.Generic
+                .Add<Regex>()               // System.Text
+                .Add<FileInfo>()            // System.IO
+                .Add<IQueryable>()          // System.Linq;
+                .Add<DynamicObject>()       // System.Dynamic
+                .Add<CSharpArgumentInfo>()  // Microsoft.CSharp.RuntimeBinder
+                ;
         }
 
         public static void Add<T>()
@@ -46,9 +55,9 @@ namespace TypeKitchen
 
         private static class ContextFree { }
 
-        public static MethodInfo CreateMethod(string body)
+        public static MethodInfo CreateMethod(string body, ScriptOptions options = null)
         {
-            var script = CSharpScript.Create(body, _options ?? DefaultOptions, typeof(ContextFree), Loader);
+            var script = CSharpScript.Create(body, options ?? _options ?? DefaultOptions, typeof(ContextFree), Loader);
             var compilation = script.GetCompilation();
             
             using (var pe = new MemoryStream())
