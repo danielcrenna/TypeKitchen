@@ -4,6 +4,6 @@ namespace TypeKitchen
 {
     public interface ITypeResolver
     {
-        T Singleton<T>();
+        T Resolve<T>();
     }
 }

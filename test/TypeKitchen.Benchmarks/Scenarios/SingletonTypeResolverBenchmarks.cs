@@ -50,7 +50,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
         [Benchmark(Baseline = true)]
         public void Native_Direct()
         {
-            _direct.Singleton<OnePropertyOneField>();
+            _direct.Resolve<OnePropertyOneField>();
         }
 
         [Benchmark(Baseline = false)]

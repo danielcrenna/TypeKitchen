@@ -7,12 +7,12 @@ namespace TypeKitchen.Tests.Fakes
 {
     public sealed class DirectTypeResolver : ITypeResolver
     {
-        private static readonly OnePropertyOneField _instance = new OnePropertyOneField();
+        private static readonly OnePropertyOneField Instance = new OnePropertyOneField();
 
-        public T Singleton<T>()
+        public T Resolve<T>()
         {
             if(typeof(T) == typeof(OnePropertyOneField))
-                return (T)(object)_instance;
+                return (T)(object)Instance;
             return default;
         }
 
