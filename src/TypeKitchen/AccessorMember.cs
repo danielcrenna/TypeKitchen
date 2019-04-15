@@ -15,6 +15,7 @@ namespace TypeKitchen
             Type = type;
             CanRead = canRead;
             CanWrite = canWrite;
+            CanCall = canCall;
             Scope = scope;
             MemberType = memberType;
             MemberInfo = info;
