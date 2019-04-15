@@ -23,5 +23,13 @@ namespace TypeKitchen.Tests
             var accessor = CallAccessor.Create(target.GetType().GetMethod("Foo"));
             accessor.Call(target);
         }
+
+        [Fact]
+        public void Call_Static_Method_Void_NoArgs()
+        {
+            var target = new ClassWithTwoMethodsAndProperty();
+            var accessor = CallAccessor.Create(target.GetType().GetMethod("Method"));
+            accessor.Call(target);
+        }
     }
 }

@@ -162,17 +162,29 @@ namespace TypeKitchen
                 var parameterTypes = parameters.Select(p => p.ParameterType).ToArray();
 
                 var il = call.GetILGeneratorInternal();
-                il.DeclareLocal(typeof(object));
-                il.Nop();
-                il.Ldarg_1();
-                il.Castclass(method.DeclaringType);
-                il.Callvirt(method);
-                il.Nop();
-                il.Ldtoken(method.ReturnType);
-                il.Call(Methods.GetTypeFromHandle);
-                il.Stloc_0();
-                il.Ldloc_0();
-                il.Ret();
+               
+                if (method.IsStatic)
+                {
+                    il.Ldtoken(method);
+                    il.Call(Methods.GetMethodFromHandle);
+
+                    il.Ldnull();                        // this
+                    il.Ldnull();                        // args
+                    il.Call(Methods.InvokeMethod);      // var r = method.Invoke(this, args);
+                    il.Ret();                           // return r;
+                }
+                else
+                {
+                    il.DeclareLocal(typeof(object));
+                    il.Ldarg_1();
+                    il.Castclass(method.DeclaringType);
+                    il.Callvirt(method);
+                    il.Ldtoken(method.ReturnType);
+                    il.Call(Methods.GetTypeFromHandle);
+                    il.Stloc_0();
+                    il.Ldloc_0();
+                    il.Ret();
+                }
 
                 tb.DefineMethodOverride(call, typeof(IMethodCallAccessor).GetMethod(nameof(IMethodCallAccessor.Call)));
             }
