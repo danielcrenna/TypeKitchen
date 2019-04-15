@@ -2,7 +2,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using BenchmarkDotNet.Attributes;
-using TypeKitchen.Internal;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
@@ -18,7 +17,6 @@ namespace TypeKitchen.Benchmarks.Scenarios
         private MethodInfo _invoke;
         private Func<int> _emit;
 
-
         [GlobalSetup]
         public void GlobalSetup()
         {
@@ -27,16 +25,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
             _invoke = typeof(SnippetBenchmarks).GetMethod("Method");
             _emit = CreateAnonymousMethod();
         }
-
-        private static Func<int> CreateAnonymousMethod()
-        {
-            var dm = new DynamicMethod($"__", typeof(int), Type.EmptyTypes);
-            var il = dm.GetILGenerator();
-            il.Emit(OpCodes.Ldc_I4_1);
-            il.Emit(OpCodes.Ret);
-            return (Func<int>)dm.CreateDelegate(typeof(Func<int>));
-        }
-
+        
         [Benchmark(Baseline = false)]
         public void Invoke_Snippet()
         {
@@ -62,5 +51,14 @@ namespace TypeKitchen.Benchmarks.Scenarios
         }
 
         public static int Method() { return 1; }
+
+        private static Func<int> CreateAnonymousMethod()
+        {
+            var dm = new DynamicMethod($"__", typeof(int), Type.EmptyTypes);
+            var il = dm.GetILGenerator();
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Ret);
+            return (Func<int>)dm.CreateDelegate(typeof(Func<int>));
+        }
     }
 }

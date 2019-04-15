@@ -12,7 +12,7 @@ using Microsoft.CSharp.RuntimeBinder;
 
 namespace TypeKitchen
 {
-    public sealed class Snippet
+    public static class Snippet
     {
         private static readonly ScriptOptions DefaultOptions;
         private static readonly InteractiveAssemblyLoader Loader;
@@ -24,19 +24,24 @@ namespace TypeKitchen
             Loader = new InteractiveAssemblyLoader();
 
             DefaultOptions = ScriptOptions.Default
-                .AddReferences(Assembly.GetAssembly(typeof(DynamicObject)), Assembly.GetAssembly(typeof(CSharpArgumentInfo)), Assembly.GetAssembly(typeof(File)))
-                .AddImports(typeof(DynamicObject).Namespace, typeof(CSharpArgumentInfo).Namespace, typeof(File).Namespace);
+                .Add<DynamicObject>()
+                .Add<CSharpArgumentInfo>()
+                .Add<FileInfo>();
         }
 
         public static void Add<T>()
         {
-            if (_options == null)
-                _options = ScriptOptions.Default;
+            _options = _options.Add<T>();
+        }
 
+        private static ScriptOptions Add<T>(this ScriptOptions root)
+        {
+            if (root == null)
+                root = ScriptOptions.Default;
             var type = typeof(T);
-
-            _options = _options.AddReferences(type.Assembly);
-            _options = _options.AddImports(type.Namespace);
+            root = root.AddReferences(type.Assembly);
+            root = root.AddImports(type.Namespace);
+            return root;
         }
 
         private static class ContextFree { }
