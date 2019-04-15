@@ -240,42 +240,42 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in a the local variable list at <paramref name="index">index</paramref> (short form).</summary>
-        public ILSugar Stloc(int index)
+        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at a specified index.</summary>
+        public ILSugar Stloc(LocalBuilder local)
         {
-            _il.Emit(OpCodes.Stloc, index);
+            _il.Emit(OpCodes.Stloc, local);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in a the local variable list at index 0.</summary>
+        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 0.</summary>
         public ILSugar Stloc_0()
         {
             _il.Emit(OpCodes.Stloc_0);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in a the local variable list at index 1.</summary>
+        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 1.</summary>
         public ILSugar Stloc_1()
         {
             _il.Emit(OpCodes.Stloc_1);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in a the local variable list at index 2.</summary>
+        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 2.</summary>
         public ILSugar Stloc_2()
         {
             _il.Emit(OpCodes.Stloc_2);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in a the local variable list at index 3.</summary>
+        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 3.</summary>
         public ILSugar Stloc_3()
         {
             _il.Emit(OpCodes.Stloc_3);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in a the local variable list at <paramref name="index">index</paramref> (short form).</summary>
+        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at <paramref name="index">index</paramref> (short form).</summary>
         public ILSugar Stloc_S(int index)
         {
             _il.Emit(OpCodes.Stloc_S, index);
@@ -323,7 +323,35 @@ namespace TypeKitchen.Internal
             _il.Emit(OpCodes.Ldloc_S, index);
             return this;
         }
-        
+
+        /// <summary>Loads the address of the local variable at a specific index onto the evaluation stack.</summary>
+        public ILSugar Ldloca(int index)
+        {
+            _il.Emit(OpCodes.Ldloca, index);
+            return this;
+        }
+
+        /// <summary>Loads the address of the local variable at a specific index onto the evaluation stack, short form.</summary>
+        public ILSugar Ldloca_S(byte index)
+        {
+            _il.Emit(OpCodes.Ldloca_S, index);
+            return this;
+        }
+
+        /// <summary>Loads the address of the local variable at a specific index onto the evaluation stack.</summary>
+        public ILSugar Ldloca(LocalBuilder local)
+        {
+            _il.Emit(OpCodes.Ldloca, local);
+            return this;
+        }
+
+        /// <summary>Loads the address of the local variable at a specific index onto the evaluation stack.</summary>
+        public ILSugar Ldloc(LocalBuilder local)
+        {
+            _il.Emit(OpCodes.Ldloc, local);
+            return this;
+        }
+
         /// <summary>Calls the method indicated by the passed method descriptor.</summary>
         public ILSugar Call(MethodInfo method)
         {
@@ -447,6 +475,13 @@ namespace TypeKitchen.Internal
         public ILSugar EmitCallvirt(MethodInfo method)
         {
             _il.EmitCall(OpCodes.Callvirt, method, null);
+            return this;
+        }
+
+        /// <summary>Copies the current topmost value on the evaluation stack, and then pushes the copy onto the evaluation stack.</summary>
+        public ILSugar Dup()
+        {
+            _il.Emit(OpCodes.Dup);
             return this;
         }
     }

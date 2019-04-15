@@ -19,12 +19,116 @@ namespace TypeKitchen.Internal
             return new ILSugar(dm.GetILGenerator());
         }
 
-        public static ILSugar GotoIfStringEquals(this ILSugar il, string name, Label @goto)
+        /// <summary>Pushes the value of i onto the evaluation stack as an int32.</summary>
+        public static ILSugar LoadConstant(this ILSugar il, long i)
         {
-            il.Ldstr(name);
-            il.Call(Methods.StringEquals);
-            il.Brtrue_S(@goto);
+            switch (i)
+            {
+                case 0:
+                    il.Ldc_I4_0();
+                    break;
+                case 1:
+                    il.Ldc_I4_1();
+                    break;
+                case 2:
+                    il.Ldc_I4_2();
+                    break;
+                case 3:
+                    il.Ldc_I4_3();
+                    break;
+                case 4:
+                    il.Ldc_I4_4();
+                    break;
+                case 5:
+                    il.Ldc_I4_5();
+                    break;
+                case 6:
+                    il.Ldc_I4_6();
+                    break;
+                case 7:
+                    il.Ldc_I4_7();
+                    break;
+                case 8:
+                    il.Ldc_I4_8();
+                    break;
+                default:
+                    if (i <= byte.MaxValue)
+                        il.Ldc_I4_S((byte)i);
+                    else if (i <= int.MaxValue)
+                        il.Ldc_I4((int) i);
+                    else
+                        il.Ldc_I8(i);
+                    break;
+            }
             return il;
+        }
+
+        /// <summary>Loads the local variable at index i onto the evaluation stack.</summary>
+        public static ILSugar LoadVariable(this ILSugar il, int i)
+        {
+            switch (i)
+            {
+                case 0:
+                    il.Ldloc_0();
+                    break;
+                case 1:
+                    il.Ldloc_1();
+                    break;
+                case 2:
+                    il.Ldloc_2();
+                    break;
+                case 3:
+                    il.Ldloc_3();
+                    break;
+                default:
+                    if (i <= byte.MaxValue)
+                        il.Ldloc_S((byte)i);
+                    else
+                        il.Ldloc(i);
+                    break;
+            }
+            return il;
+        }
+
+        /// <summary>Loads the argument at index i onto the evaluation stack.</summary>
+        public static ILSugar LoadArgument(this ILSugar il, int i)
+        {
+            switch (i)
+            {
+                case 0:
+                    il.Ldarg_0();
+                    break;
+                case 1:
+                    il.Ldarg_1();
+                    break;
+                case 2:
+                    il.Ldarg_2();
+                    break;
+                case 3:
+                    il.Ldarg_3();
+                    break;
+                default:
+                    if (i <= byte.MaxValue)
+                        il.Ldarg_S((byte)i);
+                    else
+                        il.Ldarg(i);
+                    break;
+            }
+            return il;
+        }
+
+        /// <summary>If the given type is a value type, converts it into an object reference (type O)</summary>
+        public static ILSugar MaybeBox(this ILSugar il, Type type)
+        {
+            if (type.IsValueType)
+                il.Box(type);
+            return il;
+        }
+
+        /// <summary> Branches to the specified label if a string on the evaluation stacks equals the given literal value.</summary>
+        public static ILSugar GotoIfStringEquals(this ILSugar il, string literal, Label @goto)
+        {
+            return il.Ldstr(literal).Call(Methods.StringEquals).Brtrue_S(@goto);
         }
 
         /// <summary> Creates a property with the specified name and a fixed value, known at runtime.</summary>
