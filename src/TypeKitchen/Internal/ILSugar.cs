@@ -435,5 +435,19 @@ namespace TypeKitchen.Internal
             _il.Emit(OpCodes.Unbox_Any, type);
             return this;
         }
+
+        /// <summary> Puts a call instruction onto the Microsoft intermediate language (MSIL) stream to call a varargs method. </summary>
+        public ILSugar EmitCall(MethodInfo method)
+        {
+            _il.EmitCall(OpCodes.Call, method, null);
+            return this;
+        }
+
+        /// <summary> Puts a callvirt instruction onto the Microsoft intermediate language (MSIL) stream to call a varargs method. </summary>
+        public ILSugar EmitCallvirt(MethodInfo method)
+        {
+            _il.EmitCall(OpCodes.Callvirt, method, null);
+            return this;
+        }
     }
 }
