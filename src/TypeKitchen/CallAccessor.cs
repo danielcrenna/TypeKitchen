@@ -10,7 +10,7 @@ using TypeKitchen.Internal;
 
 namespace TypeKitchen
 {
-    public sealed class CallAccessor
+    public static class CallAccessor
     {
         private static readonly Dictionary<int, ITypeCallAccessor> TypeAccessorCache = new Dictionary<int, ITypeCallAccessor>();
         private static readonly Dictionary<int, IMethodCallAccessor> MethodAccessorCache = new Dictionary<int, IMethodCallAccessor>();
@@ -119,15 +119,17 @@ namespace TypeKitchen
             }
 
             var typeInfo = tb.CreateTypeInfo();
-            return (ITypeCallAccessor)Activator.CreateInstance(typeInfo.AsType(), false);
+            return (ITypeCallAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
+        }
 
-            bool IsInstanceMethod(AccessorMember member)
-            {
-                return member.MemberInfo is MethodInfo method &&
-                       !method.Name.StartsWith("get_") &&
-                       !method.Name.StartsWith("set_") &&
-                       method.DeclaringType != typeof(object);
-            }
+        internal static bool IsInstanceMethod(this AccessorMember member)
+        {
+            return member.CanCall && 
+                   member.MemberInfo is MethodInfo method &&
+                   !method.IsStatic &&
+                   !method.Name.StartsWith("get_") &&
+                   !method.Name.StartsWith("set_") &&
+                   method.DeclaringType != typeof(object);
         }
 
         public static IMethodCallAccessor Create(MethodInfo methodInfo)
@@ -175,14 +177,11 @@ namespace TypeKitchen
                 }
                 else
                 {
-                    il.DeclareLocal(typeof(object));
                     il.Ldarg_1();
                     il.Castclass(method.DeclaringType);
                     il.Callvirt(method);
                     il.Ldtoken(method.ReturnType);
                     il.Call(Methods.GetTypeFromHandle);
-                    il.Stloc_0();
-                    il.Ldloc_0();
                     il.Ret();
                 }
 
@@ -190,7 +189,7 @@ namespace TypeKitchen
             }
 
             var typeInfo = tb.CreateTypeInfo();
-            return (IMethodCallAccessor)Activator.CreateInstance(typeInfo.AsType(), false);
+            return (IMethodCallAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
     }
 }
