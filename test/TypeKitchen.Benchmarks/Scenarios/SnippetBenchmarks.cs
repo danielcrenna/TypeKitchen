@@ -12,46 +12,63 @@ namespace TypeKitchen.Benchmarks.Scenarios
     [RPlotExporter]
     public class SnippetBenchmarks
     {
-        private IMethodCallAccessor _wrapped;
-        private MethodInfo _method;
+        private IMethodCallAccessor _accessorSnippet;
+        private IMethodCallAccessor _accessorMethod;
+
+        private MethodInfo _snippet;
         private MethodInfo _invoke;
         private Func<int> _emit;
-        private Func<object, object[], object> _lateBound;
+        private Func<object, object[], object> _lateBoundSnippet;
+        private Func<object, object[], object> _lateBoundMethod;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _method = Snippet.CreateMethod("public static int Method() { return 1; }");
-            _wrapped = CallAccessor.Create(_method);
+            _snippet = Snippet.CreateMethod("public static int Method() { return 1; }");
             _invoke = typeof(SnippetBenchmarks).GetMethod("Method");
+            _accessorSnippet = CallAccessor.Create(_snippet);
+            _accessorMethod = CallAccessor.Create(_invoke);
             _emit = CreateAnonymousMethod();
-            _lateBound = LateBinding.DynamicMethodBindCall(_method);
+            _lateBoundSnippet = LateBinding.DynamicMethodBindCall(_snippet);
+            _lateBoundMethod = LateBinding.DynamicMethodBindCall(_invoke);
         }
         
         [Benchmark(Baseline = false)]
         public void Invoke_Snippet()
         {
-            _method.Invoke(null, null);
+            _snippet.Invoke(null, null);
         }
 
         [Benchmark(Baseline = false)]
-        public void Wrapped_Snippet()
-        {
-            _wrapped.Call(null, null);
-        }
-
-        [Benchmark(Baseline = false)]
-        public void Invoke_MethodInfo()
+        public void Invoke_Method()
         {
             _invoke.Invoke(null, null);
         }
 
         [Benchmark(Baseline = false)]
-        public void Invoke_LateBound_DynamicMethod()
+        public void Accessor_Snippet()
         {
-            _lateBound.Invoke(null, null);
+            _accessorSnippet.Call(null, null);
         }
 
+        [Benchmark(Baseline = false)]
+        public void Accessor_Method()
+        {
+            _accessorSnippet.Call(null, null);
+        }
+
+        [Benchmark(Baseline = false)]
+        public void LateBound_Snippet()
+        {
+            _lateBoundSnippet.Invoke(null, null);
+        }
+
+        [Benchmark(Baseline = false)]
+        public void LateBound_Method()
+        {
+            _lateBoundMethod.Invoke(null, null);
+        }
+        
         [Benchmark(Baseline = true)]
         public void Emit_Internal()
         {
