@@ -159,31 +159,7 @@ namespace TypeKitchen
                     MethodAttributes.Virtual | MethodAttributes.NewSlot,
                     typeof(object), new[] { typeof(object), typeof(object[]) });
 
-                var parameters = method.GetParameters();
-                var parameterTypes = parameters.Select(p => p.ParameterType).ToArray();
-
-                var il = call.GetILGeneratorInternal();
-               
-                if (method.IsStatic)
-                {
-                    il.Ldtoken(method);
-                    il.Call(Methods.GetMethodFromHandle);
-
-                    il.Ldnull();                        // null
-                    il.Ldnull();                        // (object[]) args
-                    il.Call(Methods.InvokeMethod);      // var r = method.Invoke(null, args);
-                    il.Ret();                           // return r;
-                }
-                else
-                {
-                    il.Ldarg_1();
-                    il.Castclass(method.DeclaringType);
-                    il.Callvirt(method);
-                    il.Ldtoken(method.ReturnType);
-                    il.Call(Methods.GetTypeFromHandle);
-                    il.Ret();
-                }
-
+                call.GetILGeneratorInternal().EmitDynamicMethodBindCall(method, tb);
                 tb.DefineMethodOverride(call, typeof(IMethodCallAccessor).GetMethod(nameof(IMethodCallAccessor.Call)));
             }
 

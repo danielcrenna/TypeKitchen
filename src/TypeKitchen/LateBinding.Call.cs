@@ -32,13 +32,15 @@ namespace TypeKitchen
                 throw new NotSupportedException("Dynamic binding does not currently support anonymous methods");
 
             var dm = new DynamicMethod($"Call_{method.MetadataToken}", typeof(object), new[] { typeof(object), typeof(object[])});
-            var il = dm.GetILGeneratorInternal();
+            dm.GetILGeneratorInternal().EmitDynamicMethodBindCall(method, type);
+            return (Func<object, object[], object>) dm.CreateDelegate(typeof(Func<object, object[], object>));
+        }
 
-            if(!method.IsStatic)
+        internal static void EmitDynamicMethodBindCall(this ILSugar il, MethodInfo method, Type type)
+        {
+            if (!method.IsStatic)
                 il.PushLocal(type);
-
             il.CallWithArguments(method);
-
             if (method.IsStatic)
             {
                 if (method.ReturnType == typeof(void))
@@ -46,10 +48,7 @@ namespace TypeKitchen
                 else
                     il.MaybeBox(method.ReturnType);
             }
-
             il.Ret();
-
-            return (Func<object, object[], object>) dm.CreateDelegate(typeof(Func<object, object[], object>));
         }
 
         private static void CallWithArguments(this ILSugar il, MethodInfo method)
