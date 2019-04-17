@@ -4,7 +4,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Blowdart Inc. &amp; Contributors</Authors>
     <Company>Blowdart Inc.</Company>
-    <Description>TypeKitchen is a small library for fast metaprogramming in .NET Standard.</Description>
+    <Description>TypeKitchen is a small library for fast meta-programming in .NET Standard.</Description>
     <Copyright>Copyright © Blowdart Inc. All rights reserved.</Copyright>
     <PackageIconUrl>https://raw.githubusercontent.com/blowdart-inc/TypeKitchen/master/assets/logo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/blowdart-inc/TypeKitchen</PackageProjectUrl>

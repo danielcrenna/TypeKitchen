@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TypeKitchen\TypeKitchen.csproj" />
+    <ProjectReference Include="..\ExternalTestAssembly\ExternalTestAssembly.csproj" />
   </ItemGroup>
 
 </Project>

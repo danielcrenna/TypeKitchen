@@ -12,15 +12,15 @@ namespace TypeKitchen
 {
     public static class CallAccessor
     {
-        private static readonly Dictionary<int, ITypeCallAccessor> TypeAccessorCache = new Dictionary<int, ITypeCallAccessor>();
-        private static readonly Dictionary<int, IMethodCallAccessor> MethodAccessorCache = new Dictionary<int, IMethodCallAccessor>();
+        private static readonly Dictionary<Type, ITypeCallAccessor> TypeAccessorCache = new Dictionary<Type, ITypeCallAccessor>();
+        private static readonly Dictionary<MethodBase, IMethodCallAccessor> MethodAccessorCache = new Dictionary<MethodBase, IMethodCallAccessor>();
 
         public static ITypeCallAccessor Create(Type type)
         {
-            if (TypeAccessorCache.TryGetValue(type.MetadataToken, out var accessor))
+            if (TypeAccessorCache.TryGetValue(type, out var accessor))
                 return accessor;
             accessor = CreateCallAccessor(type);
-            TypeAccessorCache[type.MetadataToken] = accessor;
+            TypeAccessorCache[type] = accessor;
             return accessor;
         }
 
@@ -133,10 +133,10 @@ namespace TypeKitchen
 
         public static IMethodCallAccessor Create(MethodInfo methodInfo)
         {
-            if (MethodAccessorCache.TryGetValue(methodInfo.MetadataToken, out var accessor))
+            if (MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
                 return accessor;
             accessor = CreateCallAccessor(methodInfo);
-            MethodAccessorCache[methodInfo.MetadataToken] = accessor;
+            MethodAccessorCache[methodInfo] = accessor;
             return accessor;
         }
 

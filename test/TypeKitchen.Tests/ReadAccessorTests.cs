@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Blowdart, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using ExternalTestAssembly;
 using TypeKitchen.Tests.Fakes;
 using Xunit;
 
@@ -8,6 +9,24 @@ namespace TypeKitchen.Tests
 {
     public class ReadAccessorTests
     {
+        [Fact]
+        public void GetTests_Caching_External()
+        {
+            var target = AnonymousTypeFactory.Foo();
+            var accessor1 = ReadAccessor.Create(target.GetType());
+
+            var target2 = AnonymousTypeFactory.Bar();
+            var accessor2 = ReadAccessor.Create(target2.GetType());
+
+            Assert.NotEqual(accessor1, accessor2);
+
+            var target3 = GetOutOfMethodTarget();
+            var accessor3 = ReadAccessor.Create(target3.GetType());
+
+            Assert.NotEqual(accessor3, accessor1);
+            Assert.NotEqual(accessor3, accessor2);
+        }
+
         [Fact]
         public void GetTests_AnonymousType()
         {

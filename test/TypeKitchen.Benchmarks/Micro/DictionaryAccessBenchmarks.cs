@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using BenchmarkDotNet.Attributes;
 
 namespace TypeKitchen.Benchmarks.Micro
@@ -14,7 +13,7 @@ namespace TypeKitchen.Benchmarks.Micro
     {
         private readonly Dictionary<Type, ITypeReadAccessor> _byType = new Dictionary<Type, ITypeReadAccessor>();
         private readonly Dictionary<int, ITypeReadAccessor> _byMetadataToken = new Dictionary<int, ITypeReadAccessor>();
-
+        
         [GlobalSetup]
         public void SetUp()
         {
@@ -41,7 +40,7 @@ namespace TypeKitchen.Benchmarks.Micro
             var type = target.GetType();
             var foo = _byMetadataToken[type.MetadataToken][target, "Foo"];
         }
-
+        
         public object GetOutOfMethodTarget()
         {
             return new { Foo = "Bar", Bar = "Baz" };

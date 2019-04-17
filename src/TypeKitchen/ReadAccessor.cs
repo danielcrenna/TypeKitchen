@@ -11,14 +11,14 @@ namespace TypeKitchen
 {
     public sealed class ReadAccessor
     {
-        private static readonly Dictionary<int, ITypeReadAccessor> AccessorCache = new Dictionary<int, ITypeReadAccessor>();
+        private static readonly Dictionary<Type, ITypeReadAccessor> AccessorCache = new Dictionary<Type, ITypeReadAccessor>();
 
         public static ITypeReadAccessor Create(Type type)
         {
-            if (AccessorCache.TryGetValue(type.MetadataToken, out var accessor))
+            if (AccessorCache.TryGetValue(type, out var accessor))
                 return accessor;
             accessor = type.IsAnonymous() ? CreateAnonymousReadAccessor(type) : CreateReadAccessor(type);
-            AccessorCache[type.MetadataToken] = accessor;
+            AccessorCache[type] = accessor;
             return accessor;
         }
 
@@ -26,7 +26,7 @@ namespace TypeKitchen
         {
             var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
 
-            var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_{type.MetadataToken}",
+            var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
                 TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
@@ -153,7 +153,7 @@ namespace TypeKitchen
         {
             var members = AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
 
-            var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_Anonymous_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_Anonymous_{type.Assembly.GetHashCode()}_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
 
             //

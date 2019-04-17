@@ -11,14 +11,14 @@ namespace TypeKitchen
 {
     public sealed class WriteAccessor
     {
-        private static readonly Dictionary<int, ITypeWriteAccessor> AccessorCache = new Dictionary<int, ITypeWriteAccessor>();
+        private static readonly Dictionary<Type, ITypeWriteAccessor> AccessorCache = new Dictionary<Type, ITypeWriteAccessor>();
 
         public static ITypeWriteAccessor Create(Type type)
         {
-            if (AccessorCache.TryGetValue(type.MetadataToken, out var accessor))
+            if (AccessorCache.TryGetValue(type, out var accessor))
                 return accessor;
             accessor = CreateWriteAccessor(type);
-            AccessorCache[type.MetadataToken] = accessor;
+            AccessorCache[type] = accessor;
             return accessor;
         }
 

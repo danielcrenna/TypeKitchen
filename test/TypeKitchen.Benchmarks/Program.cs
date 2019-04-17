@@ -11,15 +11,15 @@ namespace TypeKitchen.Benchmarks
     {
         private static void Main(string[] args)
         {
-            //BenchmarkRunner.Run<AnonymousTypeBenchmarks>();
-            //BenchmarkRunner.Run<ReadAccessorBenchmarks>();
+            BenchmarkRunner.Run<AnonymousTypeBenchmarks>();
+            BenchmarkRunner.Run<ReadAccessorBenchmarks>();
             //BenchmarkRunner.Run<WriteAccessorBenchmarks>();
             //BenchmarkRunner.Run<SingletonTypeResolverBenchmarks>();
             //BenchmarkRunner.Run<DuckCastingBenchmarks>();
             //BenchmarkRunner.Run<CallAccessorBenchmarks>();
             //BenchmarkRunner.Run<ActivationBenchmarks>();
             //BenchmarkRunner.Run<SnippetBenchmarks>();
-            BenchmarkRunner.Run<DictionaryAccessBenchmarks>();
+            //BenchmarkRunner.Run<DictionaryAccessBenchmarks>();
         }
     }
 }

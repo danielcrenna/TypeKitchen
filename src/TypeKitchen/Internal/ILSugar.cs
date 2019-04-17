@@ -4,9 +4,11 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Reflection.Metadata.Ecma335;
 
 namespace TypeKitchen.Internal
 {
+    /// <summary>Provides typing efficiency, method chaining, and light argument hinting. Should not do anything "smart".</summary>
     internal class ILSugar
     {
         private readonly ILGenerator _il;
