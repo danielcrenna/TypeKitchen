@@ -19,7 +19,7 @@ namespace TypeKitchen.Internal
             _instance = instance;
             _members = accessor.Type.IsAnonymous()
                 ? AccessorMembers.Create(accessor.Type, AccessorMemberScope.Public, AccessorMemberTypes.Properties)
-                : AccessorMembers.Create(accessor.Type, AccessorMemberScope.All, AccessorMemberTypes.All);
+                : AccessorMembers.Create(accessor.Type, AccessorMemberScope.All, AccessorMemberTypes.Properties | AccessorMemberTypes.Fields);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
