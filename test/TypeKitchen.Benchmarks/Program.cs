@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using BenchmarkDotNet.Running;
+using TypeKitchen.Benchmarks.Micro;
 using TypeKitchen.Benchmarks.Scenarios;
 
 namespace TypeKitchen.Benchmarks
@@ -17,7 +18,8 @@ namespace TypeKitchen.Benchmarks
             //BenchmarkRunner.Run<DuckCastingBenchmarks>();
             //BenchmarkRunner.Run<CallAccessorBenchmarks>();
             //BenchmarkRunner.Run<ActivationBenchmarks>();
-            BenchmarkRunner.Run<SnippetBenchmarks>();
+            //BenchmarkRunner.Run<SnippetBenchmarks>();
+            BenchmarkRunner.Run<DictionaryAccessBenchmarks>();
         }
     }
 }
