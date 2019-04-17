@@ -153,7 +153,7 @@ namespace TypeKitchen
         {
             var members = AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
 
-            var tb = DynamicAssembly.Module.DefineType($"AnonymousTypeAccessor_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_Anonymous_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
 
             //
