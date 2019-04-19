@@ -161,12 +161,28 @@ namespace TypeKitchen.Internal
             if (overrides != null)
                 tb.DefineMethodOverride(getMethod, overrides);
 
-            var propertyWithGet = tb.DefineProperty(propertyName, PropertyAttributes.None, typeof(object), Type.EmptyTypes);
+            var propertyWithGet = tb.DefineProperty(propertyName, PropertyAttributes.None, type, Type.EmptyTypes);
             propertyWithGet.SetGetMethod(getMethod);
 
             var il = getMethod.GetILGeneratorInternal();
             il.Ldtoken(value);
-            il.Call(Methods.GetTypeFromHandle);
+
+            switch (value)
+            {
+                case Type _:
+                    il.Call(Methods.GetTypeFromHandle);
+                    break;
+                case ConstructorInfo _:
+                case MethodInfo _:
+                    il.Call(Methods.GetMethodFromHandle);
+                    break;
+                case FieldInfo _:
+                    il.Call(Methods.GetFieldFromHandle);
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+
             il.Ret();
         }
     }

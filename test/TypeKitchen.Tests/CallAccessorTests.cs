@@ -12,7 +12,9 @@ namespace TypeKitchen.Tests
         public void Call_Type_Void_NoArgs()
         {
             var target = new ClassWithTwoMethodsAndProperty();
-            var accessor = CallAccessor.Create(target.GetType());
+            var type = target.GetType();
+            var accessor = CallAccessor.Create(type);
+            Assert.Equal(type, accessor.Type);
             accessor.Call(target, "Foo");
         }
 
@@ -20,7 +22,11 @@ namespace TypeKitchen.Tests
         public void Call_Method_Void_NoArgs()
         {
             var target = new ClassWithTwoMethodsAndProperty();
-            var accessor = CallAccessor.Create(target.GetType().GetMethod("Foo"));
+            var methodInfo = target.GetType().GetMethod("Foo");
+            var accessor = CallAccessor.Create(methodInfo);
+            Assert.Equal(methodInfo, accessor.MethodInfo);
+            var parameters = accessor.MethodInfo.GetParameters();
+            Assert.NotNull(parameters);
             accessor.Call(target);
         }
 
@@ -28,7 +34,11 @@ namespace TypeKitchen.Tests
         public void Call_Static_Method_Void_NoArgs()
         {
             var target = new ClassWithTwoMethodsAndProperty();
-            var accessor = CallAccessor.Create(target.GetType().GetMethod("Method"));
+            var methodInfo = target.GetType().GetMethod("Method");
+            var accessor = CallAccessor.Create(methodInfo);
+            Assert.Equal(methodInfo, accessor.MethodInfo);
+            var parameters = accessor.MethodInfo.GetParameters();
+            Assert.NotNull(parameters);
             accessor.Call(target);
         }
     }

@@ -159,7 +159,9 @@ namespace TypeKitchen
                     MethodAttributes.Virtual | MethodAttributes.NewSlot,
                     typeof(object), new[] { typeof(object), typeof(object[]) });
 
-                call.GetILGeneratorInternal().EmitDynamicMethodBindCall(method, tb);
+                call.GetILGeneratorInternal()
+                    .EmitDynamicMethodBindCall(method, tb);
+
                 tb.DefineMethodOverride(call, typeof(IMethodCallAccessor).GetMethod(nameof(IMethodCallAccessor.Call)));
             }
 

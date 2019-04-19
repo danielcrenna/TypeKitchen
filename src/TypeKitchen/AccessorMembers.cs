@@ -47,7 +47,7 @@ namespace TypeKitchen
                 MethodInfo = type.GetMethods();
                 foreach (var method in MethodInfo)
                     NameToMember.Add(method.Name,
-                        new AccessorMember(method.Name, method.ReturnType, false, false, true, scope, AccessorMemberType.Field,
+                        new AccessorMember(method.Name, method.ReturnType, false, false, true, scope, AccessorMemberType.Method,
                             method));
             }
 
