@@ -7,7 +7,13 @@ namespace TypeKitchen
 {
     public interface IMethodCallAccessor
     {
-        MethodInfo MethodInfo { get; }
-        object Call(object target, params object[] args);
+        string MethodName { get; }
+        ParameterInfo[] Parameters { get; }
+
+        object Call(object target);
+        object Call(object target, object arg1);
+        object Call(object target, object arg1, object arg2);
+        object Call(object target, object arg1, object arg2, object arg3);
+        object Call(object target, object[] args);
     }
 }

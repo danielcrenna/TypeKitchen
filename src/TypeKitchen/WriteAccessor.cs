@@ -26,7 +26,7 @@ namespace TypeKitchen
         {
             var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
 
-            var tb = DynamicAssembly.Module.DefineType($"WriteAccessor_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType($"WriteAccessor_{type.Assembly.GetHashCode()}_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));
 
             //
@@ -62,7 +62,7 @@ namespace TypeKitchen
                 {
                     il.Ldarg_2();                   // key
                     il.Ldstr(member.Name);          // "Foo"
-                    il.Call(Methods.StringEquals);  // key == "Foo"
+                    il.Call(KnownMethods.StringEquals);  // key == "Foo"
                     il.Brtrue_S(branches[member]);  // if(key == "Foo")
                 }
 
@@ -117,7 +117,7 @@ namespace TypeKitchen
                 {
                     il.Ldarg_2();                   // key
                     il.Ldstr(member.Name);          // "Foo"
-                    il.Call(Methods.StringEquals);
+                    il.Call(KnownMethods.StringEquals);
                     il.Brtrue_S(branches[member]);
                 }
 

@@ -28,7 +28,35 @@ namespace TypeKitchen.Tests.Fakes
         }
 
         public MethodInfo MethodInfo => typeof(ClassWithTwoMethodsAndProperty).GetMethod(nameof(ClassWithTwoMethodsAndProperty.Foo));
-        public object Call(object target, params object[] args)
+
+        public string MethodName => MethodInfo.Name;
+        public ParameterInfo[] Parameters => MethodInfo.GetParameters();
+
+        public object Call(object target)
+        {
+            ((ClassWithTwoMethodsAndProperty)target).Foo();
+            return null;
+        }
+
+        public object Call(object target, object arg)
+        {
+            ((ClassWithTwoMethodsAndProperty)target).Foo();
+            return null;
+        }
+
+        public object Call(object target, object arg1, object arg2)
+        {
+            ((ClassWithTwoMethodsAndProperty)target).Foo();
+            return null;
+        }
+
+        public object Call(object target, object arg1, object arg2, object arg3)
+        {
+            ((ClassWithTwoMethodsAndProperty)target).Foo();
+            return null;
+        }
+
+        public object Call(object target, object[] args)
         {
             ((ClassWithTwoMethodsAndProperty)target).Foo();
             return null;

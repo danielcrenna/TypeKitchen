@@ -34,7 +34,7 @@ namespace TypeKitchen
             //
             // Type Type =>:
             //
-            tb.Property(nameof(ITypeReadAccessor.Type), type, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
+            tb.MemberProperty(nameof(ITypeReadAccessor.Type), type, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
 
             //
             // bool TryGetValue(object target, string key, out object value):
@@ -191,7 +191,7 @@ namespace TypeKitchen
             // Type Type =>:
             //
             {
-                tb.Property(nameof(ITypeReadAccessor.Type), type, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
+                tb.MemberProperty(nameof(ITypeReadAccessor.Type), type, typeof(ITypeReadAccessor).GetMethod($"get_{nameof(ITypeReadAccessor.Type)}"));
             }
 
             //

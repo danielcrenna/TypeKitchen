@@ -16,7 +16,7 @@ namespace TypeKitchen
 
         public static Dictionary<string, Func<object, object[], object>> DynamicMethodBindCall(AccessorMembers members)
         {
-            return members.Members.Where(member => member.CanCall && member.IsInstanceMethod())
+            return members.Members.Where(member => member.CanCall && member.IsInstanceMethod)
                 .ToDictionary(member => member.Name, DynamicMethodBindCall);
         }
 
@@ -32,27 +32,24 @@ namespace TypeKitchen
                 throw new NotSupportedException("Dynamic binding does not currently support anonymous methods");
 
             var dm = new DynamicMethod($"Call_{method.MetadataToken}", typeof(object), new[] { typeof(object), typeof(object[])});
-            dm.GetILGeneratorInternal().EmitDynamicMethodBindCall(method, type);
+            dm.GetILGeneratorInternal().EmitCall(type, method);
             return (Func<object, object[], object>) dm.CreateDelegate(typeof(Func<object, object[], object>));
         }
 
-        internal static void EmitDynamicMethodBindCall(this ILSugar il, MethodInfo method, Type type)
+        internal static void EmitCall(this ILSugar il, Type type, MethodInfo method)
         {
             if (!method.IsStatic)
-                il.PushLocal(type);
-            il.CallWithArguments(method);
-            if (method.IsStatic)
             {
-                if (method.ReturnType == typeof(void))
-                    il.Ldnull();
+                il.DeclareLocal(type);
+                il.Ldarg_0();
+                il.Unbox_Any(type);
+                il.Stloc_0();
+                il.LoadArgument(0);
+                if (type.IsValueType)
+                    il.Ldloca(0);
                 else
-                    il.MaybeBox(method.ReturnType);
+                    il.Ldloc_0();
             }
-            il.Ret();
-        }
-
-        private static void CallWithArguments(this ILSugar il, MethodInfo method)
-        {
             var parameters = method.GetParameters();
             for (byte i = 0; i < parameters.Length; i++)
             {
@@ -73,24 +70,18 @@ namespace TypeKitchen
                 else
                     il.Ldloc(arg);
             }
-
             if (method.IsVirtual)
                 il.Callvirt(method);
             else
                 il.Call(method);
-        }
-
-        private static void PushLocal(this ILSugar il, Type type)
-        {
-            il.DeclareLocal(type);
-            il.Ldarg_0();
-            il.Unbox_Any(type);
-            il.Stloc_0();
-            il.LoadArgument(0);
-            if (type.IsValueType)
-                il.Ldloca(0);
-            else
-                il.Ldloc_0();
+            if (method.IsStatic)
+            {
+                if (method.ReturnType == typeof(void))
+                    il.Ldnull();
+                else
+                    il.MaybeBox(method.ReturnType);
+            }
+            il.Ret();
         }
 
         #endregion

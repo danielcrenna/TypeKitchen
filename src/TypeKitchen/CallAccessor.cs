@@ -19,22 +19,31 @@ namespace TypeKitchen
         {
             if (TypeAccessorCache.TryGetValue(type, out var accessor))
                 return accessor;
-            accessor = CreateCallAccessor(type);
+            accessor = CreateTypeCallAccessor(type);
             TypeAccessorCache[type] = accessor;
             return accessor;
         }
+        
+        public static IMethodCallAccessor Create(MethodInfo methodInfo)
+        {
+            if (MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
+                return accessor;
+            accessor = CreateMethodCallAccessor(methodInfo.DeclaringType, methodInfo);
+            MethodAccessorCache[methodInfo] = accessor;
+            return accessor;
+        }
 
-        private static ITypeCallAccessor CreateCallAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
+        private static ITypeCallAccessor CreateTypeCallAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
         {
             var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Methods);
 
-            var tb = DynamicAssembly.Module.DefineType($"CallAccessor_Type_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType($"CallAccessor_Type_{type.Assembly.GetHashCode()}_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeCallAccessor));
 
             //
             // Type Type =>:
             //
-            tb.Property(nameof(ITypeCallAccessor.Type), type, typeof(ITypeCallAccessor).GetMethod($"get_{nameof(ITypeCallAccessor.Type)}"));
+            tb.MemberProperty(nameof(ITypeCallAccessor.Type), type, typeof(ITypeCallAccessor).GetMethod($"get_{nameof(ITypeCallAccessor.Type)}"));
 
             //
             // object Call(object target, string name, params object[] args):
@@ -50,7 +59,7 @@ namespace TypeKitchen
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
                 {
-                    if (!IsInstanceMethod(member))
+                    if (!member.IsInstanceMethod)
                         continue;
 
                     branches.Add(member, il.DefineLabel());
@@ -64,7 +73,7 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    if (!IsInstanceMethod(member))
+                    if (!member.IsInstanceMethod)
                         continue;
 
                     il.Ldloc_0();
@@ -73,7 +82,7 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    if (!IsInstanceMethod(member))
+                    if (!member.IsInstanceMethod)
                         continue;
 
                     var method = (MethodInfo)member.MemberInfo;
@@ -94,7 +103,7 @@ namespace TypeKitchen
                     if (parameters.Length > 0)
                     {
                         il.Ldarg_3();
-                        il.Ldc_I4_S((byte) parameters.Length);
+                        il.Ldc_I4_S((byte)parameters.Length);
                         il.Ldelem_Ref();
                         il.Unbox_Any(parameterTypes[0]);
                     }
@@ -103,7 +112,7 @@ namespace TypeKitchen
                     il.Nop();
 
                     il.Ldtoken(typeof(void));
-                    il.Call(Methods.GetTypeFromHandle);
+                    il.Call(KnownMethods.GetTypeFromHandle);
                     il.Stloc_1();
                     il.Ldloc_1();
                     il.Ret();
@@ -119,54 +128,23 @@ namespace TypeKitchen
             }
 
             var typeInfo = tb.CreateTypeInfo();
-            return (ITypeCallAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
+            return (ITypeCallAccessor)Activator.CreateInstance(typeInfo.AsType(), false);
         }
 
-        internal static bool IsInstanceMethod(this AccessorMember member)
+        private static IMethodCallAccessor CreateMethodCallAccessor(Type type, MethodInfo method)
         {
-            return member.CanCall && 
-                   member.MemberInfo is MethodInfo method &&
-                   !method.Name.StartsWith("get_") &&
-                   !method.Name.StartsWith("set_") &&
-                   method.DeclaringType != typeof(object);
-        }
+            var tb = DynamicAssembly.Module.DefineType($"CallAccessor_Method_{type.Assembly.GetHashCode()}_{method.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            tb.SetParent(typeof(MethodCallAccessor));
+            
+            var call = tb.DefineMethod(nameof(MethodCallAccessor.Call), MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(object), new[] { typeof(object), typeof(object[]) });
+            call.GetILGeneratorInternal().EmitCall(tb, method);
+            tb.DefineMethodOverride(call, typeof(MethodCallAccessor).GetMethod(nameof(MethodCallAccessor.Call), new[] { typeof(object), typeof(object[]) }));
 
-        public static IMethodCallAccessor Create(MethodInfo methodInfo)
-        {
-            if (MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
-                return accessor;
-            accessor = CreateCallAccessor(methodInfo);
-            MethodAccessorCache[methodInfo] = accessor;
-            return accessor;
-        }
-
-        private static IMethodCallAccessor CreateCallAccessor(MethodInfo method)
-        {
-            var tb = DynamicAssembly.Module.DefineType($"CallAccessor_Method_{method.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
-            tb.AddInterfaceImplementation(typeof(IMethodCallAccessor));
-
-            //
-            // MethodInfo MethodInfo =>:
-            //
-            tb.Property(nameof(IMethodCallAccessor.MethodInfo), method, typeof(IMethodCallAccessor).GetMethod($"get_{nameof(IMethodCallAccessor.MethodInfo)}"));
-
-            //
-            // object Call(object target, params object[] args):
-            //
-            {
-                var call = tb.DefineMethod(nameof(IMethodCallAccessor.Call),
-                    MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
-                    MethodAttributes.Virtual | MethodAttributes.NewSlot,
-                    typeof(object), new[] { typeof(object), typeof(object[]) });
-
-                call.GetILGeneratorInternal()
-                    .EmitDynamicMethodBindCall(method, tb);
-
-                tb.DefineMethodOverride(call, typeof(IMethodCallAccessor).GetMethod(nameof(IMethodCallAccessor.Call)));
-            }
-
-            var typeInfo = tb.CreateTypeInfo();
-            return (IMethodCallAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
+            var constructedType = tb.CreateTypeInfo().AsType();
+            var instance = (MethodCallAccessor)Activator.CreateInstance(constructedType);
+            instance.MethodName = method.Name;
+            instance.Parameters = method.GetParameters();
+            return instance;
         }
     }
 }

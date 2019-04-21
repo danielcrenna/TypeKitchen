@@ -24,21 +24,24 @@ namespace TypeKitchen.Tests
             var target = new ClassWithTwoMethodsAndProperty();
             var methodInfo = target.GetType().GetMethod("Foo");
             var accessor = CallAccessor.Create(methodInfo);
-            Assert.Equal(methodInfo, accessor.MethodInfo);
-            var parameters = accessor.MethodInfo.GetParameters();
+            Assert.Equal(methodInfo.Name, accessor.MethodName);
+
+            var parameters = accessor.Parameters;
             Assert.NotNull(parameters);
+            Assert.Equal(parameters, methodInfo.GetParameters());
             accessor.Call(target);
         }
 
         [Fact]
-        public void Call_Static_Method_Void_NoArgs()
+        public void Call_Method_Static_Void_NoArgs()
         {
             var target = new ClassWithTwoMethodsAndProperty();
             var methodInfo = target.GetType().GetMethod("Method");
             var accessor = CallAccessor.Create(methodInfo);
-            Assert.Equal(methodInfo, accessor.MethodInfo);
-            var parameters = accessor.MethodInfo.GetParameters();
+            Assert.Equal(methodInfo.Name, accessor.MethodName);
+            var parameters = accessor.Parameters;
             Assert.NotNull(parameters);
+            Assert.Equal(parameters, methodInfo.GetParameters());
             accessor.Call(target);
         }
     }

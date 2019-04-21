@@ -128,11 +128,11 @@ namespace TypeKitchen.Internal
         /// <summary> Branches to the specified label if a string on the evaluation stacks equals the given literal value.</summary>
         public static ILSugar GotoIfStringEquals(this ILSugar il, string literal, Label @goto)
         {
-            return il.Ldstr(literal).Call(Methods.StringEquals).Brtrue_S(@goto);
+            return il.Ldstr(literal).Call(KnownMethods.StringEquals).Brtrue_S(@goto);
         }
 
-        /// <summary> Creates a property with the specified name and a fixed value, known at runtime.</summary>
-        public static void Property(this TypeBuilder tb, string propertyName, MemberInfo value, MethodInfo overrides = null)
+        /// <summary> Creates a property with the specified name and a fixed reflection member value, known at runtime.</summary>
+        public static void MemberProperty(this TypeBuilder tb, string propertyName, MemberInfo value, MethodInfo overrides = null)
         {
             Type type;
             switch (value)
@@ -170,14 +170,14 @@ namespace TypeKitchen.Internal
             switch (value)
             {
                 case Type _:
-                    il.Call(Methods.GetTypeFromHandle);
+                    il.Call(KnownMethods.GetTypeFromHandle);
                     break;
                 case ConstructorInfo _:
                 case MethodInfo _:
-                    il.Call(Methods.GetMethodFromHandle);
+                    il.Call(KnownMethods.GetMethodFromHandle);
                     break;
                 case FieldInfo _:
-                    il.Call(Methods.GetFieldFromHandle);
+                    il.Call(KnownMethods.GetFieldFromHandle);
                     break;
                 default:
                     throw new ArgumentException();

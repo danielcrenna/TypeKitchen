@@ -6,15 +6,12 @@ using System.Reflection;
 
 namespace TypeKitchen.Internal
 {
-    internal static class Methods
+    internal static class KnownMethods
     {
         public static readonly MethodInfo StringEquals = typeof(string).GetMethod("op_Equality", new[] { typeof(string), typeof(string) });
-
         public static readonly MethodInfo GetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public);
         public static MethodInfo GetMethodFromHandle = typeof(MethodBase).GetMethod(nameof(MethodBase.GetMethodFromHandle), new[] { typeof(RuntimeMethodHandle) });
         public static MethodInfo GetFieldFromHandle = typeof(FieldInfo).GetMethod(nameof(FieldInfo.GetFieldFromHandle), new[] { typeof(RuntimeFieldHandle) });
-        
-        public static MethodInfo GetMethodByName = typeof(Type).GetMethod(nameof(Type.GetMethod), new[] { typeof(string) });
-        public static MethodInfo InvokeMethod = typeof(MethodBase).GetMethod(nameof(MethodBase.Invoke), new [] { typeof(object), typeof(object[])});
+        public static MethodInfo GetMethodParameters = typeof(MethodInfo).GetMethod(nameof(MethodInfo.GetParameters));
     }
 }

@@ -29,5 +29,7 @@ namespace TypeKitchen
         public AccessorMemberScope Scope { get; }
         public AccessorMemberType MemberType { get; }
         public MemberInfo MemberInfo { get; }
+
+        internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method && !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") && method.DeclaringType != typeof(object);
     }
 }

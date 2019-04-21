@@ -25,7 +25,7 @@ namespace TypeKitchen
 
         public static CreateInstance DynamicMethodWeakTyped(ConstructorInfo ctor)
         {
-            var dm = new DynamicMethod($"Construct_{ctor.MetadataToken}", ctor.DeclaringType, new[] { typeof(object[]) });
+            var dm = new DynamicMethod($"Construct__{ctor.DeclaringType?.Assembly.GetHashCode()}_{ctor.MetadataToken}", ctor.DeclaringType, new[] { typeof(object[]) });
             var il = dm.GetILGeneratorInternal();
             
             var parameters = ctor.GetParameters();
