@@ -89,10 +89,7 @@ namespace TypeKitchen
                     il.Ldc_I4_1();                                        //     1
                     il.Ret();                                             //     return 1  (true)
                 }
-
-                var fail = il.DefineLabel();
-                il.Br_S(fail);                                            // goto fail;
-                il.MarkLabel(fail);                                       // fail:
+                
                 il.Ldnull();                                              //     null
                 il.Starg_S();                                             //     value = null
                 il.Ldc_I4_0();                                            //     0
@@ -145,10 +142,7 @@ namespace TypeKitchen
                     il.Ret();                           // return result;
                 }
 
-                var fail = il.DefineLabel();
-
-                il.Br_S(fail)
-                  .MarkLabel(fail)
+                il
                   .Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes))
                   .Throw();
 

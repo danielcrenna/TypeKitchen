@@ -27,3 +27,8 @@ TypeKitchen replaces these libraries with a concise API to perform the following
 - Composition: _when you want to build up a type at runtime to implement various members declared in other types, or provided inline_
 - Flyweight Factory: _when you want to represent one or more views of a piece of data, but do not want to materialize those views_
 - MSIL Helpers: _when you want to see the IL of a compiled Expression or DynamicMethod, or want to code-generate calls to `ILGenerator` that would produce a given method body_
+- Coverage: _when you need to walk compiled bytecode to determine paths through other code, such as when building code coverage or visualization tools_
+
+##### Other Topics
+
+###### Working with AOT Frameworks

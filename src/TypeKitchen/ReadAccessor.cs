@@ -78,10 +78,7 @@ namespace TypeKitchen
                     il.Ldc_I4_1();                                  //     1
                     il.Ret();                                       //     return 1  (true)
                 }
-
-                var fail = il.DefineLabel();
-                il.Br_S(fail);                                      // goto fail;
-                il.MarkLabel(fail);                                 // fail:
+                
                 il.Ldarg_3();                                       //     value
                 il.Ldnull();                                        //     null
                 il.Stind_Ref();                                     //     value = null
@@ -128,10 +125,7 @@ namespace TypeKitchen
                         il.Box(member.Type);          // (object) result
                     il.Ret();                         // return result;
                 }
-
-                var fail = il.DefineLabel();
-                il.Br_S(fail);
-                il.MarkLabel(fail);
+                
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
                 il.Throw();
 
@@ -226,9 +220,6 @@ namespace TypeKitchen
                     il.Ret();                                           //     return 1  (true)
                 }
 
-                var fail = il.DefineLabel();
-                il.Br_S(fail);                                          // goto fail;
-                il.MarkLabel(fail);                                     // fail:
                 il.Ldarg_3();                                           //     value
                 il.Ldnull();                                            //     null
                 il.Stind_Ref();                                         //     value = null
@@ -270,9 +261,6 @@ namespace TypeKitchen
                     il.Ret();                                          // return result;
                 }
 
-                var fail = il.DefineLabel();
-                il.Br_S(fail);
-                il.MarkLabel(fail);
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
                 il.Throw();
 
