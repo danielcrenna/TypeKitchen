@@ -375,13 +375,6 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Unconditionally transfers control to a target instruction (short form).</summary>
-        public ILSugar Br_S(Label label)
-        {
-            _il.Emit(OpCodes.Br_S, label);
-            return this;
-        }
-
         /// <summary>Creates a new object or a new instance of a value type, pushing an object reference (type O) onto the evaluation stack.</summary>
         public ILSugar Newobj(ConstructorInfo ctor)
         {
@@ -403,10 +396,31 @@ namespace TypeKitchen.Internal
             return this;
         }
 
+        /// <summary>Unconditionally transfers control to a target instruction (short form).</summary>
+        public ILSugar Br_S(Label label)
+        {
+            _il.Emit(OpCodes.Br_S, label);
+            return this;
+        }
+
+        /// <summary>Unconditionally transfers control to a target instruction.</summary>
+        public ILSugar Br(Label label)
+        {
+            _il.Emit(OpCodes.Br, label);
+            return this;
+        }
+
         /// <summary>Transfers control to a target instruction (short form) if <paramref name="value">value</paramref> is true, not null, or non-zero.</summary>
         public ILSugar Brtrue_S(Label label)
         {
             _il.Emit(OpCodes.Brtrue_S, label);
+            return this;
+        }
+
+        /// <summary>Transfers control to a target instruction if <paramref name="value">value</paramref> is true, not null, or non-zero.</summary>
+        public ILSugar Brtrue(Label label)
+        {
+            _il.Emit(OpCodes.Brtrue, label);
             return this;
         }
 

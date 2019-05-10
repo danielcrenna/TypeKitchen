@@ -128,7 +128,13 @@ namespace TypeKitchen.Internal
         /// <summary> Branches to the specified label if a string on the evaluation stacks equals the given literal value.</summary>
         public static ILSugar GotoIfStringEquals(this ILSugar il, string literal, Label @goto)
         {
-            return il.Ldstr(literal).Call(KnownMethods.StringEquals).Brtrue_S(@goto);
+            var ifStringEquals = il.Ldstr(literal).Call(KnownMethods.StringEquals);
+            if(@goto.GetHashCode() > byte.MaxValue)
+                return ifStringEquals.Brtrue(@goto);
+            else
+            {
+                return ifStringEquals.Brtrue_S(@goto);
+            }
         }
 
         /// <summary> Creates a property with the specified name and a fixed reflection member value, known at runtime.</summary>

@@ -117,10 +117,7 @@ namespace TypeKitchen
                     il.Ldloc_1();
                     il.Ret();
                 }
-
-                var fail = il.DefineLabel();
-                il.Br_S(fail);
-                il.MarkLabel(fail);
+                
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
                 il.Throw();
 
