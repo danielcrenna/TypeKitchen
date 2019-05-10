@@ -1,13 +1,15 @@
 # TypeKitchen
 
 ![logo](assets/logo.png)
-TypeKitchen is a small library for fast meta-programming in .NET Standard.
+TypeKitchen is a small library for fast meta-programming in .NET.
 
 TypeKitchen was built on the premise that there are only so many actions that are useful to take with types at runtime.
-However, rather than standardize on a single library that performs all of these actions, there are myriad libraries available on NuGet, each
+However, rather than standardize on a single library that performs all of these actions well, there are myriad libraries available on NuGet, each
 taking a different approach with varying levels of performance, in terms of quality, speed, and memory use.
 
-TypeKitchen replaces these libraries with a concise API to perform the following common meta-programming tasks:
+![xkcd](https://imgs.xkcd.com/comics/standards.png)
+
+TypeKitchen replaces these libraries with a concise API to perform the following meta-programming tasks:
 
 * Common Tasks *
 - Field and Property Access: _getting and setting data members by name, including private members and anonymous types_
