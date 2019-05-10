@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Blowdart, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Reflection;
 using ExternalTestAssembly;
 using TypeKitchen.Tests.Fakes;
 using Xunit;
@@ -97,5 +98,84 @@ namespace TypeKitchen.Tests
             Assert.Equal("Bar", dict["Foo"]);
             Assert.Equal("Baz", dict["Bar"]);
         }
+
+
+        [Fact]
+        public void GetTests_ComplexNestedType_ShortFormCheck()
+        {
+            // this will fail if Brtrue_S is ever incorrectly chosen over Brtrue.
+            ReadAccessor.Create(typeof(ComplexNestedType));
+        }
+        
+
+        #region Complex Nest Type
+
+        public class FeatureToggle
+        {
+            public bool Enabled { get; set; } = true;
+        }
+
+        public class ComplexNestedType
+        {
+            public string AssemblyName { get; set; } = Assembly.GetExecutingAssembly().GetName()?.Name;
+            public string AssemblyVersion { get; set; } = Assembly.GetExecutingAssembly().GetName()?.Version?.ToString();
+
+            public FizzOptions Fizzes { get; set; } = new FizzOptions();
+            public BuzzOptions Buzz { get; set; } = new BuzzOptions();
+            public FooOptions Foos { get; set; } = new FooOptions();
+            public BarOptions Bar { get; set; } = new BarOptions();
+            public FrobOptions Frob { get; set; } = new FrobOptions();
+        }
+
+        public class FrobOptions : FeatureToggle
+        {
+            public bool A { get; set; } = false;
+            public string B { get; set; } = "0";
+            public string C { get; set; } = "Foo";
+            public string D { get; set; } = "Foo";
+            public int? E { get; set; } = null;
+            public Options F { get; set; } = Options.A;
+        }
+
+        public enum Options
+        {
+            A,
+            B,
+            C
+        }
+
+        public class BarOptions : FeatureToggle
+        {
+            public string Value { get; set; } = "Foo";
+        }
+
+        public class FooOptions : FeatureToggle
+        {
+            public string Value { get; set; } = "Foo";
+
+            public string[] Values { get; set; } =
+                {"A", "B", "C"};
+        }
+
+        public class FizzOptions : FeatureToggle
+        {
+            public long Number { get; set; } = 30_000_000;
+        }
+
+        public class BuzzOptions : FeatureToggle
+        {
+            public string Value { get; set; } = "Foo";
+
+            public string C { get; set; } = "Foo";
+            public bool CBool { get; set; } = false;
+
+            public string B { get; set; } = "Foo";
+            public bool BBool { get; set; } = true;
+
+            public string A { get; set; } = "Foo";
+            public bool ABool { get; set; } = true;
+        }
+
+        #endregion
     }
 }

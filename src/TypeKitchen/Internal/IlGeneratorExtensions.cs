@@ -129,12 +129,8 @@ namespace TypeKitchen.Internal
         public static ILSugar GotoIfStringEquals(this ILSugar il, string literal, Label @goto)
         {
             var ifStringEquals = il.Ldstr(literal).Call(KnownMethods.StringEquals);
-            if(@goto.GetHashCode() > byte.MaxValue)
-                return ifStringEquals.Brtrue(@goto);
-            else
-            {
-                return ifStringEquals.Brtrue_S(@goto);
-            }
+            ifStringEquals.Brtrue(@goto); // TODO calculate offsets dynamically to call Brtrue_S vs. Brtrue, not worth it right now.
+            return il;
         }
 
         /// <summary> Creates a property with the specified name and a fixed reflection member value, known at runtime.</summary>
