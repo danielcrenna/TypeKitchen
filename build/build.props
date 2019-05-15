@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Configurations>Debug;Release;Package</Configurations>
-    <Version>0.0.14-pre</Version>
+    <Version>0.0.15-pre</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'!='Debug'">

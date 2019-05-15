@@ -60,10 +60,10 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                   // key
-                    il.Ldstr(member.Name);          // "Foo"
-                    il.Call(KnownMethods.StringEquals);  // key == "Foo"
-                    il.Brtrue_S(branches[member]);  // if(key == "Foo")
+                    il.Ldarg_2();                       // key
+                    il.Ldstr(member.Name);              // "Foo"
+                    il.Call(KnownMethods.StringEquals); // key == "Foo"
+                    il.Brtrue(branches[member]);        // if(key == "Foo")
                 }
 
                 foreach (var member in members)
@@ -112,10 +112,10 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();                   // key
-                    il.Ldstr(member.Name);          // "Foo"
+                    il.Ldarg_2();                       // key
+                    il.Ldstr(member.Name);              // "Foo"
                     il.Call(KnownMethods.StringEquals);
-                    il.Brtrue_S(branches[member]);
+                    il.Brtrue(branches[member]);
                 }
 
                 foreach (var member in members)

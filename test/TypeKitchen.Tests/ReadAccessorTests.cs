@@ -108,9 +108,9 @@ namespace TypeKitchen.Tests
         }
         
 
-        #region Complex Nest Type
+        #region Complex Nested Type
 
-        public class FeatureToggle
+        public class FrobToggle
         {
             public bool Enabled { get; set; } = true;
         }
@@ -127,7 +127,7 @@ namespace TypeKitchen.Tests
             public FrobOptions Frob { get; set; } = new FrobOptions();
         }
 
-        public class FrobOptions : FeatureToggle
+        public class FrobOptions : FrobToggle
         {
             public bool A { get; set; } = false;
             public string B { get; set; } = "0";
@@ -144,12 +144,12 @@ namespace TypeKitchen.Tests
             C
         }
 
-        public class BarOptions : FeatureToggle
+        public class BarOptions : FrobToggle
         {
             public string Value { get; set; } = "Foo";
         }
 
-        public class FooOptions : FeatureToggle
+        public class FooOptions : FrobToggle
         {
             public string Value { get; set; } = "Foo";
 
@@ -157,12 +157,12 @@ namespace TypeKitchen.Tests
                 {"A", "B", "C"};
         }
 
-        public class FizzOptions : FeatureToggle
+        public class FizzOptions : FrobToggle
         {
             public long Number { get; set; } = 30_000_000;
         }
 
-        public class BuzzOptions : FeatureToggle
+        public class BuzzOptions : FrobToggle
         {
             public string Value { get; set; } = "Foo";
 

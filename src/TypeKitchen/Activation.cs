@@ -58,7 +58,5 @@ namespace TypeKitchen
             var compiled = (CreateInstance)lambda.Compile();
             return compiled;
         }
-
-        
     }
 }
