@@ -12,25 +12,54 @@ namespace TypeKitchen
 {
     public static class CallAccessor
     {
+        private static readonly object TypeSync = new object();
         private static readonly Dictionary<Type, ITypeCallAccessor> TypeAccessorCache = new Dictionary<Type, ITypeCallAccessor>();
+
+        private static readonly object MethodSync = new object();
         private static readonly Dictionary<MethodBase, IMethodCallAccessor> MethodAccessorCache = new Dictionary<MethodBase, IMethodCallAccessor>();
+
+        public static ITypeCallAccessor Create(object @object)
+        {
+            if (@object is Type type)
+                return Create(type);
+
+            type = @object.GetType();
+
+            lock (TypeSync)
+            {
+                return TypeAccessorCache.TryGetValue(type, out var accessor) ? accessor : CreateImpl(type);
+            }
+        }
 
         public static ITypeCallAccessor Create(Type type)
         {
-            if (TypeAccessorCache.TryGetValue(type, out var accessor))
-                return accessor;
-            accessor = CreateTypeCallAccessor(type);
-            TypeAccessorCache[type] = accessor;
-            return accessor;
+            lock (TypeSync)
+            {
+                return TypeAccessorCache.TryGetValue(type, out var accessor) ? accessor : CreateImpl(type);
+            }
         }
-        
+
+        private static ITypeCallAccessor CreateImpl(Type type)
+        {
+            lock (TypeSync)
+            {
+                var accessor = CreateTypeCallAccessor(type);
+                TypeAccessorCache[type] = accessor;
+                return accessor;
+            }
+        }
+
         public static IMethodCallAccessor Create(MethodInfo methodInfo)
         {
-            if (MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
+            lock (MethodSync)
+            {
+                if(MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
+                    return accessor;
+
+                accessor = CreateMethodCallAccessor(methodInfo.DeclaringType, methodInfo);
+                MethodAccessorCache[methodInfo] = accessor;
                 return accessor;
-            accessor = CreateMethodCallAccessor(methodInfo.DeclaringType, methodInfo);
-            MethodAccessorCache[methodInfo] = accessor;
-            return accessor;
+            }
         }
 
         private static ITypeCallAccessor CreateTypeCallAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)

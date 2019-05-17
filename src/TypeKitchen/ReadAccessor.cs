@@ -11,15 +11,32 @@ namespace TypeKitchen
 {
     public sealed class ReadAccessor
     {
+        private static readonly object Sync = new object();
         private static readonly Dictionary<Type, ITypeReadAccessor> AccessorCache = new Dictionary<Type, ITypeReadAccessor>();
+
+        public static ITypeReadAccessor Create(object @object)
+        {
+            if (@object is Type type)
+                return Create(type);
+
+            type = @object.GetType();
+
+            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, @object);
+        }
 
         public static ITypeReadAccessor Create(Type type)
         {
-            if (AccessorCache.TryGetValue(type, out var accessor))
+            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, null);
+        }
+
+        private static ITypeReadAccessor Create(Type type, object @object)
+        {
+            lock (Sync)
+            {
+                var accessor = type.IsAnonymous() ? CreateAnonymousReadAccessor(type, @object) : CreateReadAccessor(type);
+                AccessorCache[type] = accessor;
                 return accessor;
-            accessor = type.IsAnonymous() ? CreateAnonymousReadAccessor(type) : CreateReadAccessor(type);
-            AccessorCache[type] = accessor;
-            return accessor;
+            }
         }
 
         private static ITypeReadAccessor CreateReadAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
@@ -49,12 +66,15 @@ namespace TypeKitchen
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
                     branches.Add(member, il.DefineLabel());
+                var fail = il.DefineLabel();
 
                 foreach (var member in members)
                 {
                     il.Ldarg_2();                                         // key
                     il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
                 }
+
+                il.Br(fail);
 
                 foreach (var member in members)
                 {
@@ -78,7 +98,8 @@ namespace TypeKitchen
                     il.Ldc_I4_1();                                  //     1
                     il.Ret();                                       //     return 1  (true)
                 }
-                
+
+                il.MarkLabel(fail);
                 il.Ldarg_3();                                       //     value
                 il.Ldnull();                                        //     null
                 il.Stind_Ref();                                     //     value = null
@@ -143,7 +164,7 @@ namespace TypeKitchen
         ///     Anonymous types only have private readonly properties with no logic before their backing fields, so we can do
         ///     a lot to optimize access to them, though we must delegate the access itself due to private reflection rules.
         /// </summary>
-        private static ITypeReadAccessor CreateAnonymousReadAccessor(Type type)
+        private static ITypeReadAccessor CreateAnonymousReadAccessor(Type type, object debugObject = null)
         {
             var members = AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
 
@@ -162,12 +183,12 @@ namespace TypeKitchen
                     throw new NullReferenceException();
 
                 var dm = new DynamicMethod($"_{member.Name}", typeof(object), new[] {typeof(object)}, tb.Module);
-                var dmIl = dm.GetILGenerator();
-                dmIl.Emit(OpCodes.Ldarg_0);
-                dmIl.Emit(OpCodes.Ldfld, backingField);
+                var dmIl = dm.GetILGeneratorInternal();
+                dmIl.Ldarg_0()
+                    .Ldfld(backingField);
                 if (backingField.FieldType.IsValueType)
-                    dmIl.Emit(OpCodes.Box, backingField.FieldType);
-                dmIl.Emit(OpCodes.Ret);
+                    dmIl.Box(backingField.FieldType);
+                dmIl.Ret();
                 var backingFieldDelegate = (Func<object, object>) dm.CreateDelegate(typeof(Func<object, object>));
 
                 var getField = tb.DefineField($"_Get{member.Name}", typeof(Func<object, object>), FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly);
@@ -198,12 +219,15 @@ namespace TypeKitchen
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
                     branches.Add(member, il.DefineLabel());
+                var fail = il.DefineLabel();
 
                 foreach (var member in members)
                 {
                     il.Ldarg_2();                                           // key
                     il.GotoIfStringEquals(member.Name, branches[member]);   // if(key == "Foo") goto found;
                 }
+
+                il.Br(fail);
 
                 foreach (var member in members)
                 {
@@ -213,30 +237,27 @@ namespace TypeKitchen
                     il.Ldarg_3();                                       //     value
                     il.Ldsfld(fb);                                      //     _GetFoo
                     il.Ldarg_1();                                       //     target
-                    il.Callvirt(fb.FieldType.GetMethod("Invoke"));      //     result = _GetFoo.Invoke(target)
-                    if (member.Type.IsValueType) il.Box(member.Type);   //     (object) result
+                    il.Call(fb.FieldType.GetMethod("Invoke"));          //     result = _GetFoo.Invoke(target)
                     il.Stind_Ref();                                     //     value = result
                     il.Ldc_I4_1();                                      //     1
-                    il.Ret();                                           //     return 1  (true)
+                    il.Ret();                                           //     return 1 (true)
                 }
 
+                il.MarkLabel(fail);
                 il.Ldarg_3();                                           //     value
                 il.Ldnull();                                            //     null
                 il.Stind_Ref();                                         //     value = null
                 il.Ldc_I4_0();                                          //     0
                 il.Ret();                                               //     return 0 (false)
 
-                tb.DefineMethodOverride(tryGetValue, typeof(ITypeReadAccessor).GetMethod("TryGetValue"));
+                tb.DefineMethodOverride(tryGetValue, typeof(ITypeReadAccessor).GetMethod(nameof(ITypeReadAccessor.TryGetValue)));
             }
 
             //
             // object this[object target, string key]:
             //
             {
-                var getItem = tb.DefineMethod("get_Item",
-                    MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
-                    MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(object),
-                    new[] {typeof(object), typeof(string)});
+                var getItem = tb.DefineMethod("get_Item", MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(object), new[] {typeof(object), typeof(string)});
                 var il = getItem.GetILGeneratorInternal();
 
                 var branches = new Dictionary<AccessorMember, Label>();
@@ -257,7 +278,6 @@ namespace TypeKitchen
                     il.Ldsfld(fb);                                     // _GetFoo
                     il.Ldarg_1();                                      // target
                     il.Call(fb.FieldType.GetMethod("Invoke"));         //     result = _GetFoo.Invoke(target)
-                    if (member.Type.IsValueType) il.Box( member.Type); //     (object) result
                     il.Ret();                                          // return result;
                 }
 
@@ -270,6 +290,7 @@ namespace TypeKitchen
                 tb.DefineMethodOverride(getItem, typeof(ITypeReadAccessor).GetMethod("get_Item"));
             }
 
+
             var typeInfo = tb.CreateTypeInfo();
 
             //
@@ -280,10 +301,41 @@ namespace TypeKitchen
                 var setField = typeInfo.GetMethod(setter.Key.Name, BindingFlags.Static | BindingFlags.NonPublic);
                 if (setField == null)
                     throw new NullReferenceException();
-                setField.Invoke(null, new object[] {setter.Value});
+                setField.Invoke(null, new object[] { setter.Value });
+
+                if (debugObject != null)
+                {
+                    var memberName = setter.Key.Name.Replace("_SetGet", string.Empty);
+
+                    var staticFieldFunc = (Func<object, object>)typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
+                    if (staticFieldFunc != setter.Value)
+                        throw new ArgumentException($"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
+
+                    var backingField = type.GetField($"<{memberName}>i__Field", BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (backingField == null)
+                        throw new NullReferenceException("backing field was not found");
+
+                    var backingFieldValue = backingField.GetValue(debugObject);
+                    var cachedDelegateValue = setter.Value(debugObject);
+                    if (!backingFieldValue.Equals(cachedDelegateValue))
+                        throw new ArgumentException($"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
+                }
             }
 
-            return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
+            var accessor = (ITypeReadAccessor) Activator.CreateInstance(typeInfo, false);
+
+            if (debugObject != null)
+            {
+                foreach (var member in members)
+                {
+                    var byAccessor = accessor[debugObject, member.Name];
+                    var byReflection = ((Func<object, object>)typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(debugObject);
+                    if(!byAccessor.Equals(byReflection))
+                        throw new InvalidOperationException("IL produced incorrect accessor");
+                }
+            }
+
+            return accessor;
         }
     }
 }

@@ -11,7 +11,7 @@ namespace TypeKitchen.Benchmarks
     {
         private static void Main(string[] args)
         {
-            BenchmarkRunner.Run<AnonymousTypeBenchmarks>();
+            BenchmarkRunner.Run<ReadAccessorAnonymousTypeBenchmarks>();
             BenchmarkRunner.Run<ReadAccessorBenchmarks>();
             //BenchmarkRunner.Run<WriteAccessorBenchmarks>();
             //BenchmarkRunner.Run<SingletonTypeResolverBenchmarks>();

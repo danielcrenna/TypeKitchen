@@ -411,16 +411,16 @@ namespace TypeKitchen.Internal
         }
 
         /// <summary>Transfers control to a target instruction (short form) if <paramref name="value">value</paramref> is true, not null, or non-zero.</summary>
-        public ILSugar Brtrue_S(Label label)
+        public ILSugar Brtrue_S(Label value)
         {
-            _il.Emit(OpCodes.Brtrue_S, label);
+            _il.Emit(OpCodes.Brtrue_S, value);
             return this;
         }
 
         /// <summary>Transfers control to a target instruction if <paramref name="value">value</paramref> is true, not null, or non-zero.</summary>
-        public ILSugar Brtrue(Label label)
+        public ILSugar Brtrue(Label value)
         {
-            _il.Emit(OpCodes.Brtrue, label);
+            _il.Emit(OpCodes.Brtrue, value);
             return this;
         }
 
@@ -438,7 +438,7 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Stores a object reference value at a supplied address.</summary>
+        /// <summary>Stores an object reference value at a supplied address.</summary>
         public ILSugar Stind_Ref()
         {
             _il.Emit(OpCodes.Stind_Ref);

@@ -11,15 +11,32 @@ namespace TypeKitchen
 {
     public sealed class WriteAccessor
     {
+        private static readonly object Sync = new object();
         private static readonly Dictionary<Type, ITypeWriteAccessor> AccessorCache = new Dictionary<Type, ITypeWriteAccessor>();
+
+        public static ITypeWriteAccessor Create(object @object)
+        {
+            if (@object is Type type)
+                return Create(type);
+
+            type = @object.GetType();
+
+            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : CreateImpl(type);
+        }
 
         public static ITypeWriteAccessor Create(Type type)
         {
-            if (AccessorCache.TryGetValue(type, out var accessor))
+            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : CreateImpl(type);
+        }
+
+        private static ITypeWriteAccessor CreateImpl(Type type)
+        {
+            lock (Sync)
+            {
+                var accessor = CreateWriteAccessor(type);
+                AccessorCache[type] = accessor;
                 return accessor;
-            accessor = CreateWriteAccessor(type);
-            AccessorCache[type] = accessor;
-            return accessor;
+            }
         }
 
         private static ITypeWriteAccessor CreateWriteAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)

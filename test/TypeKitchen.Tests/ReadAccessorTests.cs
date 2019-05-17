@@ -99,6 +99,47 @@ namespace TypeKitchen.Tests
             Assert.Equal("Baz", dict["Bar"]);
         }
 
+        [Fact]
+        public void GetTests_AnonymousType_TryGetValue_Boolean()
+        {
+            var o = new { ThisIsFalse = false };
+            var accessor = ReadAccessor.Create(o);
+            Assert.True(accessor.TryGetValue(o, "ThisIsFalse", out var value));
+            Assert.Equal(o.ThisIsFalse, (bool)value);
+        }
+
+        [Fact]
+        public void GetTests_AnonymousType_Indexer_Int32()
+        {
+            var o = new { ThisIsAnInt32 = 123 };
+            var accessor = ReadAccessor.Create(o);
+            Assert.Equal(o.ThisIsAnInt32, accessor[o, "ThisIsAnInt32"]);
+        }
+
+        [Fact]
+        public void GetTests_AnonymousType_Indexer_Boolean()
+        {
+            var o = new { ThisIsFalse = false };
+            var accessor = ReadAccessor.Create(o);
+            Assert.Equal(o.ThisIsFalse, accessor[o, "ThisIsFalse"]);
+        }
+
+        [Fact]
+        public void GetTests_ConcreteType_TryGetValue_Boolean()
+        {
+            var o = new FrobToggle { Enabled = false };
+            var accessor = ReadAccessor.Create(o);
+            Assert.True(accessor.TryGetValue(o, "Enabled", out var value));
+            Assert.Equal(o.Enabled, (bool)value);
+        }
+
+        [Fact]
+        public void GetTests_ConcreteType_Indexer_Boolean()
+        {
+            var o = new FrobToggle { Enabled = false };
+            var accessor = ReadAccessor.Create(o);
+            Assert.Equal(o.Enabled, accessor[o, "Enabled"]);
+        }
 
         [Fact]
         public void GetTests_ComplexNestedType_ShortFormCheck()
@@ -106,8 +147,23 @@ namespace TypeKitchen.Tests
             // this will fail if Brtrue_S is ever incorrectly chosen over Brtrue.
             ReadAccessor.Create(typeof(ComplexNestedType));
         }
-        
 
+        [Fact]
+        public void GetTests_ConcreteType_TryGetValue_FailsOnWrongKey()
+        {
+            var o = new FrobToggle { Enabled = false };
+            var accessor = ReadAccessor.Create(o);
+            Assert.False(accessor.TryGetValue(o, "NotAKey", out _));
+        }
+
+        [Fact]
+        public void GetTests_AnonymousType_TryGetValue_FailsOnWrongKey()
+        {
+            var o = new { ThisIsFalse = false };
+            var accessor = ReadAccessor.Create(o);
+            Assert.False(accessor.TryGetValue(o, "NotAKey", out _));
+        }
+        
         #region Complex Nested Type
 
         public class FrobToggle

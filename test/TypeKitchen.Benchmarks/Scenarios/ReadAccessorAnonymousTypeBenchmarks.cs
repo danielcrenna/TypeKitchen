@@ -14,7 +14,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
     [DisassemblyDiagnoser(false, true)]
     [CsvMeasurementsExporter]
     [RPlotExporter]
-    public class AnonymousTypeBenchmarks
+    public class ReadAccessorAnonymousTypeBenchmarks
     {
         private TypeAccessor _fastMember;
         private Func<object, object> _getBar;
