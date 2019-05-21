@@ -14,7 +14,7 @@ TypeKitchen replaces these libraries with a concise API to perform the following
 - Field and Property Access: _getting and setting data members by name, including private members and anonymous types_
 - Method Call Invocation: _calling methods on runtime types, when you know the arguments at runtime, and even when you don't_
 - Object Activation: _creating new instances of types, typically because `Activator.CreateInstance` is too slow_
-- Type Resolution: _when you want to describe how object instances should be created, and manage their lifetime, in a deferred fashion (i.e. inversion of control / dependency injection)
+- Type Resolution: _when you want to describe how object instances should be created, and manage their lifetime, in a deferred fashion (i.e. inversion of control / dependency injection)_
 - Wire Serialization: _when you want a fast and non-allocating wire format for serializing/deserializing runtime types_
 
 #### Less Common Tasks
