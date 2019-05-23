@@ -164,10 +164,10 @@ namespace TypeKitchen
             
             var call = tb.DefineMethod(nameof(MethodCallAccessor.Call), MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(object), new[] { typeof(object), typeof(object[]) });
             call.GetILGeneratorInternal().EmitCall(tb, method);
-            tb.DefineMethodOverride(call, typeof(MethodCallAccessor).GetMethod(nameof(MethodCallAccessor.Call), new[] { typeof(object), typeof(object[]) }));
+            tb.DefineMethodOverride(call, KnownMethods.CallWithArgs);
 
             var constructedType = tb.CreateTypeInfo().AsType();
-            var instance = (MethodCallAccessor)Activator.CreateInstance(constructedType);
+            var instance = (MethodCallAccessor) Activator.CreateInstance(constructedType);
             instance.MethodName = method.Name;
             instance.Parameters = method.GetParameters();
             return instance;
