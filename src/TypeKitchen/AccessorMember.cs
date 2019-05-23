@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 
@@ -21,6 +22,7 @@ namespace TypeKitchen
             Scope = scope;
             MemberType = memberType;
             MemberInfo = info;
+            Attributes = info.GetCustomAttributes().ToArray();
         }
 
         public string Name { get; }
@@ -31,6 +33,7 @@ namespace TypeKitchen
         public AccessorMemberScope Scope { get; }
         public AccessorMemberType MemberType { get; }
         public MemberInfo MemberInfo { get; }
+        public Attribute[] Attributes { get; }
 
         public bool HasAttribute<T>() where T : Attribute
         {
