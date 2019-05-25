@@ -11,7 +11,7 @@
     <PackageReference Include="Autofac" Version="4.9.2" />
     <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
     <PackageReference Include="DotLiquid" Version="2.0.314" />
-    <PackageReference Include="FastMember" Version="1.4.1" />
+    <PackageReference Include="FastMember" Version="1.5.0" />
     <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
   </ItemGroup>
 

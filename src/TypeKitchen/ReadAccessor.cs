@@ -14,34 +14,54 @@ namespace TypeKitchen
         private static readonly object Sync = new object();
         private static readonly Dictionary<Type, ITypeReadAccessor> AccessorCache = new Dictionary<Type, ITypeReadAccessor>();
 
+        public static ITypeReadAccessor Create(object @object, out AccessorMembers members)
+        {
+            if (@object is Type type)
+                return Create(type, out members);
+            type = @object.GetType();
+
+            if (!AccessorCache.TryGetValue(type, out var accessor))
+                return Create(type, @object, out members);
+            members = null;
+            return accessor;
+        }
+
         public static ITypeReadAccessor Create(object @object)
         {
             if (@object is Type type)
                 return Create(type);
-
             type = @object.GetType();
+            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, @object, out _);
+        }
 
-            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, @object);
+        public static ITypeReadAccessor Create(Type type, out AccessorMembers members)
+        {
+            if (!AccessorCache.TryGetValue(type, out var accessor))
+                return Create(type, null, out members);
+            members = null;
+            return accessor;
         }
 
         public static ITypeReadAccessor Create(Type type)
         {
-            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, null);
+            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, null, out _);
         }
-
-        private static ITypeReadAccessor Create(Type type, object @object)
+        
+        private static ITypeReadAccessor Create(Type type, object @object, out AccessorMembers members)
         {
             lock (Sync)
             {
-                var accessor = type.IsAnonymous() ? CreateAnonymousReadAccessor(type, @object) : CreateReadAccessor(type);
+                var accessor = type.IsAnonymous()
+                    ? CreateAnonymousReadAccessor(type, out members, @object)
+                    : CreateReadAccessor(type, out members);
                 AccessorCache[type] = accessor;
                 return accessor;
             }
         }
 
-        private static ITypeReadAccessor CreateReadAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
+        private static ITypeReadAccessor CreateReadAccessor(Type type, out AccessorMembers members, AccessorMemberScope scope = AccessorMemberScope.All)
         {
-            var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
+            members = CreateReadAccessorMembers(type, scope);
 
             var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
@@ -160,13 +180,17 @@ namespace TypeKitchen
             return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
 
+        private static AccessorMembers CreateReadAccessorMembers(Type type, AccessorMemberScope scope) => AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
+
+        private static AccessorMembers CreateAnonymousReadAccessorMembers(Type type) => AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
+
         /// <summary>
         ///     Anonymous types only have private readonly properties with no logic before their backing fields, so we can do
         ///     a lot to optimize access to them, though we must delegate the access itself due to private reflection rules.
         /// </summary>
-        private static ITypeReadAccessor CreateAnonymousReadAccessor(Type type, object debugObject = null)
+        private static ITypeReadAccessor CreateAnonymousReadAccessor(Type type, out AccessorMembers members, object debugObject = null)
         {
-            var members = AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
+            members = CreateAnonymousReadAccessorMembers(type);
 
             var tb = DynamicAssembly.Module.DefineType($"ReadAccessor_Anonymous_{type.Assembly.GetHashCode()}_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));

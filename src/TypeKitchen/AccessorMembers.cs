@@ -28,7 +28,7 @@ namespace TypeKitchen
 
             if (memberTypes.HasFlagFast(AccessorMemberTypes.Properties))
             {
-                PropertyInfo = type.GetProperties(flags);
+                PropertyInfo = type.GetProperties(flags).OrderBy(p => p.Name).ToArray();
                 foreach (var property in PropertyInfo)
                     NameToMember.Add(property.Name,
                         new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite, false, scope, AccessorMemberType.Property, property));
@@ -36,7 +36,7 @@ namespace TypeKitchen
 
             if (memberTypes.HasFlagFast(AccessorMemberTypes.Fields))
             {
-                FieldInfo = type.GetFields(flags);
+                FieldInfo = type.GetFields(flags).OrderBy(f => f.Name).ToArray();
                 foreach (var field in FieldInfo)
                     NameToMember.Add(field.Name,
                         new AccessorMember(field.Name, field.FieldType, true, true, false, scope, AccessorMemberType.Field, field));
@@ -44,7 +44,7 @@ namespace TypeKitchen
 
             if (memberTypes.HasFlagFast(AccessorMemberTypes.Methods))
             {
-                MethodInfo = type.GetMethods();
+                MethodInfo = type.GetMethods().OrderBy(m => m.Name).ToArray();
                 foreach (var method in MethodInfo)
                 {
                     // this willfully ignores the concept of overloads, last in wins
@@ -59,8 +59,8 @@ namespace TypeKitchen
             var properties = PropertyInfo ?? Enumerable.Empty<PropertyInfo>();
             var methods = MethodInfo ?? Enumerable.Empty<MethodInfo>();
 
-            MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).ToArray();
-            Members = NameToMember.Values.ToArray();
+            MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(m => m.Name).ToArray();
+            Members = NameToMember.Values.OrderBy(m => m.Name).ToList();
         }
 
         public Type DeclaringType { get; }
@@ -68,7 +68,7 @@ namespace TypeKitchen
         public FieldInfo[] FieldInfo { get; }
         public MethodInfo[] MethodInfo { get; }
         public MemberInfo[] MemberInfo { get; }
-        public AccessorMember[] Members { get; }
+        public List<AccessorMember> Members { get; }
 
         private Dictionary<string, AccessorMember> NameToMember { get; }
 
@@ -80,12 +80,20 @@ namespace TypeKitchen
 
         public IEnumerator<AccessorMember> GetEnumerator()
         {
-            return NameToMember.Values.GetEnumerator();
+            return Members.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public static AccessorMembers Create(object instance, AccessorMemberScope scope = AccessorMemberScope.All,
+            AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
+        {
+            return instance is Type type
+                ? Create(type, scope, memberTypes)
+                : Create(instance.GetType(), scope, memberTypes);
         }
 
         public static AccessorMembers Create(Type type, AccessorMemberScope scope = AccessorMemberScope.All, AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
