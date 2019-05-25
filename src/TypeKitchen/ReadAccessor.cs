@@ -22,7 +22,7 @@ namespace TypeKitchen
 
             if (!AccessorCache.TryGetValue(type, out var accessor))
                 return Create(type, @object, out members);
-            members = null;
+            members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type);
             return accessor;
         }
 
@@ -38,7 +38,7 @@ namespace TypeKitchen
         {
             if (!AccessorCache.TryGetValue(type, out var accessor))
                 return Create(type, null, out members);
-            members = null;
+            members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type);
             return accessor;
         }
 
@@ -180,7 +180,7 @@ namespace TypeKitchen
             return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
 
-        private static AccessorMembers CreateReadAccessorMembers(Type type, AccessorMemberScope scope) => AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
+        private static AccessorMembers CreateReadAccessorMembers(Type type, AccessorMemberScope scope = AccessorMemberScope.All) => AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
 
         private static AccessorMembers CreateAnonymousReadAccessorMembers(Type type) => AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
 
