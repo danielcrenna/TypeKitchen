@@ -105,7 +105,7 @@ namespace TypeKitchen
                     switch (member.MemberInfo)                      //     result = target.{member.Name}
                     {
                         case PropertyInfo property:
-                            il.Callvirt(property.GetGetMethod());
+                            il.Callvirt(property.GetGetMethod(true));
                             break;
                         case FieldInfo field:
                             il.Ldfld(field);
@@ -155,7 +155,7 @@ namespace TypeKitchen
                     switch (member.MemberInfo)         // result = target.Foo
                     {
                         case PropertyInfo property:
-                            il.Callvirt(property.GetGetMethod());
+                            il.Callvirt(property.GetGetMethod(true));
                             break;
                         case FieldInfo field:
                             il.Ldfld(field);
