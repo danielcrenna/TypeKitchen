@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 
@@ -22,7 +21,32 @@ namespace TypeKitchen
             Scope = scope;
             MemberType = memberType;
             MemberInfo = info;
-            Attributes = info.GetCustomAttributes().ToArray();
+
+            if ((info is PropertyInfo || info is FieldInfo) && Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
+            {
+                var metadata = (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
+
+                MemberInfo surrogate;
+                switch (info)
+                {
+                    case PropertyInfo _:
+                        surrogate = metadata.MetadataType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                            ?? throw new InvalidOperationException();
+                        break;
+                    case FieldInfo _:
+                        surrogate = metadata.MetadataType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                            ?? throw new InvalidOperationException();
+                        break;
+                    default:
+                        throw new ArgumentException();
+                }
+
+                Attributes = Attribute.GetCustomAttributes(surrogate, true);
+            }
+            else
+            {
+                Attributes = Attribute.GetCustomAttributes(info, true);
+            }
         }
 
         public string Name { get; }
@@ -37,36 +61,50 @@ namespace TypeKitchen
 
         public bool HasAttribute<T>() where T : Attribute
         {
-            return Attribute.IsDefined(MemberInfo, typeof(T), true);
+            foreach(var attr in Attributes)
+                if (attr is T)
+                    return true;
+            return false;
         }
 
         public bool TryGetAttribute<T>(out T attribute) where T : Attribute
         {
-            if (!Attribute.IsDefined(MemberInfo, typeof(T), true))
+            foreach (var attr in Attributes)
             {
-                attribute = default;
-                return false;
+                if (!(attr is T a))
+                    continue;
+                attribute = a;
+                return true;
             }
-            attribute = Attribute.GetCustomAttribute(MemberInfo, typeof(T), true) as T;
-            return attribute != null;
+
+            attribute = default;
+            return false;
         }
 
         public bool TryGetAttributes<T>(out Attribute[] attributes) where T : Attribute
         {
-            if (!Attribute.IsDefined(MemberInfo, typeof(T), true))
+            var capacity = 0;
+            foreach (var attr in Attributes)
+            {
+                if (!(attr is T))
+                    continue;
+                capacity++;
+            }
+
+            if (capacity == 0)
             {
                 attributes = default;
                 return false;
             }
-
-            var get = Attribute.GetCustomAttributes(MemberInfo, typeof(T), true);
-            if (get.Length == 0)
+            
+            attributes = new Attribute[capacity];
+            for (var i = 0; i < Attributes.Length; i++)
             {
-                attributes = default;
-                return false;
+                var attr = Attributes[i];
+                if (!(attr is T a))
+                    continue;
+                attributes[i] = a;
             }
-
-            attributes = get;
             return true;
         }
 
