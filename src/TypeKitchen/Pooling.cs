@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -15,8 +18,15 @@ namespace TypeKitchen
                     new StringBuilderPooledObjectPolicy()
                 ));
 
-            public static StringBuilder Get() => Pool.Get();
-            public static void Return(StringBuilder obj) => Pool.Return(obj);
+            public static StringBuilder Get()
+            {
+                return Pool.Get();
+            }
+
+            public static void Return(StringBuilder obj)
+            {
+                Pool.Return(obj);
+            }
 
             public static string Scoped(Action<StringBuilder> closure)
             {
@@ -54,19 +64,26 @@ namespace TypeKitchen
                     new DefaultObjectPool<List<T>>(new ListObjectPolicy<List<T>>())
                 );
 
-            public static List<T> Get() => Pool.Get();
+            public static List<T> Get()
+            {
+                return Pool.Get();
+            }
 
-            public static void Return(List<T> obj) => Pool.Return(obj);
+            public static void Return(List<T> obj)
+            {
+                Pool.Return(obj);
+            }
         }
 
 
         #region Policies
 
-        /// <summary> The default policy provided by Microsoft uses new T() constraint, which silently defers to Activator.CreateInstance. </summary>
+        /// <summary>
+        ///     The default policy provided by Microsoft uses new T() constraint, which silently defers to
+        ///     Activator.CreateInstance.
+        /// </summary>
         private class DefaultObjectPolicy<T> : IPooledObjectPolicy<T>
         {
-            internal static T CreateNew() { return Instancing.CreateInstance<T>(); }
-
             public T Create()
             {
                 return CreateNew();
@@ -75,6 +92,11 @@ namespace TypeKitchen
             public bool Return(T obj)
             {
                 return true;
+            }
+
+            internal static T CreateNew()
+            {
+                return Instancing.CreateInstance<T>();
             }
         }
 
@@ -91,7 +113,7 @@ namespace TypeKitchen
                 return obj.Count == 0;
             }
         }
-        
+
         #endregion
     }
 }

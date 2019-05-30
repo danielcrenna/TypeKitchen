@@ -1,10 +1,9 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Reflection.Metadata.Ecma335;
 
 namespace TypeKitchen.Internal
 {
@@ -36,7 +35,7 @@ namespace TypeKitchen.Internal
             _il.MarkLabel(loc);
             return this;
         }
-        
+
         /// <summary>Loads the argument at index 0 onto the evaluation stack.</summary>
         public ILSugar Ldarg_0()
         {
@@ -134,7 +133,7 @@ namespace TypeKitchen.Internal
             _il.Emit(OpCodes.Ldc_I4_7);
             return this;
         }
-        
+
         /// <summary>Pushes the integer value of 8 onto the evaluation stack as an int32.</summary>
         public ILSugar Ldc_I4_8()
         {
@@ -211,6 +210,7 @@ namespace TypeKitchen.Internal
                 default:
                     throw new ArgumentException();
             }
+
             return this;
         }
 
@@ -242,42 +242,60 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at a specified index.</summary>
+        /// <summary>
+        ///     Pops the current value from the top of the evaluation stack and stores it in the local variable list at a
+        ///     specified index.
+        /// </summary>
         public ILSugar Stloc(LocalBuilder local)
         {
             _il.Emit(OpCodes.Stloc, local);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 0.</summary>
+        /// <summary>
+        ///     Pops the current value from the top of the evaluation stack and stores it in the local variable list at index
+        ///     0.
+        /// </summary>
         public ILSugar Stloc_0()
         {
             _il.Emit(OpCodes.Stloc_0);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 1.</summary>
+        /// <summary>
+        ///     Pops the current value from the top of the evaluation stack and stores it in the local variable list at index
+        ///     1.
+        /// </summary>
         public ILSugar Stloc_1()
         {
             _il.Emit(OpCodes.Stloc_1);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 2.</summary>
+        /// <summary>
+        ///     Pops the current value from the top of the evaluation stack and stores it in the local variable list at index
+        ///     2.
+        /// </summary>
         public ILSugar Stloc_2()
         {
             _il.Emit(OpCodes.Stloc_2);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at index 3.</summary>
+        /// <summary>
+        ///     Pops the current value from the top of the evaluation stack and stores it in the local variable list at index
+        ///     3.
+        /// </summary>
         public ILSugar Stloc_3()
         {
             _il.Emit(OpCodes.Stloc_3);
             return this;
         }
 
-        /// <summary>Pops the current value from the top of the evaluation stack and stores it in the local variable list at <paramref name="index">index</paramref> (short form).</summary>
+        /// <summary>
+        ///     Pops the current value from the top of the evaluation stack and stores it in the local variable list at
+        ///     <paramref name="index">index</paramref> (short form).
+        /// </summary>
         public ILSugar Stloc_S(int index)
         {
             _il.Emit(OpCodes.Stloc_S, index);
@@ -367,7 +385,7 @@ namespace TypeKitchen.Internal
             _il.Emit(OpCodes.Callvirt, method);
             return this;
         }
-        
+
         /// <summary>Attempts to cast an object passed by reference to the specified class.</summary>
         public ILSugar Castclass(Type type)
         {
@@ -375,14 +393,20 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Creates a new object or a new instance of a value type, pushing an object reference (type O) onto the evaluation stack.</summary>
+        /// <summary>
+        ///     Creates a new object or a new instance of a value type, pushing an object reference (type O) onto the
+        ///     evaluation stack.
+        /// </summary>
         public ILSugar Newobj(ConstructorInfo ctor)
         {
             _il.Emit(OpCodes.Newobj, ctor);
             return this;
         }
 
-        /// <summary>Pushes an object reference to a new zero-based, one-dimensional array whose elements are of a specific type onto the evaluation stack.</summary>
+        /// <summary>
+        ///     Pushes an object reference to a new zero-based, one-dimensional array whose elements are of a specific type
+        ///     onto the evaluation stack.
+        /// </summary>
         public ILSugar Newarr(Type type)
         {
             _il.Emit(OpCodes.Newarr, type);
@@ -410,14 +434,20 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Transfers control to a target instruction (short form) if <paramref name="value">value</paramref> is true, not null, or non-zero.</summary>
+        /// <summary>
+        ///     Transfers control to a target instruction (short form) if <paramref name="value">value</paramref> is true, not
+        ///     null, or non-zero.
+        /// </summary>
         public ILSugar Brtrue_S(Label value)
         {
             _il.Emit(OpCodes.Brtrue_S, value);
             return this;
         }
 
-        /// <summary>Transfers control to a target instruction if <paramref name="value">value</paramref> is true, not null, or non-zero.</summary>
+        /// <summary>
+        ///     Transfers control to a target instruction if <paramref name="value">value</paramref> is true, not null, or
+        ///     non-zero.
+        /// </summary>
         public ILSugar Brtrue(Label value)
         {
             _il.Emit(OpCodes.Brtrue, value);
@@ -431,7 +461,10 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Returns from the current method, pushing a return value (if present) from the callee's evaluation stack onto the caller's evaluation stack.</summary>
+        /// <summary>
+        ///     Returns from the current method, pushing a return value (if present) from the callee's evaluation stack onto
+        ///     the caller's evaluation stack.
+        /// </summary>
         public ILSugar Ret()
         {
             _il.Emit(OpCodes.Ret);
@@ -445,7 +478,10 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Fills space if opcodes are patched. No meaningful operation is performed although a processing cycle can be consumed.</summary>
+        /// <summary>
+        ///     Fills space if opcodes are patched. No meaningful operation is performed although a processing cycle can be
+        ///     consumed.
+        /// </summary>
         public ILSugar Nop()
         {
             _il.Emit(OpCodes.Nop);
@@ -466,7 +502,10 @@ namespace TypeKitchen.Internal
             return this;
         }
 
-        /// <summary>Loads the element containing an object reference at a specified array index onto the top of the evaluation stack as type O (object reference).</summary>
+        /// <summary>
+        ///     Loads the element containing an object reference at a specified array index onto the top of the evaluation
+        ///     stack as type O (object reference).
+        /// </summary>
         public ILSugar Ldelem_Ref()
         {
             _il.Emit(OpCodes.Ldelem_Ref);

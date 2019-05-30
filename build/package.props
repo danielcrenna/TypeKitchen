@@ -2,14 +2,13 @@
 
   <PropertyGroup>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Authors>Blowdart Inc. &amp; Contributors</Authors>
-    <Company>Blowdart Inc.</Company>
-    <Description>TypeKitchen is a small library for fast meta-programming in .NET Standard.</Description>
-    <Copyright>Copyright © Blowdart Inc. All rights reserved.</Copyright>
-    <PackageIconUrl>https://raw.githubusercontent.com/blowdart-inc/TypeKitchen/master/assets/logo.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/blowdart-inc/TypeKitchen</PackageProjectUrl>
+    <Authors>Daniel Crenna &amp; Contributors</Authors>
+    <Description>TypeKitchen is a small library for fast meta-programming in .NET.</Description>
+    <Copyright>Copyright © Daniel Crenna &amp; Contributors. All rights reserved.</Copyright>
+    <PackageIconUrl>https://raw.githubusercontent.com/danielcrenna/TypeKitchen/master/assets/logo.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/danielcrenna/TypeKitchen</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/blowdart-inc/TypeKitchen</RepositoryUrl>
+    <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
   </PropertyGroup>

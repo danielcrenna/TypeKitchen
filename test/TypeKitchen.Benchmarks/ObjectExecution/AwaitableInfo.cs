@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace TypeKitchen.Benchmarks.ObjectMethodExecutor
+namespace TypeKitchen.Benchmarks.ObjectExecution
 {
     internal struct AwaitableInfo
     {

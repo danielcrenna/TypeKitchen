@@ -1,10 +1,9 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace TypeKitchen
@@ -13,7 +12,7 @@ namespace TypeKitchen
     {
         public string MethodName { get; set; }
         public ParameterInfo[] Parameters { get; set; }
-        
+
         public object Call(object target)
         {
             var args = Arguments.Get(0);
@@ -71,7 +70,7 @@ namespace TypeKitchen
                 Arguments.Return(args);
             }
         }
-        
+
         public abstract object Call(object target, object[] args);
 
 
@@ -84,14 +83,20 @@ namespace TypeKitchen
             private readonly ObjectWrapper[] _items;
             private object[] _firstItem;
 
-            public ArgumentsPool() : this(Environment.ProcessorCount * 2) { }
+            public ArgumentsPool() : this(Environment.ProcessorCount * 2)
+            {
+            }
 
-            public ArgumentsPool(int maximumRetained) => _items = new ObjectWrapper[maximumRetained - 1];
+            public ArgumentsPool(int maximumRetained)
+            {
+                _items = new ObjectWrapper[maximumRetained - 1];
+            }
 
             public object[] Get(int length)
             {
                 var comparator = _firstItem;
-                if (comparator != null && Interlocked.CompareExchange(ref _firstItem, default, comparator) == comparator)
+                if (comparator != null &&
+                    Interlocked.CompareExchange(ref _firstItem, default, comparator) == comparator)
                     return comparator;
                 var items = _items;
                 for (var index = 0; index < items.Length; ++index)
@@ -102,6 +107,7 @@ namespace TypeKitchen
                     if (item != null && Interlocked.CompareExchange(ref items[index].Element, default, item) == item)
                         return item;
                 }
+
                 return new object[length];
             }
 
@@ -111,7 +117,8 @@ namespace TypeKitchen
                     return;
                 var items = _items;
                 var index = 0;
-                while (index < items.Length && Interlocked.CompareExchange(ref items[index].Element, obj, default) != null)
+                while (index < items.Length &&
+                       Interlocked.CompareExchange(ref items[index].Element, obj, default) != null)
                     ++index;
             }
 

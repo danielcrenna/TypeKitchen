@@ -4,7 +4,7 @@
 using System;
 using System.Linq.Expressions;
 
-namespace TypeKitchen.Benchmarks.ObjectMethodExecutor
+namespace TypeKitchen.Benchmarks.ObjectExecution
 {
     internal struct CoercedAwaitableInfo
     {

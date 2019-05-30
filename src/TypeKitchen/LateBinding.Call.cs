@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -22,7 +22,7 @@ namespace TypeKitchen
 
         public static Func<object, object[], object> DynamicMethodBindCall(AccessorMember member)
         {
-            return DynamicMethodBindCall((MethodInfo)member.MemberInfo);
+            return DynamicMethodBindCall((MethodInfo) member.MemberInfo);
         }
 
         public static Func<object, object[], object> DynamicMethodBindCall(MethodInfo method)
@@ -31,7 +31,8 @@ namespace TypeKitchen
             if (type == null)
                 throw new NotSupportedException("Dynamic binding does not currently support anonymous methods");
 
-            var dm = new DynamicMethod($"Call_{method.MetadataToken}", typeof(object), new[] { typeof(object), typeof(object[])});
+            var dm = new DynamicMethod($"Call_{method.MetadataToken}", typeof(object),
+                new[] {typeof(object), typeof(object[])});
             dm.GetILGeneratorInternal().EmitCall(type, method);
             return (Func<object, object[], object>) dm.CreateDelegate(typeof(Func<object, object[], object>));
         }
@@ -50,12 +51,13 @@ namespace TypeKitchen
                 else
                     il.Ldloc_0();
             }
+
             var parameters = method.GetParameters();
             for (byte i = 0; i < parameters.Length; i++)
             {
-                il.Ldarg_1();       // args
+                il.Ldarg_1(); // args
                 il.LoadConstant(i); // i
-                il.Ldelem_Ref();    // args[i]
+                il.Ldelem_Ref(); // args[i]
 
                 var parameterType = parameters[i].ParameterType;
                 var byRef = parameterType.IsByRef;
@@ -70,6 +72,7 @@ namespace TypeKitchen
                 else
                     il.Ldloc(arg);
             }
+
             if (method.IsVirtual)
                 il.Callvirt(method);
             else
@@ -81,6 +84,7 @@ namespace TypeKitchen
                 else
                     il.MaybeBox(method.ReturnType);
             }
+
             il.Ret();
         }
 

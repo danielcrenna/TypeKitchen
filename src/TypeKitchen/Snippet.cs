@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -28,13 +28,13 @@ namespace TypeKitchen
             Loader = new InteractiveAssemblyLoader();
 
             DefaultOptions = ScriptOptions.Default
-                .Add<Guid>()                // System
-                .Add<List<object>>()        // System.Collections.Generic
-                .Add<Regex>()               // System.Text
-                .Add<FileInfo>()            // System.IO
-                .Add<IQueryable>()          // System.Linq;
-                .Add<DynamicObject>()       // System.Dynamic
-                .Add<CSharpArgumentInfo>()  // Microsoft.CSharp.RuntimeBinder
+                    .Add<Guid>() // System
+                    .Add<List<object>>() // System.Collections.Generic
+                    .Add<Regex>() // System.Text
+                    .Add<FileInfo>() // System.IO
+                    .Add<IQueryable>() // System.Linq;
+                    .Add<DynamicObject>() // System.Dynamic
+                    .Add<CSharpArgumentInfo>() // Microsoft.CSharp.RuntimeBinder
                 ;
         }
 
@@ -53,13 +53,11 @@ namespace TypeKitchen
             return root;
         }
 
-        private static class ContextFree { }
-
         public static MethodInfo CreateMethod(string body, ScriptOptions options = null)
         {
             var script = CSharpScript.Create(body, options ?? _options ?? DefaultOptions, typeof(ContextFree), Loader);
             var compilation = script.GetCompilation();
-            
+
             using (var pe = new MemoryStream())
             {
                 using (var pdb = new MemoryStream())
@@ -74,6 +72,10 @@ namespace TypeKitchen
                     return method;
                 }
             }
+        }
+
+        private static class ContextFree
+        {
         }
     }
 }

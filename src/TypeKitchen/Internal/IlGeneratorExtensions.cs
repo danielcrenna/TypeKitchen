@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -53,13 +53,14 @@ namespace TypeKitchen.Internal
                     break;
                 default:
                     if (i <= byte.MaxValue)
-                        il.Ldc_I4_S((byte)i);
+                        il.Ldc_I4_S((byte) i);
                     else if (i <= int.MaxValue)
                         il.Ldc_I4((int) i);
                     else
                         il.Ldc_I8(i);
                     break;
             }
+
             return il;
         }
 
@@ -82,11 +83,12 @@ namespace TypeKitchen.Internal
                     break;
                 default:
                     if (i <= byte.MaxValue)
-                        il.Ldloc_S((byte)i);
+                        il.Ldloc_S((byte) i);
                     else
                         il.Ldloc(i);
                     break;
             }
+
             return il;
         }
 
@@ -109,11 +111,12 @@ namespace TypeKitchen.Internal
                     break;
                 default:
                     if (i <= byte.MaxValue)
-                        il.Ldarg_S((byte)i);
+                        il.Ldarg_S((byte) i);
                     else
                         il.Ldarg(i);
                     break;
             }
+
             return il;
         }
 
@@ -129,12 +132,14 @@ namespace TypeKitchen.Internal
         public static ILSugar GotoIfStringEquals(this ILSugar il, string literal, Label @goto)
         {
             var ifStringEquals = il.Ldstr(literal).Call(KnownMethods.StringEquals);
-            ifStringEquals.Brtrue(@goto); // TODO calculate offsets dynamically to call Brtrue_S vs. Brtrue, not worth it right now.
+            ifStringEquals
+                .Brtrue(@goto); // TODO calculate offsets dynamically to call Brtrue_S vs. Brtrue, not worth it right now.
             return il;
         }
 
         /// <summary> Creates a property with the specified name and a fixed reflection member value, known at runtime.</summary>
-        public static void MemberProperty(this TypeBuilder tb, string propertyName, MemberInfo value, MethodInfo overrides = null)
+        public static void MemberProperty(this TypeBuilder tb, string propertyName, MemberInfo value,
+            MethodInfo overrides = null)
         {
             Type type;
             switch (value)

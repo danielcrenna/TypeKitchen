@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace TypeKitchen.Benchmarks.ObjectMethodExecutor
+namespace TypeKitchen.Benchmarks.ObjectExecution
 {
     internal class ObjectMethodExecutor
     {

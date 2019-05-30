@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace TypeKitchen.Benchmarks.ObjectMethodExecutor
+namespace TypeKitchen.Benchmarks.ObjectExecution
 {
     /// <summary>
     ///     Provides a common awaitable structure that <see cref="ObjectMethodExecutor.ExecuteAsync" /> can

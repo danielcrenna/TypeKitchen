@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -31,7 +31,8 @@ namespace TypeKitchen
                 PropertyInfo = type.GetProperties(flags).OrderBy(p => p.Name).ToArray();
                 foreach (var property in PropertyInfo)
                     NameToMember.Add(property.Name,
-                        new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite, false, scope, AccessorMemberType.Property, property));
+                        new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite,
+                            false, scope, AccessorMemberType.Property, property));
             }
 
             if (memberTypes.HasFlagFast(AccessorMemberTypes.Fields))
@@ -39,20 +40,19 @@ namespace TypeKitchen
                 FieldInfo = type.GetFields(flags).OrderBy(f => f.Name).ToArray();
                 foreach (var field in FieldInfo)
                     NameToMember.Add(field.Name,
-                        new AccessorMember(field.Name, field.FieldType, true, true, false, scope, AccessorMemberType.Field, field));
+                        new AccessorMember(field.Name, field.FieldType, true, true, false, scope,
+                            AccessorMemberType.Field, field));
             }
 
             if (memberTypes.HasFlagFast(AccessorMemberTypes.Methods))
             {
                 MethodInfo = type.GetMethods().OrderBy(m => m.Name).ToArray();
                 foreach (var method in MethodInfo)
-                {
                     // this willfully ignores the concept of overloads, last in wins
-                    NameToMember[method.Name] = 
+                    NameToMember[method.Name] =
                         new AccessorMember(method.Name, method.ReturnType, false, false, true, scope,
                             AccessorMemberType.Method,
                             method);
-                }
             }
 
             var fields = FieldInfo ?? Enumerable.Empty<FieldInfo>();
@@ -75,7 +75,6 @@ namespace TypeKitchen
         public AccessorMember this[string name] => NameToMember[name];
         public int Count => NameToMember.Count;
         public IEnumerable<string> Names => NameToMember.Keys;
-        public bool ContainsKey(string key) => NameToMember.ContainsKey(key);
 
 
         public IEnumerator<AccessorMember> GetEnumerator()
@@ -88,6 +87,11 @@ namespace TypeKitchen
             return GetEnumerator();
         }
 
+        public bool ContainsKey(string key)
+        {
+            return NameToMember.ContainsKey(key);
+        }
+
         public static AccessorMembers Create(object instance, AccessorMemberScope scope = AccessorMemberScope.All,
             AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
         {
@@ -96,11 +100,12 @@ namespace TypeKitchen
                 : Create(instance.GetType(), scope, memberTypes);
         }
 
-        public static AccessorMembers Create(Type type, AccessorMemberScope scope = AccessorMemberScope.All, AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
+        public static AccessorMembers Create(Type type, AccessorMemberScope scope = AccessorMemberScope.All,
+            AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
         {
             var cacheKey = new AccessorMembersKey(type, scope, memberTypes);
             if (!Cache.TryGetValue(cacheKey, out var members))
-                 Cache.TryAdd(cacheKey, members = new AccessorMembers(type, scope, memberTypes));
+                Cache.TryAdd(cacheKey, members = new AccessorMembers(type, scope, memberTypes));
             return members;
         }
 

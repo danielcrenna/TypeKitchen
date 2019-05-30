@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -13,10 +13,14 @@ namespace TypeKitchen
     public static class CallAccessor
     {
         private static readonly object TypeSync = new object();
-        private static readonly Dictionary<Type, ITypeCallAccessor> TypeAccessorCache = new Dictionary<Type, ITypeCallAccessor>();
+
+        private static readonly Dictionary<Type, ITypeCallAccessor> TypeAccessorCache =
+            new Dictionary<Type, ITypeCallAccessor>();
 
         private static readonly object MethodSync = new object();
-        private static readonly Dictionary<MethodBase, IMethodCallAccessor> MethodAccessorCache = new Dictionary<MethodBase, IMethodCallAccessor>();
+
+        private static readonly Dictionary<MethodBase, IMethodCallAccessor> MethodAccessorCache =
+            new Dictionary<MethodBase, IMethodCallAccessor>();
 
         public static ITypeCallAccessor Create(object @object)
         {
@@ -53,7 +57,7 @@ namespace TypeKitchen
         {
             lock (MethodSync)
             {
-                if(MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
+                if (MethodAccessorCache.TryGetValue(methodInfo, out var accessor))
                     return accessor;
 
                 accessor = CreateMethodCallAccessor(methodInfo.DeclaringType, methodInfo);
@@ -62,17 +66,22 @@ namespace TypeKitchen
             }
         }
 
-        private static ITypeCallAccessor CreateTypeCallAccessor(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
+        private static ITypeCallAccessor CreateTypeCallAccessor(Type type,
+            AccessorMemberScope scope = AccessorMemberScope.All)
         {
             var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Methods);
 
-            var tb = DynamicAssembly.Module.DefineType($"CallAccessor_Type_{type.Assembly.GetHashCode()}_{type.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType(
+                $"CallAccessor_Type_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
+                TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
+                TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeCallAccessor));
 
             //
             // Type Type =>:
             //
-            tb.MemberProperty(nameof(ITypeCallAccessor.Type), type, typeof(ITypeCallAccessor).GetMethod($"get_{nameof(ITypeCallAccessor.Type)}"));
+            tb.MemberProperty(nameof(ITypeCallAccessor.Type), type,
+                typeof(ITypeCallAccessor).GetMethod($"get_{nameof(ITypeCallAccessor.Type)}"));
 
             //
             // object Call(object target, string name, params object[] args):
@@ -81,7 +90,7 @@ namespace TypeKitchen
                 var call = tb.DefineMethod(nameof(ITypeCallAccessor.Call),
                     MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
                     MethodAttributes.Virtual | MethodAttributes.NewSlot,
-                    typeof(object), new[] { typeof(object), typeof(string), typeof(object[]) });
+                    typeof(object), new[] {typeof(object), typeof(string), typeof(object[])});
 
                 var il = call.GetILGeneratorInternal();
 
@@ -114,7 +123,7 @@ namespace TypeKitchen
                     if (!member.IsInstanceMethod)
                         continue;
 
-                    var method = (MethodInfo)member.MemberInfo;
+                    var method = (MethodInfo) member.MemberInfo;
                     var parameters = method.GetParameters();
                     var parameterTypes = parameters.Select(p => p.ParameterType).ToArray();
 
@@ -132,7 +141,7 @@ namespace TypeKitchen
                     if (parameters.Length > 0)
                     {
                         il.Ldarg_3();
-                        il.Ldc_I4_S((byte)parameters.Length);
+                        il.Ldc_I4_S((byte) parameters.Length);
                         il.Ldelem_Ref();
                         il.Unbox_Any(parameterTypes[0]);
                     }
@@ -146,7 +155,7 @@ namespace TypeKitchen
                     il.Ldloc_1();
                     il.Ret();
                 }
-                
+
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
                 il.Throw();
 
@@ -154,15 +163,21 @@ namespace TypeKitchen
             }
 
             var typeInfo = tb.CreateTypeInfo();
-            return (ITypeCallAccessor)Activator.CreateInstance(typeInfo.AsType(), false);
+            return (ITypeCallAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
 
         private static IMethodCallAccessor CreateMethodCallAccessor(Type type, MethodInfo method)
         {
-            var tb = DynamicAssembly.Module.DefineType($"CallAccessor_Method_{type.Assembly.GetHashCode()}_{method.MetadataToken}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType(
+                $"CallAccessor_Method_{type.Assembly.GetHashCode()}_{method.MetadataToken}",
+                TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
+                TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.SetParent(typeof(MethodCallAccessor));
-            
-            var call = tb.DefineMethod(nameof(MethodCallAccessor.Call), MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(object), new[] { typeof(object), typeof(object[]) });
+
+            var call = tb.DefineMethod(nameof(MethodCallAccessor.Call),
+                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
+                MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(object),
+                new[] {typeof(object), typeof(object[])});
             call.GetILGeneratorInternal().EmitCall(tb, method);
             tb.DefineMethodOverride(call, KnownMethods.CallWithArgs);
 

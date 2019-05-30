@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -12,12 +12,26 @@ namespace TypeKitchen
     public static class Instancing
     {
         private static readonly Dictionary<Type, CreateInstance> Factory = new Dictionary<Type, CreateInstance>();
-        private static readonly Dictionary<CreateInstance, ParameterInfo[]> Parameters = new Dictionary<CreateInstance, ParameterInfo[]>();
+
+        private static readonly Dictionary<CreateInstance, ParameterInfo[]> Parameters =
+            new Dictionary<CreateInstance, ParameterInfo[]>();
+
         private static readonly ArrayPool<object> ArgumentsPool = ArrayPool<object>.Create();
 
-        public static T CreateInstance<T>() => (T)CreateInstance(typeof(T));
-        public static T CreateInstance<T>(params object[] args) => (T)CreateInstance(typeof(T), args);
-        public static T CreateInstance<T>(IServiceProvider serviceProvider) => (T)CreateInstance(typeof(T), serviceProvider);
+        public static T CreateInstance<T>()
+        {
+            return (T) CreateInstance(typeof(T));
+        }
+
+        public static T CreateInstance<T>(params object[] args)
+        {
+            return (T) CreateInstance(typeof(T), args);
+        }
+
+        public static T CreateInstance<T>(IServiceProvider serviceProvider)
+        {
+            return (T) CreateInstance(typeof(T), serviceProvider);
+        }
 
         public static object CreateInstance(Type type)
         {
@@ -46,6 +60,7 @@ namespace TypeKitchen
                     var parameter = parameters[i];
                     args[i] = serviceProvider.GetService(parameter.ParameterType);
                 }
+
                 var instance = activator(args);
                 return instance;
             }
@@ -55,7 +70,11 @@ namespace TypeKitchen
             }
         }
 
-        private static CreateInstance GetOrBuildActivator<T>() => GetOrBuildActivator(typeof(T));
+        private static CreateInstance GetOrBuildActivator<T>()
+        {
+            return GetOrBuildActivator(typeof(T));
+        }
+
         private static CreateInstance GetOrBuildActivator(Type type)
         {
             lock (Factory)
@@ -70,10 +89,11 @@ namespace TypeKitchen
 
                     var ctor = type.GetConstructor(Type.EmptyTypes) ?? type.GetConstructors()
                                    .OrderByDescending(x => x.GetParameters().Length).First();
-                    
+
                     Factory.Add(type, activator = Activation.DynamicMethodWeakTyped(ctor));
                     Parameters.Add(activator, ctor.GetParameters());
                 }
+
                 return activator;
             }
         }

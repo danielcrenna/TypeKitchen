@@ -1,4 +1,4 @@
-﻿// Copyright (c) Blowdart, Inc. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -10,7 +10,8 @@ namespace TypeKitchen
 {
     public sealed class AccessorMember
     {
-        public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall, AccessorMemberScope scope,
+        public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall,
+            AccessorMemberScope scope,
             AccessorMemberType memberType, MemberInfo info)
         {
             Name = name;
@@ -22,20 +23,24 @@ namespace TypeKitchen
             MemberType = memberType;
             MemberInfo = info;
 
-            if ((info is PropertyInfo || info is FieldInfo) && Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
+            if ((info is PropertyInfo || info is FieldInfo) &&
+                Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
             {
-                var metadata = (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
+                var metadata =
+                    (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
 
                 MemberInfo surrogate;
                 switch (info)
                 {
                     case PropertyInfo _:
-                        surrogate = metadata.MetadataType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                            ?? throw new InvalidOperationException();
+                        surrogate = metadata.MetadataType.GetProperty(name,
+                                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                                    ?? throw new InvalidOperationException();
                         break;
                     case FieldInfo _:
-                        surrogate = metadata.MetadataType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                            ?? throw new InvalidOperationException();
+                        surrogate = metadata.MetadataType.GetField(name,
+                                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                                    ?? throw new InvalidOperationException();
                         break;
                     default:
                         throw new ArgumentException();
@@ -59,9 +64,13 @@ namespace TypeKitchen
         public MemberInfo MemberInfo { get; }
         public Attribute[] Attributes { get; }
 
+        internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method &&
+                                          !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") &&
+                                          method.DeclaringType != typeof(object);
+
         public bool HasAttribute<T>() where T : Attribute
         {
-            foreach(var attr in Attributes)
+            foreach (var attr in Attributes)
                 if (attr is T)
                     return true;
             return false;
@@ -96,7 +105,7 @@ namespace TypeKitchen
                 attributes = default;
                 return false;
             }
-            
+
             attributes = new Attribute[capacity];
             for (var i = 0; i < Attributes.Length; i++)
             {
@@ -105,6 +114,7 @@ namespace TypeKitchen
                     continue;
                 attributes[i] = a;
             }
+
             return true;
         }
 
@@ -112,9 +122,5 @@ namespace TypeKitchen
         {
             return Attribute.GetCustomAttributes(MemberInfo, typeof(T), canInherit).Cast<T>();
         }
-
-        internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method &&
-                                          !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") &&
-                                           method.DeclaringType != typeof(object);
     }
 }

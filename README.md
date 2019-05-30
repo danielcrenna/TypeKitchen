@@ -14,6 +14,7 @@ TypeKitchen replaces these libraries with a concise API to perform the following
 - Field and Property Access: _getting and setting data members by name, including private members and anonymous types_
 - Method Call Invocation: _calling methods on runtime types, when you know the arguments at runtime, and even when you don't_
 - Object Activation: _creating new instances of types, typically because `Activator.CreateInstance` is too slow_
+- Object Pooling: _when you want to avoid over-allocating memory that will be garbage collected later_
 - Type Resolution: _when you want to describe how object instances should be created, and manage their lifetime, in a deferred fashion (i.e. inversion of control / dependency injection)_
 - Wire Serialization: _when you want a fast and non-allocating wire format for serializing/deserializing runtime types_
 
@@ -29,6 +30,6 @@ TypeKitchen replaces these libraries with a concise API to perform the following
 - MSIL Helpers: _when you want to see the IL of a compiled Expression or DynamicMethod, or want to code-generate calls to `ILGenerator` that would produce a given method body_
 - Coverage: _when you need to walk compiled bytecode to determine paths through other code, such as when building code coverage or visualization tools_
 
-##### Other Topics
+##### Logo
 
-###### Working with AOT Frameworks
+Logo is from Font Awesome, and is under a [CC BY 4.0 License](https://creativecommons.org/licenses/by/4.0/). 
