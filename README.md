@@ -1,6 +1,5 @@
 # TypeKitchen
 
-![logo](assets/logo.png?s=100)
 TypeKitchen is a small library for fast meta-programming in .NET.
 
 TypeKitchen was built on the premise that there are only so many actions that are useful to take with types at runtime.
