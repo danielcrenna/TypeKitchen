@@ -81,23 +81,24 @@ namespace TypeKitchen
 
         public static bool IsValueTypeOrNullableValueType(this Type type)
         {
-            return type.IsPrimitiveOrNullablePrimitive() ||
-                   type == typeof(StringValues) ||
-                   type == typeof(StringValues?) ||
-                   type == typeof(DateTime) ||
-                   type == typeof(DateTime?) ||
-                   type == typeof(DateTimeOffset) ||
-                   type == typeof(DateTimeOffset?) ||
-                   type == typeof(TimeSpan) ||
-                   type == typeof(TimeSpan?) ||
-                   type == typeof(Guid) ||
-                   type == typeof(Guid?);
+	        return type.IsPrimitiveOrNullablePrimitive() ||
+	               type == typeof(StringValues) ||
+	               type == typeof(StringValues?) ||
+	               type == typeof(DateTime) ||
+	               type == typeof(DateTime?) ||
+	               type == typeof(DateTimeOffset) ||
+	               type == typeof(DateTimeOffset?) ||
+	               type == typeof(TimeSpan) ||
+	               type == typeof(TimeSpan?) ||
+	               type == typeof(Guid) ||
+	               type == typeof(Guid?);
         }
 
         public static bool IsValueType(this Type type)
         {
             return type.IsPrimitive() ||
-                   type == typeof(StringValues) ||
+                   type.IsEnum ||
+				   type == typeof(StringValues) ||
                    type == typeof(DateTime) ||
                    type == typeof(DateTimeOffset) ||
                    type == typeof(TimeSpan) ||
@@ -106,8 +107,9 @@ namespace TypeKitchen
 
         public static bool IsNullableValueType(this Type type)
         {
-            return type.IsNullablePrimitive() ||
-                   type == typeof(StringValues?) ||
+			return type.IsNullablePrimitive() ||
+                   (Nullable.GetUnderlyingType(type) != null && type.IsEnum) |
+				   type == typeof(StringValues?) ||
                    type == typeof(DateTime?) ||
                    type == typeof(DateTimeOffset?) ||
                    type == typeof(TimeSpan?) ||
