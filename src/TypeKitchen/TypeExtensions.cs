@@ -82,16 +82,8 @@ namespace TypeKitchen
         public static bool IsValueTypeOrNullableValueType(this Type type)
         {
 	        return type.IsPrimitiveOrNullablePrimitive() ||
-	               type == typeof(StringValues) ||
-	               type == typeof(StringValues?) ||
-	               type == typeof(DateTime) ||
-	               type == typeof(DateTime?) ||
-	               type == typeof(DateTimeOffset) ||
-	               type == typeof(DateTimeOffset?) ||
-	               type == typeof(TimeSpan) ||
-	               type == typeof(TimeSpan?) ||
-	               type == typeof(Guid) ||
-	               type == typeof(Guid?);
+	               type.IsValueType() ||
+	               type.IsNullableValueType();
         }
 
         public static bool IsValueType(this Type type)
