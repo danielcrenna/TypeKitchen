@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.ObjectPool;
@@ -11,7 +10,7 @@ namespace TypeKitchen
 {
     public static class Pooling
     {
-        public static class StringBuilderPool
+		public static class StringBuilderPool
         {
             private static readonly ObjectPool<StringBuilder> Pool =
                 new LeakTrackingObjectPool<StringBuilder>(new DefaultObjectPool<StringBuilder>(
@@ -61,7 +60,7 @@ namespace TypeKitchen
         {
             private static readonly ObjectPool<List<T>> Pool =
                 new LeakTrackingObjectPool<List<T>>(
-                    new DefaultObjectPool<List<T>>(new ListObjectPolicy<List<T>>())
+                    new DefaultObjectPool<List<T>>(new CollectionObjectPolicy<List<T>, T>())
                 );
 
             public static List<T> Get()
@@ -75,45 +74,101 @@ namespace TypeKitchen
             }
         }
 
-
-        #region Policies
-
-        /// <summary>
-        ///     The default policy provided by Microsoft uses new T() constraint, which silently defers to
-        ///     Activator.CreateInstance.
-        /// </summary>
-        private class DefaultObjectPolicy<T> : IPooledObjectPolicy<T>
+        public static class HashSetPool<T>
         {
-            public T Create()
-            {
-                return CreateNew();
-            }
+	        private static readonly ObjectPool<HashSet<T>> Pool =
+		        new LeakTrackingObjectPool<HashSet<T>>(
+			        new DefaultObjectPool<HashSet<T>>(
+				        new CollectionObjectPolicy<HashSet<T>, T>())
+		        );
 
-            public bool Return(T obj)
-            {
-                return true;
-            }
+	        public static HashSet<T> Get()
+	        {
+		        return Pool.Get();
+	        }
 
-            internal static T CreateNew()
+	        public static void Return(HashSet<T> obj)
+	        {
+		        Pool.Return(obj);
+	        }
+		}
+
+        public static class HashSetPool
+        {
+	        private static readonly ObjectPool<HashSet<string>> Pool =
+		        new LeakTrackingObjectPool<HashSet<string>>(
+			        new DefaultObjectPool<HashSet<string>>(
+				        new StringSetPolicy<OrdinalIgnoreCaseComparer>())
+		        );
+
+	        public static HashSet<string> Get()
+	        {
+		        return Pool.Get();
+	        }
+
+	        public static void Return(HashSet<string> obj)
+	        {
+		        Pool.Return(obj);
+	        }
+		}
+
+		#region Policies
+
+		/// <summary>
+		///     The default policy provided by Microsoft uses new T() constraint,
+		///		which silently defers to Activator.CreateInstance.
+		/// </summary>
+		private class DefaultObjectPolicy<T> : IPooledObjectPolicy<T>
+        {
+            public T Create() => CreateNew();
+            public bool Return(T obj) => true;
+            private static T CreateNew() => Instancing.CreateInstance<T>();
+        }
+
+        private class CollectionObjectPolicy<TCollection, TElement> : IPooledObjectPolicy<TCollection> where TCollection : ICollection<TElement>
+        {
+            public TCollection Create() => Instancing.CreateInstance<TCollection>();
+
+            public bool Return(TCollection collection)
             {
-                return Instancing.CreateInstance<T>();
+                collection.Clear();
+                return collection.Count == 0;
             }
         }
 
-        private class ListObjectPolicy<T> : IPooledObjectPolicy<T> where T : IList
+        private interface IStringSetComparer : IEqualityComparer<string>
         {
-            public T Create()
-            {
-                return Instancing.CreateInstance<T>();
-            }
-
-            public bool Return(T obj)
-            {
-                obj.Clear();
-                return obj.Count == 0;
-            }
+			StringComparer Comparer { get; }
         }
 
-        #endregion
-    }
+        // ReSharper disable once ClassNeverInstantiated.Local
+        private class OrdinalIgnoreCaseComparer : IStringSetComparer
+        {
+	        public bool Equals(string x, string y)
+	        {
+		        return Comparer.Equals(x, y);
+	        }
+
+	        public int GetHashCode(string obj)
+	        {
+		        return Comparer.GetHashCode(obj);
+	        }
+
+	        public StringComparer Comparer => StringComparer.OrdinalIgnoreCase;
+        }
+
+        private class StringSetPolicy<T> : IPooledObjectPolicy<HashSet<string>> where T : IStringSetComparer
+		{
+			public HashSet<string> Create() => new HashSet<string>(
+				Instancing.CreateInstance<T>());
+
+	        public bool Return(HashSet<string> set)
+	        {
+		        set.Clear();
+		        return set.Count == 0;
+	        }
+        }
+
+		#endregion
+	}
 }
