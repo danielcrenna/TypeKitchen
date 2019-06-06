@@ -16,37 +16,54 @@ namespace TypeKitchen
         private static readonly Dictionary<Type, ITypeWriteAccessor> AccessorCache =
             new Dictionary<Type, ITypeWriteAccessor>();
 
-        public static ITypeWriteAccessor Create(object @object)
+		public static ITypeWriteAccessor Create(object @object, out AccessorMembers members)
+		{
+			if (@object is Type type)
+				return Create(type, out members);
+			type = @object.GetType();
+
+			if (!AccessorCache.TryGetValue(type, out var accessor))
+				return Create(type, out members);
+			members = CreateWriteAccessorMembers(type);
+			return accessor;
+		}
+
+		public static ITypeWriteAccessor Create(object @object)
+		{
+			if (@object is Type type)
+				return Create(type);
+			type = @object.GetType();
+			return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, out _);
+		}
+
+		public static ITypeWriteAccessor Create(Type type, out AccessorMembers members)
+		{
+			if (!AccessorCache.TryGetValue(type, out var accessor))
+				return CreateImpl(type, out members);
+			members = CreateWriteAccessorMembers(type);
+			return accessor;
+		}
+
+		public static ITypeWriteAccessor Create(Type type)
+		{
+			return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, out _);
+		}
+
+		private static ITypeWriteAccessor CreateImpl(Type type, out AccessorMembers members)
+		{
+			lock (Sync)
+			{
+				var accessor = CreateWriteAccessor(type, out members);
+				AccessorCache[type] = accessor;
+				return accessor;
+			}
+		}
+
+		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members,
+			AccessorMemberScope scope = AccessorMemberScope.All)
         {
-            if (@object is Type type)
-                return Create(type);
-
-            type = @object.GetType();
-
-            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : CreateImpl(type);
-        }
-
-        public static ITypeWriteAccessor Create(Type type)
-        {
-            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : CreateImpl(type);
-        }
-
-        private static ITypeWriteAccessor CreateImpl(Type type)
-        {
-            lock (Sync)
-            {
-                var accessor = CreateWriteAccessor(type);
-                AccessorCache[type] = accessor;
-                return accessor;
-            }
-        }
-
-        private static ITypeWriteAccessor CreateWriteAccessor(Type type,
-            AccessorMemberScope scope = AccessorMemberScope.All)
-        {
-            var members =
-                AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
-
+            members = CreateWriteAccessorMembers(type, scope);
+			
             var tb = DynamicAssembly.Module.DefineType(
                 $"WriteAccessor_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
@@ -190,5 +207,10 @@ namespace TypeKitchen
             var typeInfo = tb.CreateTypeInfo();
             return (ITypeWriteAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
+
+		private static AccessorMembers CreateWriteAccessorMembers(Type type, AccessorMemberScope scope = AccessorMemberScope.All)
+		{
+			return AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
+		}
     }
 }
