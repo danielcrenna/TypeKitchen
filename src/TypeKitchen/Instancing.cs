@@ -75,6 +75,8 @@ namespace TypeKitchen
             return GetOrBuildActivator(typeof(T));
         }
 
+		private static readonly ParameterInfo[] EmptyParameters = new ParameterInfo[0];
+
         private static CreateInstance GetOrBuildActivator(Type type)
         {
             lock (Factory)
@@ -88,10 +90,18 @@ namespace TypeKitchen
                         return activator;
 
                     var ctor = type.GetConstructor(Type.EmptyTypes) ?? type.GetConstructors()
-                                   .OrderByDescending(x => x.GetParameters().Length).First();
+                                   .OrderByDescending(x => x.GetParameters().Length).FirstOrDefault();
 
-                    Factory.Add(type, activator = Activation.DynamicMethodWeakTyped(ctor));
-                    Parameters.Add(activator, ctor.GetParameters());
+                    if (ctor == null)
+                    {
+	                    Factory.Add(type, activator = args => Activator.CreateInstance(type));
+						Parameters.Add(activator, EmptyParameters);
+					}
+                    else
+                    {
+	                    Factory.Add(type, activator = Activation.DynamicMethodWeakTyped(ctor));
+	                    Parameters.Add(activator, ctor.GetParameters());
+					}
                 }
 
                 return activator;

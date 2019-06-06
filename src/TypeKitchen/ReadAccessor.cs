@@ -210,7 +210,7 @@ namespace TypeKitchen
             members = CreateAnonymousReadAccessorMembers(type);
 
             var tb = DynamicAssembly.Module.DefineType(
-                $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
+                $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.Name}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
                 TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
