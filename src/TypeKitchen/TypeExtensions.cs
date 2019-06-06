@@ -2,6 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Primitives;
 
@@ -137,5 +140,17 @@ namespace TypeKitchen
                    type == typeof(double?) ||
                    type == typeof(decimal?);
         }
-    }
+
+        public static bool HasAttribute<T>(this ICustomAttributeProvider provider, bool inherit = true)
+	        where T : Attribute
+        {
+	        return provider.IsDefined(typeof(T), inherit);
+        }
+
+        public static IEnumerable<T> GetAttributes<T>(this ICustomAttributeProvider provider, bool inherit = true)
+	        where T : Attribute
+        {
+	        return provider.GetCustomAttributes(typeof(T), inherit).OfType<T>();
+        }
+	}
 }
