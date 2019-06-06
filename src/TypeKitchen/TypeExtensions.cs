@@ -84,8 +84,7 @@ namespace TypeKitchen
 
         public static bool IsValueTypeOrNullableValueType(this Type type)
         {
-	        return type.IsPrimitiveOrNullablePrimitive() ||
-	               type.IsValueType() ||
+	        return type.IsValueType() ||
 	               type.IsNullableValueType();
         }
 
@@ -103,12 +102,17 @@ namespace TypeKitchen
         public static bool IsNullableValueType(this Type type)
         {
 			return type.IsNullablePrimitive() ||
-                   (Nullable.GetUnderlyingType(type) != null && type.IsEnum) ||
+                   IsNullableEnum(type) ||
 				   type == typeof(StringValues?) ||
                    type == typeof(DateTime?) ||
                    type == typeof(DateTimeOffset?) ||
                    type == typeof(TimeSpan?) ||
                    type == typeof(Guid?);
+        }
+
+        private static bool IsNullableEnum(Type type)
+        {
+	        return (type = Nullable.GetUnderlyingType(type)) != null && type.IsEnum;
         }
 
         public static bool IsPrimitiveOrNullablePrimitive(this Type type)
