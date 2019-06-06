@@ -102,7 +102,7 @@ namespace TypeKitchen
         public static bool IsNullableValueType(this Type type)
         {
 			return type.IsNullablePrimitive() ||
-                   IsNullableEnum(type) ||
+                   type.IsNullableEnum() ||
 				   type == typeof(StringValues?) ||
                    type == typeof(DateTime?) ||
                    type == typeof(DateTimeOffset?) ||
@@ -110,7 +110,7 @@ namespace TypeKitchen
                    type == typeof(Guid?);
         }
 
-        private static bool IsNullableEnum(Type type)
+        public static bool IsNullableEnum(this Type type)
         {
 	        return (type = Nullable.GetUnderlyingType(type)) != null && type.IsEnum;
         }
