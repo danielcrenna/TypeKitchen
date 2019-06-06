@@ -67,7 +67,7 @@ namespace TypeKitchen
             members = CreateReadAccessorMembers(type, scope);
 
             var tb = DynamicAssembly.Module.DefineType(
-                $"ReadAccessor_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
+                $"ReadAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
                 TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
@@ -104,10 +104,10 @@ namespace TypeKitchen
                 foreach (var member in members)
                 {
                     il.MarkLabel(branches[member]); // found:
-                    il.Ldarg_3(); //     value
-                    il.Ldarg_1(); //     target
-                    il.Castclass(type); //     ({Type}) target
-                    switch (member.MemberInfo) //     result = target.{member.Name}
+                    il.Ldarg_3();					//     value
+                    il.Ldarg_1();					//     target
+                    il.Castclass(type);				//     ({Type}) target
+                    switch (member.MemberInfo)		//     result = target.{member.Name}
                     {
                         case PropertyInfo property:
                             il.Callvirt(property.GetGetMethod(true));
@@ -118,18 +118,18 @@ namespace TypeKitchen
                     }
 
                     if (member.Type.IsValueType)
-                        il.Box(member.Type); //     (object) result
-                    il.Stind_Ref(); //     value = result
-                    il.Ldc_I4_1(); //     1
-                    il.Ret(); //     return 1  (true)
+                        il.Box(member.Type);	//     (object) result
+                    il.Stind_Ref();				//     value = result
+                    il.Ldc_I4_1();				//     1
+                    il.Ret();					//     return 1  (true)
                 }
 
                 il.MarkLabel(fail);
-                il.Ldarg_3(); //     value
-                il.Ldnull(); //     null
-                il.Stind_Ref(); //     value = null
-                il.Ldc_I4_0(); //     0
-                il.Ret(); //     return 0 (false)
+                il.Ldarg_3();		//     value
+                il.Ldnull();		//     null
+                il.Stind_Ref();		//     value = null
+                il.Ldc_I4_0();		//     0
+                il.Ret();			//     return 0 (false)
 
                 tb.DefineMethodOverride(tryGetValue, typeof(ITypeReadAccessor).GetMethod("TryGetValue"));
             }
@@ -147,7 +147,7 @@ namespace TypeKitchen
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
                     branches.Add(member, il.DefineLabel());
-
+				
                 foreach (var member in members)
                 {
                     il.Ldarg_2(); // key
@@ -157,10 +157,10 @@ namespace TypeKitchen
                 foreach (var member in members)
                 {
                     il.MarkLabel(branches[member]);
-                    il.Ldarg_1(); // target
-                    il.Castclass(type); // ({Type}) target
+                    il.Ldarg_1();						// target
+                    il.Castclass(type);					// ({Type}) target
 
-                    switch (member.MemberInfo) // result = target.Foo
+                    switch (member.MemberInfo)			// result = target.Foo
                     {
                         case PropertyInfo property:
                             il.Callvirt(property.GetGetMethod(true));
@@ -171,8 +171,8 @@ namespace TypeKitchen
                     }
 
                     if (member.Type.IsValueType)
-                        il.Box(member.Type); // (object) result
-                    il.Ret(); // return result;
+                        il.Box(member.Type);			// (object) result
+                    il.Ret();							// return result;
                 }
 
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
@@ -210,7 +210,7 @@ namespace TypeKitchen
             members = CreateAnonymousReadAccessorMembers(type);
 
             var tb = DynamicAssembly.Module.DefineType(
-                $"ReadAccessor_Anonymous_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
+                $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
                 TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
                 TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
