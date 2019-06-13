@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -28,13 +29,13 @@ namespace TypeKitchen
             Loader = new InteractiveAssemblyLoader();
 
             DefaultOptions = ScriptOptions.Default
-                    .Add<Guid>() // System
-                    .Add<List<object>>() // System.Collections.Generic
-                    .Add<Regex>() // System.Text
-                    .Add<FileInfo>() // System.IO
-                    .Add<IQueryable>() // System.Linq;
-                    .Add<DynamicObject>() // System.Dynamic
-                    .Add<CSharpArgumentInfo>() // Microsoft.CSharp.RuntimeBinder
+                    .Add<Guid>()					// System
+                    .Add<List<object>>()			// System.Collections.Generic
+                    .Add<Regex>()					// System.Text
+                    .Add<FileInfo>()				// System.IO
+                    .Add<IQueryable>()				// System.Linq;
+                    .Add<DynamicObject>()			// System.Dynamic
+                    .Add<CSharpArgumentInfo>()	    // Microsoft.CSharp.RuntimeBinder
                 ;
         }
 
@@ -63,9 +64,16 @@ namespace TypeKitchen
                 using (var pdb = new MemoryStream())
                 {
                     var result = compilation.Emit(pe, pdb);
+                    if (!result.Success)
+                    {
+	                    foreach (var diagnostic in result.Diagnostics)
+	                    {
+							Trace.TraceError($"Error or warning during snippet compilation: {diagnostic.GetMessage()}");
+	                    }
+	                    return null;
+                    }
 
                     pe.Seek(0, SeekOrigin.Begin);
-
                     var assembly = AssemblyLoadContext.Default.LoadFromStream(pe, pdb);
                     var types = assembly.GetTypes();
                     var method = types[0].GetMethods()[1];
@@ -74,8 +82,6 @@ namespace TypeKitchen
             }
         }
 
-        private static class ContextFree
-        {
-        }
+        private static class ContextFree { }
     }
 }
