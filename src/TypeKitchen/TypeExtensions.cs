@@ -17,7 +17,14 @@ namespace TypeKitchen
             return type.Namespace == null && Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute));
         }
 
-        public static string GetPreferredTypeName(this Type type)
+        public static ConstructorInfo GetWidestConstructor(this Type implementationType)
+        {
+	        var allPublic = implementationType.GetConstructors();
+	        var constructor = allPublic.OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
+	        return constructor ?? implementationType.GetConstructor(Type.EmptyTypes);
+        }
+
+		public static string GetPreferredTypeName(this Type type)
         {
             string typeName;
 
