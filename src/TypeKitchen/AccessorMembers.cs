@@ -103,7 +103,7 @@ namespace TypeKitchen
         public static AccessorMembers Create(Type type, AccessorMemberScope scope = AccessorMemberScope.All,
             AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
         {
-            var cacheKey = new AccessorMembersKey(type, scope, memberTypes);
+            var cacheKey = new AccessorMembersKey(type, memberTypes, scope);
             if (!Cache.TryGetValue(cacheKey, out var members))
                 Cache.TryAdd(cacheKey, members = new AccessorMembers(type, scope, memberTypes));
             return members;

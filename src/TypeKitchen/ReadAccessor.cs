@@ -9,62 +9,109 @@ using TypeKitchen.Internal;
 
 namespace TypeKitchen
 {
-    public sealed class ReadAccessor
+	public sealed class ReadAccessor
     {
         private static readonly object Sync = new object();
 
-        private static readonly Dictionary<Type, ITypeReadAccessor> AccessorCache =
-            new Dictionary<Type, ITypeReadAccessor>();
+        private static readonly Dictionary<AccessorMembersKey, ITypeReadAccessor> AccessorCache =
+            new Dictionary<AccessorMembersKey, ITypeReadAccessor>();
 
         public static ITypeReadAccessor Create(object @object, out AccessorMembers members)
+        {
+	        return Create(@object, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.All,
+		        out members);
+        }
+
+        public static ITypeReadAccessor Create(object @object, AccessorMemberTypes types, out AccessorMembers members)
+        {
+	        return Create(@object, types, AccessorMemberScope.All,
+		        out members);
+        }
+
+        public static ITypeReadAccessor Create(object @object, AccessorMemberScope scope, out AccessorMembers members)
+        {
+	        return Create(@object, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, scope,
+		        out members);
+        }
+
+		public static ITypeReadAccessor Create(object @object, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
         {
             if (@object is Type type)
                 return Create(type, out members);
             type = @object.GetType();
 
-            if (!AccessorCache.TryGetValue(type, out var accessor))
-                return Create(type, @object, out members);
-            members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type);
+            var key = new AccessorMembersKey(type, types, scope);
+			if (!AccessorCache.TryGetValue(key, out var accessor))
+                return Create(type, @object, types, scope, out members);
+            members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type, types, scope);
             return accessor;
         }
 
-        public static ITypeReadAccessor Create(object @object)
+        public static ITypeReadAccessor Create(object @object, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
         {
             if (@object is Type type)
-                return Create(type);
-            type = @object.GetType();
-            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, @object, out _);
+                return Create(type, types, scope);
+			type = @object.GetType();
+			var key = new AccessorMembersKey(type, types, scope);
+			return AccessorCache.TryGetValue(key, out var accessor) ? accessor : Create(type, @object, types, scope, out _);
         }
 
-        public static ITypeReadAccessor Create(Type type, out AccessorMembers members)
+        public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types, out AccessorMembers members)
         {
-            if (!AccessorCache.TryGetValue(type, out var accessor))
-                return Create(type, null, out members);
-            members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type);
-            return accessor;
-        }
+			return Create(type, types, AccessorMemberScope.All, out members);
+		}
 
-        public static ITypeReadAccessor Create(Type type)
+        public static ITypeReadAccessor Create(Type type, AccessorMemberScope scope, out AccessorMembers members)
         {
-            return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, null, out _);
-        }
+			return Create(type, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, scope,
+				out members);
+		}
 
-        private static ITypeReadAccessor Create(Type type, object @object, out AccessorMembers members)
+		public static ITypeReadAccessor Create(Type type, out AccessorMembers members)
+		{
+			return Create(type, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.All,
+				out members);
+		}
+
+		public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
+		{
+			var key = new AccessorMembersKey(type, types, scope);
+			if (!AccessorCache.TryGetValue(key, out var accessor))
+				return Create(type, null, types, scope, out members);
+			members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type, types, scope);
+			return accessor;
+		}
+		
+		public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
+		{
+			var key = new AccessorMembersKey(type, types, scope);
+			return AccessorCache.TryGetValue(key, out var accessor) ? accessor : Create(type, null, types, scope, out _);
+		}
+
+        private static ITypeReadAccessor Create(Type type, object @object, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
         {
             lock (Sync)
             {
-                var accessor = type.IsAnonymous()
+	            var anonymous = type.IsAnonymous();
+
+	            var key = anonymous
+		            ? new AccessorMembersKey(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public)
+		            : new AccessorMembersKey(type, types, scope);
+
+	            var accessor = anonymous
                     ? CreateAnonymousReadAccessor(type, out members, @object)
-                    : CreateReadAccessor(type, out members);
-                AccessorCache[type] = accessor;
+                    : CreateReadAccessor(type, out members, types, scope);
+
+                AccessorCache[key] = accessor;
                 return accessor;
             }
         }
 
         private static ITypeReadAccessor CreateReadAccessor(Type type, out AccessorMembers members,
-            AccessorMemberScope scope = AccessorMemberScope.All)
+	        AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
+			AccessorMemberScope scope = AccessorMemberScope.All)
         {
-            members = CreateReadAccessorMembers(type, scope);
+            members = CreateReadAccessorMembers(type, types, scope);
 
             var tb = DynamicAssembly.Module.DefineType(
                 $"ReadAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
@@ -189,10 +236,9 @@ namespace TypeKitchen
             return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
 
-        private static AccessorMembers CreateReadAccessorMembers(Type type,
-            AccessorMemberScope scope = AccessorMemberScope.All)
+        private static AccessorMembers CreateReadAccessorMembers(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
         {
-            return AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
+            return AccessorMembers.Create(type, scope, types);
         }
 
         private static AccessorMembers CreateAnonymousReadAccessorMembers(Type type)
@@ -285,22 +331,22 @@ namespace TypeKitchen
                 {
                     var fb = staticFieldsByMember[member];
 
-                    il.MarkLabel(branches[member]); // found:
-                    il.Ldarg_3(); //     value
-                    il.Ldsfld(fb); //     _GetFoo
-                    il.Ldarg_1(); //     target
-                    il.Call(fb.FieldType.GetMethod("Invoke")); //     result = _GetFoo.Invoke(target)
-                    il.Stind_Ref(); //     value = result
-                    il.Ldc_I4_1(); //     1
-                    il.Ret(); //     return 1 (true)
+                    il.MarkLabel(branches[member]);				// found:
+                    il.Ldarg_3();								//     value
+                    il.Ldsfld(fb);								//     _GetFoo
+                    il.Ldarg_1();								//     target
+                    il.Call(fb.FieldType.GetMethod("Invoke"));	//     result = _GetFoo.Invoke(target)
+                    il.Stind_Ref();								//     value = result
+                    il.Ldc_I4_1();								//     1
+                    il.Ret();									//     return 1 (true)
                 }
 
                 il.MarkLabel(fail);
-                il.Ldarg_3(); //     value
-                il.Ldnull(); //     null
-                il.Stind_Ref(); //     value = null
-                il.Ldc_I4_0(); //     0
-                il.Ret(); //     return 0 (false)
+                il.Ldarg_3();		//     value
+                il.Ldnull();		//     null
+                il.Stind_Ref();		//     value = null
+                il.Ldc_I4_0();		//     0
+                il.Ret();			//     return 0 (false)
 
                 tb.DefineMethodOverride(tryGetValue,
                     typeof(ITypeReadAccessor).GetMethod(nameof(ITypeReadAccessor.TryGetValue)));
@@ -330,11 +376,11 @@ namespace TypeKitchen
                 {
                     var fb = staticFieldsByMember[member];
 
-                    il.MarkLabel(branches[member]); // found:
-                    il.Ldsfld(fb); // _GetFoo
-                    il.Ldarg_1(); // target
-                    il.Call(fb.FieldType.GetMethod("Invoke")); //     result = _GetFoo.Invoke(target)
-                    il.Ret(); // return result;
+                    il.MarkLabel(branches[member]);				// found:
+                    il.Ldsfld(fb);								// _GetFoo
+                    il.Ldarg_1();								// target
+                    il.Call(fb.FieldType.GetMethod("Invoke"));	//     result = _GetFoo.Invoke(target)
+                    il.Ret();									// return result;
                 }
 
                 il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
@@ -386,15 +432,15 @@ namespace TypeKitchen
             var accessor = (ITypeReadAccessor) Activator.CreateInstance(typeInfo, false);
 
             if (debugObject != null)
-                foreach (var member in members)
-                {
-                    var byAccessor = accessor[debugObject, member.Name];
-                    var byReflection =
-                        ((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(
-                            debugObject);
-                    if (!byAccessor.Equals(byReflection))
-                        throw new InvalidOperationException("IL produced incorrect accessor");
-                }
+            {
+	            foreach (var member in members)
+	            {
+		            var byAccessor = accessor[debugObject, member.Name];
+		            var byReflection = ((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(debugObject);
+		            if (!byAccessor.Equals(byReflection))
+			            throw new InvalidOperationException("IL produced incorrect accessor");
+	            }
+            }
 
             return accessor;
         }

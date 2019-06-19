@@ -11,7 +11,7 @@ namespace TypeKitchen
         public AccessorMemberScope Scope { get; }
         public AccessorMemberTypes Types { get; }
 
-        public AccessorMembersKey(Type type, AccessorMemberScope scope, AccessorMemberTypes types)
+        public AccessorMembersKey(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
         {
             Type = type;
             Scope = scope;
