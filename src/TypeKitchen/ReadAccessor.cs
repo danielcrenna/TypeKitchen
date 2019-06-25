@@ -52,9 +52,7 @@ namespace TypeKitchen
             if (@object is Type type)
                 return Create(type, types, scope);
 			type = @object.GetType();
-			var key = type.IsAnonymous()
-				? new AccessorMembersKey(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public)
-				: new AccessorMembersKey(type, types, scope);
+			var key = KeyForType(type, types, scope);
 			return AccessorCache.TryGetValue(key, out var accessor) ? accessor : Create(type, @object, types, scope, out _);
         }
 
@@ -86,21 +84,20 @@ namespace TypeKitchen
 		
 		public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
 		{
-			var key = new AccessorMembersKey(type, types, scope);
+			var key = KeyForType(type, types, scope);
 			return AccessorCache.TryGetValue(key, out var accessor) ? accessor : Create(type, null, types, scope, out _);
 		}
 
-        private static ITypeReadAccessor Create(Type type, object @object, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
+		
+		private static ITypeReadAccessor Create(Type type, object @object, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
         {
             lock (Sync)
             {
 	            var anonymous = type.IsAnonymous();
 
-	            var key = anonymous
-		            ? new AccessorMembersKey(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public)
-		            : new AccessorMembersKey(type, types, scope);
+				var key = KeyForType(type, types, scope);
 
-	            var accessor = anonymous
+				var accessor = anonymous
                     ? CreateAnonymousReadAccessor(type, out members, @object)
                     : CreateReadAccessor(type, out members, types, scope);
 
@@ -109,7 +106,16 @@ namespace TypeKitchen
             }
         }
 
-        private static ITypeReadAccessor CreateReadAccessor(Type type, out AccessorMembers members,
+		private static AccessorMembersKey KeyForType(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
+		{
+			var key = type.IsAnonymous()
+				? new AccessorMembersKey(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public)
+				: new AccessorMembersKey(type, types, scope);
+			return key;
+		}
+
+
+		private static ITypeReadAccessor CreateReadAccessor(Type type, out AccessorMembers members,
 	        AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
 			AccessorMemberScope scope = AccessorMemberScope.All)
         {
