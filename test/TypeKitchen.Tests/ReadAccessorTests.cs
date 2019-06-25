@@ -86,7 +86,7 @@ namespace TypeKitchen.Tests
 		public void GetTests_AnonymousType()
 		{
 			var target = GetOutOfMethodTarget();
-			var accessor = ReadAccessor.Create(target.GetType());
+			var accessor = ReadAccessor.Create(target);
 			var foo = accessor[target, "Foo"];
 			var bar = accessor[target, "Bar"];
 			Assert.Equal("Bar", foo);
@@ -96,7 +96,7 @@ namespace TypeKitchen.Tests
 			Assert.Equal("Baz", value);
 
 			target = new {Foo = "Fizz", Bar = "Buzz"};
-			var other = ReadAccessor.Create(target.GetType());
+			var other = ReadAccessor.Create(target);
 			Assert.Equal(accessor, other);
 			accessor = other;
 
