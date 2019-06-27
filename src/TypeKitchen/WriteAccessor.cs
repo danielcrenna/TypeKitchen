@@ -106,12 +106,18 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
+					if (!member.CanWrite)
+						continue;
+
 					il.Ldarg_2();											// key
                     il.GotoIfStringEquals(member.Name, branches[member]);	// if (key == "Foo") goto found;
 				}
 
 				foreach (var member in members)
-                {
+				{
+					if (!member.CanWrite)
+						continue;
+
                     il.MarkLabel(branches[member]);				 // found:
                     il.Ldarg_1();								 //     target
                     il.Castclass(type);							 //     ({Type}) target
@@ -156,7 +162,10 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.Ldarg_2();			// key
+	                if (!member.CanWrite)
+		                continue;
+
+					il.Ldarg_2();			// key
                     il.Ldstr(member.Name);	// "Foo"
                     il.Call(KnownMethods.StringEquals);
                     il.Brtrue(branches[member]);
@@ -164,7 +173,10 @@ namespace TypeKitchen
 
                 foreach (var member in members)
                 {
-                    il.MarkLabel(branches[member]); // found:
+	                if (!member.CanWrite)
+		                continue;
+
+					il.MarkLabel(branches[member]); // found:
                     il.Ldarg_1();					//     target
                     il.Castclass(type);				//     ({Type}) target
                     il.Ldarg_3();					//     value
