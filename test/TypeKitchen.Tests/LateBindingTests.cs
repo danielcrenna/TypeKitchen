@@ -81,7 +81,7 @@ namespace TypeKitchen.Tests
 		private static void CanReadPropertyAndField(LateBindingStrategy strategy, AccessorMemberScope scope,
 			AccessorMemberTypes types)
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var map = BindGet(strategy, target, scope, types);
 
 			Assert.Equal("Bar", map["Foo"](target));
@@ -91,7 +91,7 @@ namespace TypeKitchen.Tests
 		private static void CanWritePropertyAndField(LateBindingStrategy strategy, AccessorMemberScope scope,
 			AccessorMemberTypes types)
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 
 			var getMap = BindGet(strategy, target, scope, types);
 			var setMap = BindSet(strategy, target, scope, types);
@@ -123,7 +123,7 @@ namespace TypeKitchen.Tests
 					map = LateBinding.MethodInvokeBindGet(members);
 					break;
 				case LateBindingStrategy.OpenDelegate:
-					map = LateBinding.OpenDelegateBindGet<OnePropertyOneField>(members);
+					map = LateBinding.OpenDelegateBindGet<OnePropertyOneFieldStrings>(members);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null);
@@ -152,7 +152,7 @@ namespace TypeKitchen.Tests
 					map = LateBinding.MethodInvokeBindSet(members);
 					break;
 				case LateBindingStrategy.OpenDelegate:
-					map = LateBinding.OpenDelegateBindSet<OnePropertyOneField>(members);
+					map = LateBinding.OpenDelegateBindSet<OnePropertyOneFieldStrings>(members);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null);
@@ -181,7 +181,7 @@ namespace TypeKitchen.Tests
 				//    map = LateBinding.MethodInvokeBindGet(members);
 				//    break;
 				//case LateBindingStrategy.OpenDelegate:
-				//    map = LateBinding.OpenDelegateBindGet<OnePropertyOneField>(members);
+				//    map = LateBinding.OpenDelegateBindGet<OnePropertyOneFieldStrings>(members);
 				//    break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null);

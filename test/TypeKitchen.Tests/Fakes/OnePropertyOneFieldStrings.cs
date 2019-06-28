@@ -3,7 +3,7 @@
 
 namespace TypeKitchen.Tests.Fakes
 {
-	public class OnePropertyOneField
+	public class OnePropertyOneFieldStrings
 	{
 		public string Bar;
 		public string Foo { get; set; }

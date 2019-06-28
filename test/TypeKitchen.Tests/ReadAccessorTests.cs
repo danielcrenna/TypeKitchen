@@ -195,7 +195,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void GetTests_DictionaryWrapper()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var accessor = ReadAccessor.Create(target.GetType());
 			var dict = accessor.AsReadOnlyDictionary(target);
 			Assert.Equal("Bar", dict["Foo"]);
@@ -205,7 +205,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void GetTests_PropertiesAndFields()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var accessor = ReadAccessor.Create(target.GetType());
 			var foo = accessor[target, "Foo"];
 			var bar = accessor[target, "Bar"];
@@ -215,7 +215,7 @@ namespace TypeKitchen.Tests
 			Assert.True(accessor.TryGetValue(target, "Bar", out var value));
 			Assert.Equal("Baz", value);
 
-			target = new OnePropertyOneField {Foo = "Fizz", Bar = "Buzz"};
+			target = new OnePropertyOneFieldStrings {Foo = "Fizz", Bar = "Buzz"};
 			var other = ReadAccessor.Create(target.GetType());
 			Assert.Equal(accessor, other);
 			accessor = other;
@@ -228,7 +228,7 @@ namespace TypeKitchen.Tests
 			Assert.True(accessor.TryGetValue(target, "Bar", out value));
 			Assert.Equal("Buzz", value);
 
-			Assert.Equal(typeof(OnePropertyOneField), accessor.Type);
+			Assert.Equal(typeof(OnePropertyOneFieldStrings), accessor.Type);
 		}
 	}
 }

@@ -102,7 +102,11 @@ namespace TypeKitchen
 
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
-                    branches.Add(member, il.DefineLabel());
+                {
+	                if (!member.CanWrite)
+		                continue;
+					branches.Add(member, il.DefineLabel());
+                }
 
 				foreach (var member in members)
 				{
@@ -118,23 +122,30 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-                    il.MarkLabel(branches[member]);				 // found:
-                    il.Ldarg_1();								 //     target
-                    il.Castclass(type);							 //     ({Type}) target
-                    il.Ldarg_3();								 //     value
-                    switch (member.MemberInfo)					 //     result = target.{member.Name}
+                    il.MarkLabel(branches[member]);				// found:
+                    il.Ldarg_1();								//     target
+                    il.Castclass(type);							//     ({Type}) target
+                    il.Ldarg_3();								//     value
+
+                    switch (member.MemberInfo)					//     result = target.{member.Name}
                     {
                         case PropertyInfo property:
-                            il.Castclass(property.PropertyType); 
-                            il.Callvirt(property.GetSetMethod(true));
+	                        if (!property.PropertyType.IsValueType)
+		                        il.Castclass(property.PropertyType);
+	                        else
+		                        il.Unbox_Any(property.PropertyType);
+							il.Callvirt(property.GetSetMethod(true));
                             break;
                         case FieldInfo field:
-                            il.Castclass(field.FieldType);
-                            il.Stfld(field);
+	                        if (!field.FieldType.IsValueType)
+		                        il.Castclass(field.FieldType);
+	                        else
+		                        il.Unbox_Any(field.FieldType);
+							il.Stfld(field);
                             break;
                     }
-					il.Ldc_I4_1();					//     1
-                    il.Ret();						//     return 1  (true)
+					il.Ldc_I4_1();								//     1
+                    il.Ret();									//     return 1  (true)
                 }
 
 				il.Ldnull();	//     null
@@ -158,20 +169,22 @@ namespace TypeKitchen
 
                 var branches = new Dictionary<AccessorMember, Label>();
                 foreach (var member in members)
-                    branches.Add(member, il.DefineLabel());
+                {
+	                if (!member.CanWrite)
+		                continue;
+	                branches.Add(member, il.DefineLabel());
+                }
 
-                foreach (var member in members)
+				foreach (var member in members)
                 {
 	                if (!member.CanWrite)
 		                continue;
 
-					il.Ldarg_2();			// key
-                    il.Ldstr(member.Name);	// "Foo"
-                    il.Call(KnownMethods.StringEquals);
-                    il.Brtrue(branches[member]);
-                }
-
-                foreach (var member in members)
+					il.Ldarg_2();											// key
+					il.GotoIfStringEquals(member.Name, branches[member]);	// if (key == "Foo") goto found;
+				}
+				
+				foreach (var member in members)
                 {
 	                if (!member.CanWrite)
 		                continue;
@@ -184,22 +197,26 @@ namespace TypeKitchen
                     switch (member.MemberInfo)		//     result = target.{member.Name}
                     {
                         case PropertyInfo property:
-                            il.Castclass(property.PropertyType);
+							if(!property.PropertyType.IsValueType)
+								il.Castclass(property.PropertyType);
+							else
+								il.Unbox_Any(property.PropertyType);
                             il.Callvirt(property.GetSetMethod(true));
                             break;
                         case FieldInfo field:
-                            il.Castclass(field.FieldType);
-                            il.Stfld(field);
+							if (!field.FieldType.IsValueType)
+								il.Castclass(field.FieldType);
+							else
+								il.Unbox_Any(field.FieldType);
+							il.Stfld(field);
                             break;
                     }
                     il.Ret();						// return result;
                 }
 
-                il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes))
-                  .Throw();
+				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes)).Throw();
 
-                var item = tb.DefineProperty("Item", PropertyAttributes.SpecialName, typeof(object),
-                    new[] {typeof(string)});
+                var item = tb.DefineProperty("Item", PropertyAttributes.SpecialName, typeof(object), new[] {typeof(string)});
                 item.SetSetMethod(setItem);
 
                 tb.DefineMethodOverride(setItem, typeof(ITypeWriteAccessor).GetMethod("set_Item"));

@@ -19,10 +19,10 @@ namespace TypeKitchen.Tests.Fakes
 			switch (key)
 			{
 				case "Foo":
-					value = ((OnePropertyOneField) target).Foo;
+					value = ((OnePropertyOneFieldStrings) target).Foo;
 					return true;
 				case "Bar":
-					value = ((OnePropertyOneField) target).Bar;
+					value = ((OnePropertyOneFieldStrings) target).Bar;
 					return true;
 				default:
 					value = null;
@@ -30,7 +30,7 @@ namespace TypeKitchen.Tests.Fakes
 			}
 		}
 
-		public Type Type => typeof(OnePropertyOneField);
+		public Type Type => typeof(OnePropertyOneFieldStrings);
 
 		public object this[object target, string key]
 		{
@@ -39,9 +39,9 @@ namespace TypeKitchen.Tests.Fakes
 				switch (key)
 				{
 					case "Foo":
-						return ((OnePropertyOneField) target).Foo;
+						return ((OnePropertyOneFieldStrings) target).Foo;
 					case "Bar":
-						return ((OnePropertyOneField) target).Bar;
+						return ((OnePropertyOneFieldStrings) target).Bar;
 					default:
 						throw new ArgumentNullException();
 				}

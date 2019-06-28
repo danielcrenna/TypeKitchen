@@ -13,17 +13,17 @@ namespace TypeKitchen.Tests.Fakes
 		{
 		}
 
-		public Type Type => typeof(OnePropertyOneField);
+		public Type Type => typeof(OnePropertyOneFieldStrings);
 
 		public bool TrySetValue(object target, string key, object value)
 		{
 			switch (key)
 			{
 				case "Foo":
-					((OnePropertyOneField) target).Foo = (string) value;
+					((OnePropertyOneFieldStrings) target).Foo = (string) value;
 					return true;
 				case "Bar":
-					((OnePropertyOneField) target).Bar = (string) value;
+					((OnePropertyOneFieldStrings) target).Bar = (string) value;
 					return true;
 				default:
 					return false;
@@ -37,10 +37,10 @@ namespace TypeKitchen.Tests.Fakes
 				switch (key)
 				{
 					case "Foo":
-						((OnePropertyOneField) target).Foo = (string) value;
+						((OnePropertyOneFieldStrings) target).Foo = (string) value;
 						return;
 					case "Bar":
-						((OnePropertyOneField) target).Bar = (string) value;
+						((OnePropertyOneFieldStrings) target).Bar = (string) value;
 						return;
 					default:
 						throw new ArgumentNullException();
