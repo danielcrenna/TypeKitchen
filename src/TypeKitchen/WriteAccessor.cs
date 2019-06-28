@@ -185,7 +185,7 @@ namespace TypeKitchen
                     {
                         case PropertyInfo property:
                             il.Castclass(property.PropertyType);
-                            il.Callvirt(property.GetSetMethod());
+                            il.Callvirt(property.GetSetMethod(true));
                             break;
                         case FieldInfo field:
                             il.Castclass(field.FieldType);
