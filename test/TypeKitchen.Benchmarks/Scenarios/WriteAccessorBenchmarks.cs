@@ -20,14 +20,14 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[GlobalSetup]
 		public void GlobalSetup()
 		{
-			_fastMember = TypeAccessor.Create(typeof(OnePropertyOneField));
-			_typeKitchen = WriteAccessor.Create(typeof(OnePropertyOneField));
+			_fastMember = TypeAccessor.Create(typeof(OnePropertyOneFieldStrings));
+			_typeKitchen = WriteAccessor.Create(typeof(OnePropertyOneFieldStrings));
 		}
 
 		[Benchmark(Baseline = false)]
 		public void FastMember_TypeAccessor_Singleton()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			_fastMember[target, "Foo"] = "Fizz";
 			_fastMember[target, "Bar"] = "Buzz";
 		}
@@ -35,7 +35,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void TypeKitchen_WriteAccessor_Singleton()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			_typeKitchen[target, "Foo"] = "Fizz";
 			_typeKitchen[target, "Bar"] = "Buzz";
 		}
@@ -43,7 +43,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void FastMember_TypeAccessor_Create()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var accessor = TypeAccessor.Create(target.GetType());
 			accessor[target, "Foo"] = "Fizz";
 			accessor[target, "Bar"] = "Buzz";
@@ -52,7 +52,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void TypeKitchen_WriteAccessor_Create()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var accessor = WriteAccessor.Create(target.GetType());
 			accessor[target, "Foo"] = "Fizz";
 			accessor[target, "Bar"] = "Buzz";
@@ -61,7 +61,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = true)]
 		public void Contrived_Direct_Access()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var bar = DirectWriteAccessor.Instance[target, "Foo"] = "Fizz";
 			var baz = DirectWriteAccessor.Instance[target, "Bar"] = "Buzz";
 		}

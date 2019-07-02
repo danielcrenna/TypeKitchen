@@ -20,14 +20,14 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[GlobalSetup]
 		public void GlobalSetup()
 		{
-			_fastMember = TypeAccessor.Create(typeof(OnePropertyOneField));
-			_typeKitchen = ReadAccessor.Create(typeof(OnePropertyOneField));
+			_fastMember = TypeAccessor.Create(typeof(OnePropertyOneFieldStrings));
+			_typeKitchen = ReadAccessor.Create(typeof(OnePropertyOneFieldStrings));
 		}
 
 		[Benchmark(Baseline = false)]
 		public void FastMember_TypeAccessor_Singleton()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var bar = _fastMember[target, "Foo"];
 			var baz = _fastMember[target, "Bar"];
 		}
@@ -35,7 +35,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void TypeKitchen_ReadAccessor_Singleton()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var bar = _typeKitchen[target, "Foo"];
 			var baz = _typeKitchen[target, "Bar"];
 		}
@@ -43,7 +43,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void FastMember_TypeAccessor_Create()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var accessor = TypeAccessor.Create(target.GetType());
 			var bar = accessor[target, "Foo"];
 			var baz = accessor[target, "Bar"];
@@ -52,7 +52,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void TypeKitchen_ReadAccessor_Create()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var accessor = ReadAccessor.Create(target.GetType());
 			var bar = accessor[target, "Foo"];
 			var baz = accessor[target, "Bar"];
@@ -61,7 +61,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = true)]
 		public void Contrived_Direct_Access()
 		{
-			var target = new OnePropertyOneField {Foo = "Bar", Bar = "Baz"};
+			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 			var bar = DirectReadAccessorForOnePropertyOneField.Instance[target, "Foo"];
 			var baz = DirectReadAccessorForOnePropertyOneField.Instance[target, "Bar"];
 		}
