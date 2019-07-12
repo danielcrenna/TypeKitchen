@@ -39,21 +39,15 @@ namespace TypeKitchen
             if (@object is Type type)
                 return Create(type, out members);
             type = @object.GetType();
-
-            var key = new AccessorMembersKey(type, types, scope);
-			if (!AccessorCache.TryGetValue(key, out var accessor))
-                return Create(type, @object, types, scope, out members);
-            members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type, types, scope);
-            return accessor;
-        }
+			return Create(type, @object, types, scope, out members);
+		}
 
         public static ITypeReadAccessor Create(object @object, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
         {
             if (@object is Type type)
                 return Create(type, types, scope);
 			type = @object.GetType();
-			var key = KeyForType(type, types, scope);
-			return AccessorCache.TryGetValue(key, out var accessor) ? accessor : Create(type, @object, types, scope, out _);
+			return Create(type, @object, types, scope, out _);
         }
 
         public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types, out AccessorMembers members)
@@ -75,29 +69,31 @@ namespace TypeKitchen
 
 		public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
 		{
-			var key = new AccessorMembersKey(type, types, scope);
-			if (!AccessorCache.TryGetValue(key, out var accessor))
-				return Create(type, null, types, scope, out members);
-			members = type.IsAnonymous() ? CreateAnonymousReadAccessorMembers(type) : CreateReadAccessorMembers(type, types, scope);
-			return accessor;
+			return Create(type, null, types, scope, out members);
 		}
 		
 		public static ITypeReadAccessor Create(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
 		{
-			var key = KeyForType(type, types, scope);
-			return AccessorCache.TryGetValue(key, out var accessor) ? accessor : Create(type, null, types, scope, out _);
+			return Create(type, null, types, scope, out _);
 		}
-
 		
 		private static ITypeReadAccessor Create(Type type, object @object, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
         {
             lock (Sync)
             {
-	            var anonymous = type.IsAnonymous();
+	            var key = KeyForType(type, types, scope);
 
-				var key = KeyForType(type, types, scope);
+	            if (AccessorCache.TryGetValue(key, out var accessor))
+	            {
+		            members = type.IsAnonymous()
+			            ? CreateAnonymousReadAccessorMembers(type)
+			            : CreateReadAccessorMembers(type, types, scope);
+					return accessor;
+	            }
 
-				var accessor = anonymous
+				var anonymous = type.IsAnonymous();
+				
+				accessor = anonymous
                     ? CreateAnonymousReadAccessor(type, out members, @object)
                     : CreateReadAccessor(type, out members, types, scope);
 
@@ -114,20 +110,33 @@ namespace TypeKitchen
 			return key;
 		}
 
-
 		private static ITypeReadAccessor CreateReadAccessor(Type type, out AccessorMembers members,
 	        AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
 			AccessorMemberScope scope = AccessorMemberScope.All)
         {
             members = CreateReadAccessorMembers(type, types, scope);
 
-            var tb = DynamicAssembly.Module.DefineType(
-                $"ReadAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
-                TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
-                TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
-            tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
+			var typeName = CreateNameForType(type);
 
-            //
+			TypeBuilder tb;
+			try
+			{
+				tb = DynamicAssembly.Module.DefineType(
+					typeName,
+					TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
+					TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+
+				tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
+			}
+			catch (ArgumentException e)
+			{
+				if (e.Message == "Duplicate type name within an assembly.")
+					throw new ArgumentException($"Duplicate type name within an assembly: {typeName}", nameof(typeName),
+						e);
+				throw;
+			}
+
+			//
             // Type Type =>:
             //
             tb.MemberProperty(nameof(ITypeReadAccessor.Type), type,
@@ -244,7 +253,14 @@ namespace TypeKitchen
             return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
         }
 
-        private static AccessorMembers CreateReadAccessorMembers(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
+		private static string CreateNameForType(Type type)
+		{
+			return type.IsAnonymous()
+				? $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}"
+				: $"ReadAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}";
+		}
+
+		private static AccessorMembers CreateReadAccessorMembers(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
         {
             return AccessorMembers.Create(type, scope, types);
         }
@@ -263,9 +279,7 @@ namespace TypeKitchen
         {
             members = CreateAnonymousReadAccessorMembers(type);
 
-            var typeName = $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}";
-
-            var tb = DynamicAssembly.Module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+            var tb = DynamicAssembly.Module.DefineType(CreateNameForType(type), TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
             tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
 
             //

@@ -28,12 +28,46 @@ namespace TypeKitchen
 
 		public ReflectionTypeResolver() : this(AppDomain.CurrentDomain.GetAssemblies()) { }
 
-		public Type FindByFullName(string typeName) => _loadedTypes.Value.SingleOrDefault(t => t.FullName != null && t.FullName.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+		public Type FindByFullName(string typeName)
+		{
+			foreach (var type in _loadedTypes.Value)
+			{
+				if (type.FullName != null && type.FullName.Equals(typeName, StringComparison.OrdinalIgnoreCase))
+					return type;
+			}
 
-		public Type FindFirstByName(string name) => _loadedTypes.Value.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+			return null;
+		}
 
-		public Type FindFirstByMethodName(string methodName) => _loadedMethods.Value.FirstOrDefault(m => m.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase))?.DeclaringType;
+		public Type FindFirstByName(string name)
+		{
+			foreach (var type in _loadedTypes.Value)
+			{
+				if (type.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+					return type;
+			}
+			return null;
+		}
 
-		public IEnumerable<Type> FindByMethodName(string methodName) => _loadedMethods.Value.Where(m => m.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase)).Select(x => x.DeclaringType);
+		public Type FindFirstByMethodName(string methodName)
+		{
+			foreach (var method in _loadedMethods.Value)
+			{
+				if (method.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase))
+					return method.DeclaringType;
+			}
+			return null;
+		}
+
+		public IEnumerable<Type> FindByMethodName(string methodName)
+		{
+			var methods = _loadedMethods.Value;
+
+			foreach (var m in methods)
+			{
+				if (m.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase))
+					yield return m.DeclaringType;
+			}
+		}
 	}
 }
