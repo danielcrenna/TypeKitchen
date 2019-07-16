@@ -2,8 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace TypeKitchen
@@ -15,15 +16,46 @@ namespace TypeKitchen
 
 		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies)
 		{
-			_loadedTypes = new Lazy<IEnumerable<Type>>(() =>
+			_loadedTypes = new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, typeof(object).GetTypeInfo().Assembly));
+			_loadedMethods = new Lazy<IEnumerable<MethodInfo>>(LoadMethods);
+		}
+
+		private IEnumerable<MethodInfo> LoadMethods()
+		{
+			foreach (var type in _loadedTypes.Value)
 			{
-				var mscorlib = typeof(object).GetTypeInfo().Assembly;
-				return assemblies.Where(a => !a.IsDynamic && a != mscorlib).SelectMany(a => a.GetTypes());
-			});
-			_loadedMethods = new Lazy<IEnumerable<MethodInfo>>(() =>
+				foreach (var method in type.GetMethods())
+				{
+					yield return method;
+				}
+			}
+		}
+
+		private static string[] SkipRuntimeAssemblies = { "Microsoft.VisualStudio.ArchitectureTools.PEReader"};
+
+		private static IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, params Assembly[] skipAssemblies)
+		{
+			var types = new HashSet<Type>();
+
+			foreach(var assembly in assemblies)
 			{
-				return _loadedTypes.Value.SelectMany(x => x.GetMethods());
-			});
+				if (assembly.IsDynamic || ((IList) skipAssemblies).Contains(assembly) || ((IList) SkipRuntimeAssemblies).Contains(assembly.FullName))
+					continue;
+
+				try
+				{
+					foreach (var type in assembly.GetTypes())
+					{
+						types.Add(type);
+					}
+				}
+				catch (Exception e)
+				{
+					Trace.TraceError($"{e}");
+				}
+			}
+
+			return types;
 		}
 
 		public ReflectionTypeResolver() : this(AppDomain.CurrentDomain.GetAssemblies()) { }
