@@ -13,50 +13,92 @@ namespace TypeKitchen
     {
         private static readonly object Sync = new object();
 
-        private static readonly Dictionary<Type, ITypeWriteAccessor> AccessorCache =
-            new Dictionary<Type, ITypeWriteAccessor>();
+        private static readonly Dictionary<AccessorMembersKey, ITypeWriteAccessor> AccessorCache =
+            new Dictionary<AccessorMembersKey, ITypeWriteAccessor>();
 
 		public static ITypeWriteAccessor Create(object @object, out AccessorMembers members)
 		{
-			if (@object is Type type)
-				return Create(type, out members);
-			type = @object.GetType();
-
-			if (!AccessorCache.TryGetValue(type, out var accessor))
-				return Create(type, out members);
-			members = CreateWriteAccessorMembers(type);
-			return accessor;
+			return Create(@object, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.All,
+				out members);
 		}
 
-		public static ITypeWriteAccessor Create(object @object)
+		public static ITypeWriteAccessor Create(object @object, AccessorMemberTypes types, out AccessorMembers members)
+		{
+			return Create(@object, types, AccessorMemberScope.All,
+				out members);
+		}
+
+		public static ITypeWriteAccessor Create(object @object, AccessorMemberScope scope, out AccessorMembers members)
+		{
+			return Create(@object, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, scope,
+				out members);
+		}
+
+		public static ITypeWriteAccessor Create(object @object, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
 		{
 			if (@object is Type type)
-				return Create(type);
+				return Create(type, out members);
 			type = @object.GetType();
-			return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, out _);
+			return Create(type, types, scope, out members);
+		}
+
+		public static ITypeWriteAccessor Create(object @object, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
+		{
+			if (@object is Type type)
+				return Create(type, types, scope);
+			type = @object.GetType();
+			return Create(type, types, scope, out _);
+		}
+
+		public static ITypeWriteAccessor Create(Type type, AccessorMemberTypes types, out AccessorMembers members)
+		{
+			return Create(type, types, AccessorMemberScope.All, out members);
+		}
+
+		public static ITypeWriteAccessor Create(Type type, AccessorMemberScope scope, out AccessorMembers members)
+		{
+			return Create(type, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, scope,
+				out members);
 		}
 
 		public static ITypeWriteAccessor Create(Type type, out AccessorMembers members)
 		{
-			if (!AccessorCache.TryGetValue(type, out var accessor))
-				return CreateImpl(type, out members);
-			members = CreateWriteAccessorMembers(type);
-			return accessor;
+			return Create(type, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.All,
+				out members);
 		}
 
-		public static ITypeWriteAccessor Create(Type type)
+		public static ITypeWriteAccessor Create(Type type, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
 		{
-			return AccessorCache.TryGetValue(type, out var accessor) ? accessor : Create(type, out _);
+			return CreateImpl(type, types, scope, out members);
 		}
 
-		private static ITypeWriteAccessor CreateImpl(Type type, out AccessorMembers members)
+		public static ITypeWriteAccessor Create(Type type, AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope scope = AccessorMemberScope.All)
+		{
+			return CreateImpl(type, types, scope, out _);
+		}
+
+		private static ITypeWriteAccessor CreateImpl(Type type, AccessorMemberTypes types, AccessorMemberScope scope, out AccessorMembers members)
 		{
 			lock (Sync)
 			{
-				var accessor = CreateWriteAccessor(type, out members);
-				AccessorCache[type] = accessor;
+				var key = KeyForType(type, types, scope);
+
+				if (AccessorCache.TryGetValue(key, out var accessor))
+				{
+					members = CreateWriteAccessorMembers(type, scope);
+					return accessor;
+				}
+
+				accessor = CreateWriteAccessor(type, out members);
+				AccessorCache[key] = accessor;
 				return accessor;
 			}
+		}
+
+		private static AccessorMembersKey KeyForType(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
+		{
+			var key = new AccessorMembersKey(type, types, scope);
+			return key;
 		}
 
 		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members,
