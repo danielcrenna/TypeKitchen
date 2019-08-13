@@ -58,6 +58,8 @@ namespace TypeKitchen.Tests.Fakes
 					return typeof(void);
 				case "Method":
 					return typeof(ClassWithTwoMethodsAndProperty).GetMethod("Method").Invoke(null, null);
+				case "Biff":
+					return ((ClassWithTwoMethodsAndProperty) target).Biff();
 				default:
 					throw new ArgumentNullException();
 			}

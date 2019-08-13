@@ -22,10 +22,33 @@ namespace TypeKitchen.Tests
 		}
 
 		[Fact]
-		public void Call_Method_Void_NoArgs()
+		public void Call_Instance_Method_Void_NoArgs()
+		{
+			CallInstanceMethod(nameof(ClassWithTwoMethodsAndProperty.Foo));
+		}
+
+
+		[Fact]
+		public void Call_Instance_Method_ReturnInt_NoArgs()
+		{
+			CallInstanceMethod(nameof(ClassWithTwoMethodsAndProperty.Biff));
+		}
+
+		[Fact]
+		public void Call_Instance_Void_NoArgs()
 		{
 			var target = new ClassWithTwoMethodsAndProperty();
-			var methodInfo = target.GetType().GetMethod("Foo");
+			var type = target.GetType();
+			var accessor = CallAccessor.Create(type);
+			Assert.Equal(type, accessor.Type);
+			accessor.Call(target, "Foo");
+		}
+
+
+		private static void CallInstanceMethod(string methodName)
+		{
+			var target = new ClassWithTwoMethodsAndProperty();
+			var methodInfo = target.GetType().GetMethod(methodName);
 			var accessor = CallAccessor.Create(methodInfo);
 			Assert.Equal(methodInfo.Name, accessor.MethodName);
 
@@ -33,16 +56,6 @@ namespace TypeKitchen.Tests
 			Assert.NotNull(parameters);
 			Assert.Equal(parameters, methodInfo.GetParameters());
 			accessor.Call(target);
-		}
-
-		[Fact]
-		public void Call_Type_Void_NoArgs()
-		{
-			var target = new ClassWithTwoMethodsAndProperty();
-			var type = target.GetType();
-			var accessor = CallAccessor.Create(type);
-			Assert.Equal(type, accessor.Type);
-			accessor.Call(target, "Foo");
 		}
 	}
 }

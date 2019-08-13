@@ -23,6 +23,8 @@ namespace TypeKitchen.Tests.Fakes
 
 		public string Baz => "ABC";
 
+		public int Biff() => 1;
+
 		public static int Method() { return 1; }
 	}
 }
