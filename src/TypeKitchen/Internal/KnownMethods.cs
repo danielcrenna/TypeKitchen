@@ -20,9 +20,10 @@ namespace TypeKitchen.Internal
         public static MethodInfo GetFieldFromHandle =
             typeof(FieldInfo).GetMethod(nameof(FieldInfo.GetFieldFromHandle), new[] {typeof(RuntimeFieldHandle)});
 
-        public static MethodInfo GetMethodParameters = typeof(MethodInfo).GetMethod(nameof(MethodInfo.GetParameters));
-
         public static MethodInfo CallWithArgs = typeof(MethodCallAccessor).GetMethod(nameof(MethodCallAccessor.Call),
-            new[] {typeof(object), typeof(object[])});
+			BindingFlags.Public | BindingFlags.Instance,
+			null, CallingConventions.HasThis,
+			new[] {typeof(object), typeof(object[])},
+			null);
     }
 }

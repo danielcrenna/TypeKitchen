@@ -12,79 +12,57 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void Activator_NoParams()
 		{
-			var target =
-				Activation.ActivatorWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.ActivatorWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void Activator_Params()
 		{
-			var target =
-				Activation.ActivatorWeakTyped(
-					typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.ActivatorWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void DynamicMethod_NoParams()
 		{
-			var target =
-				Activation.DynamicMethodWeakTyped(
-					typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.DynamicMethodWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void DynamicMethod_Params()
 		{
-			var target =
-				Activation.DynamicMethodWeakTyped(
-					typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.DynamicMethodWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void Expression_NoParams()
 		{
-			var target =
-				Activation.ExpressionWeakTyped(
-					typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.ExpressionWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void Expression_Params()
 		{
-			var target =
-				Activation.DynamicMethodWeakTyped(
-					typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.DynamicMethodWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void Invoke_NoParams()
 		{
-			var target =
-				Activation.InvokeWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.InvokeWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(Type.EmptyTypes))();
+			Assert.NotNull(target);
 		}
 
 		[Fact]
 		public void Invoke_Params()
 		{
-			var target =
-				Activation.InvokeWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(
-					100);
-			var accessor = CallAccessor.Create(target.GetType());
-			accessor.Call(target, "Foo");
+			var target = Activation.InvokeWeakTyped(typeof(ClassWithTwoMethodsAndProperty).GetConstructor(new[] {typeof(int)}))(100);
+			Assert.NotNull(target);
 		}
 	}
 }

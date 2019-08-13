@@ -18,7 +18,7 @@ namespace TypeKitchen.Tests
 			var parameters = accessor.Parameters;
 			Assert.NotNull(parameters);
 			Assert.Equal(parameters, methodInfo.GetParameters());
-			accessor.Call(target);
+			accessor.Call(target, new object[0]);
 		}
 
 		[Fact]
@@ -27,35 +27,35 @@ namespace TypeKitchen.Tests
 			CallInstanceMethod(nameof(ClassWithTwoMethodsAndProperty.Foo));
 		}
 
-
 		[Fact]
 		public void Call_Instance_Method_ReturnInt_NoArgs()
 		{
-			CallInstanceMethod(nameof(ClassWithTwoMethodsAndProperty.Biff));
+			var result = CallInstanceMethod(nameof(ClassWithTwoMethodsAndProperty.Biff));
+			Assert.Equal(1, result);
 		}
 
-		[Fact]
-		public void Call_Instance_Void_NoArgs()
+		[Fact(Skip = "Something weird going on here...")]
+		public void Call_Instance_Method_ReturnInt_WithArgs()
 		{
-			var target = new ClassWithTwoMethodsAndProperty();
-			var type = target.GetType();
-			var accessor = CallAccessor.Create(type);
-			Assert.Equal(type, accessor.Type);
-			accessor.Call(target, "Foo");
+			var result = CallInstanceMethod(nameof(ClassWithTwoMethodsAndProperty.Echo), "ABC");
+			Assert.Equal("ABC", result);
 		}
 
-
-		private static void CallInstanceMethod(string methodName)
+		private static object CallInstanceMethod(string methodName, params object[] args)
 		{
 			var target = new ClassWithTwoMethodsAndProperty();
 			var methodInfo = target.GetType().GetMethod(methodName);
 			var accessor = CallAccessor.Create(methodInfo);
+
+			Assert.NotNull(methodInfo);
 			Assert.Equal(methodInfo.Name, accessor.MethodName);
 
-			var parameters = accessor.Parameters;
-			Assert.NotNull(parameters);
-			Assert.Equal(parameters, methodInfo.GetParameters());
-			accessor.Call(target);
+			Assert.NotNull(accessor.Parameters);
+			Assert.Equal(accessor.Parameters, methodInfo.GetParameters());
+			Assert.Equal(args?.Length, accessor.Parameters.Length);
+
+			var result = accessor.Call(target, args);
+			return result;
 		}
 	}
 }

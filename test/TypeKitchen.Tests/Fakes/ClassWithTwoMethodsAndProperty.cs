@@ -25,6 +25,8 @@ namespace TypeKitchen.Tests.Fakes
 
 		public int Biff() => 1;
 
+		public string Echo(string a) => a;
+
 		public static int Method() { return 1; }
 	}
 }

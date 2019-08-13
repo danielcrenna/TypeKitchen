@@ -60,6 +60,8 @@ namespace TypeKitchen.Tests.Fakes
 					return typeof(ClassWithTwoMethodsAndProperty).GetMethod("Method").Invoke(null, null);
 				case "Biff":
 					return ((ClassWithTwoMethodsAndProperty) target).Biff();
+				case "Echo":
+					return ((ClassWithTwoMethodsAndProperty) target).Echo(args[0]?.ToString());
 				default:
 					throw new ArgumentNullException();
 			}

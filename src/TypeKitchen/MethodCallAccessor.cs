@@ -26,52 +26,52 @@ namespace TypeKitchen
             }
         }
 
-        public object Call(object target, object arg1)
-        {
-            var args = Arguments.Get(1);
-            args[0] = arg1;
-            try
-            {
-                return Call(target, args);
-            }
-            finally
-            {
-                Arguments.Return(args);
-            }
-        }
+		public object Call(object target, object arg1)
+		{
+			var args = Arguments.Get(1);
+			args[0] = arg1;
+			try
+			{
+				return Call(target, args);
+			}
+			finally
+			{
+				Arguments.Return(args);
+			}
+		}
 
-        public object Call(object target, object arg1, object arg2)
-        {
-            var args = Arguments.Get(2);
-            args[0] = arg1;
-            args[1] = arg2;
-            try
-            {
-                return Call(target, args);
-            }
-            finally
-            {
-                Arguments.Return(args);
-            }
-        }
+		public object Call(object target, object arg1, object arg2)
+		{
+			var args = Arguments.Get(2);
+			args[0] = arg1;
+			args[1] = arg2;
+			try
+			{
+				return Call(target, args);
+			}
+			finally
+			{
+				Arguments.Return(args);
+			}
+		}
 
-        public object Call(object target, object arg1, object arg2, object arg3)
-        {
-            var args = Arguments.Get(3);
-            args[0] = arg1;
-            args[1] = arg2;
-            args[2] = arg3;
-            try
-            {
-                return Call(target, args);
-            }
-            finally
-            {
-                Arguments.Return(args);
-            }
-        }
+		public object Call(object target, object arg1, object arg2, object arg3)
+		{
+			var args = Arguments.Get(3);
+			args[0] = arg1;
+			args[1] = arg2;
+			args[2] = arg3;
+			try
+			{
+				return Call(target, args);
+			}
+			finally
+			{
+				Arguments.Return(args);
+			}
+		}
 
-        public abstract object Call(object target, object[] args);
+		public abstract object Call(object target, object[] args);
 
 
         #region Pooling 
