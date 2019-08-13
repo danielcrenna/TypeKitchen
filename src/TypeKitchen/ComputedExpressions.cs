@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -25,17 +28,17 @@ namespace TypeKitchen
 					}
 					else if (key.Contains("("))
 					{
-						var members = AccessorMembers.Create(@this, AccessorMemberScope.Public, AccessorMemberTypes.Methods);
+						var members = AccessorMembers.Create(@this, AccessorMemberScope.Public,
+							AccessorMemberTypes.Methods);
 						foreach (var member in members)
-						{
 							if (key.StartsWith(member.Name) && member.MemberInfo is MethodInfo method)
 							{
 								var caller = CallAccessor.Create(method);
 								var result = caller.Call(@this, new object[0]); // FIXME: parse parameters
 								var replacer = result?.ToString();
-								expression = expression.Replace(match.Groups[0].Value, quoted ? $"\"{replacer}\"" : replacer);
+								expression = expression.Replace(match.Groups[0].Value,
+									quoted ? $"\"{replacer}\"" : replacer);
 							}
-						}
 					}
 
 					continue;

@@ -55,9 +55,9 @@ namespace TypeKitchen
 			var parameters = method.GetParameters();
 			for (byte i = 0; i < parameters.Length; i++)
 			{
-				il.Ldarg_1();           // args
-				il.LoadConstant(i);     // i
-				il.Ldelem_Ref();        // args[i]
+				il.Ldarg_1(); // args
+				il.LoadConstant(i); // i
+				il.Ldelem_Ref(); // args[i]
 
 				var parameterType = parameters[i].ParameterType;
 				var byRef = parameterType.IsByRef;
