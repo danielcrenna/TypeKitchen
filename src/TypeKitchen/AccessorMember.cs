@@ -8,119 +8,117 @@ using System.Reflection;
 
 namespace TypeKitchen
 {
-    public sealed class AccessorMember
-    {
-        public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall,
-            AccessorMemberScope scope,
-            AccessorMemberType memberType, MemberInfo info)
-        {
-            Name = name;
-            Type = type;
-            CanRead = canRead;
-            CanWrite = canWrite;
-            CanCall = canCall;
-            Scope = scope;
-            MemberType = memberType;
-            MemberInfo = info;
+	public sealed class AccessorMember
+	{
+		public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall,
+			AccessorMemberScope scope,
+			AccessorMemberType memberType, MemberInfo info)
+		{
+			Name = name;
+			Type = type;
+			CanRead = canRead;
+			CanWrite = canWrite;
+			CanCall = canCall;
+			Scope = scope;
+			MemberType = memberType;
+			MemberInfo = info;
 
-            if ((info is PropertyInfo || info is FieldInfo) &&
-                Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
-            {
-                var metadata =
-                    (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
+			if ((info is PropertyInfo || info is FieldInfo) &&
+			    Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
+			{
+				var metadata =
+					(MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
 
-                MemberInfo surrogate;
-                switch (info)
-                {
-                    case PropertyInfo _:
-                        surrogate = metadata.MetadataType.GetProperty(name,
-                                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                                    ?? throw new InvalidOperationException();
-                        break;
-                    case FieldInfo _:
-                        surrogate = metadata.MetadataType.GetField(name,
-                                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                                    ?? throw new InvalidOperationException();
-                        break;
-                    default:
-                        throw new ArgumentException();
-                }
+				MemberInfo surrogate;
+				switch (info)
+				{
+					case PropertyInfo _:
+						surrogate = metadata.MetadataType.GetProperty(name,
+							            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+						            ?? throw new InvalidOperationException();
+						break;
+					case FieldInfo _:
+						surrogate = metadata.MetadataType.GetField(name,
+							            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+						            ?? throw new InvalidOperationException();
+						break;
+					default:
+						throw new ArgumentException();
+				}
 
-                Attributes = Attribute.GetCustomAttributes(surrogate, true);
-            }
-            else
-            {
-                Attributes = Attribute.GetCustomAttributes(info, true);
-            }
-        }
+				Attributes = Attribute.GetCustomAttributes(surrogate, true);
+			}
+			else
+				Attributes = Attribute.GetCustomAttributes(info, true);
+		}
 
-        public string Name { get; }
-        public Type Type { get; }
-        public bool CanRead { get; }
-        public bool CanWrite { get; }
-        public bool CanCall { get; }
-        public AccessorMemberScope Scope { get; }
-        public AccessorMemberType MemberType { get; }
-        public MemberInfo MemberInfo { get; }
-        public Attribute[] Attributes { get; }
+		public string Name { get; }
+		public Type Type { get; }
+		public bool CanRead { get; }
+		public bool CanWrite { get; }
+		public bool CanCall { get; }
+		public AccessorMemberScope Scope { get; }
+		public AccessorMemberType MemberType { get; }
+		public MemberInfo MemberInfo { get; }
+		public Attribute[] Attributes { get; }
 
-        internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method &&
-                                          !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") &&
-                                          method.DeclaringType != typeof(object);
+		internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method &&
+		                                  !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") &&
+		                                  method.DeclaringType != typeof(object);
 
-        public bool HasAttribute<T>() where T : Attribute
-        {
+		public bool HasAttribute<T>() where T : Attribute
+		{
 			foreach (var attr in Attributes)
-                if (attr is T)
-                    return true;
-            return false;
-        }
+				if (attr is T)
+					return true;
+			return false;
+		}
 
-        public bool TryGetAttribute<T>(out T attribute) where T : Attribute
-        {
-            foreach (var attr in Attributes)
-            {
-                if (!(attr is T a))
-                    continue;
-                attribute = a;
-                return true;
-            }
+		public bool TryGetAttribute<T>(out T attribute) where T : Attribute
+		{
+			foreach (var attr in Attributes)
+			{
+				if (!(attr is T a))
+					continue;
+				attribute = a;
+				return true;
+			}
 
-            attribute = default;
-            return false;
-        }
+			attribute = default;
+			return false;
+		}
 
-        public bool TryGetAttributes<T>(out Attribute[] attributes) where T : Attribute
-        {
-            var capacity = 0;
-            foreach (var attr in Attributes)
-            {
-                if (!(attr is T))
-                    continue;
-                capacity++;
-            }
+		public bool TryGetAttributes<T>(out Attribute[] attributes) where T : Attribute
+		{
+			var capacity = 0;
+			foreach (var attr in Attributes)
+			{
+				if (!(attr is T))
+					continue;
+				capacity++;
+			}
 
-            if (capacity == 0)
-            {
-                attributes = default;
-                return false;
-            }
+			if (capacity == 0)
+			{
+				attributes = default;
+				return false;
+			}
 
-            attributes = new Attribute[capacity];
-            for (var i = 0; i < Attributes.Length; i++)
-            {
-                var attr = Attributes[i];
-                if (!(attr is T a))
-                    continue;
-                attributes[i] = a;
-            }
+			attributes = new Attribute[capacity];
+			for (var i = 0; i < Attributes.Length; i++)
+			{
+				var attr = Attributes[i];
+				if (!(attr is T a))
+					continue;
+				attributes[i] = a;
+			}
 
-            return true;
-        }
+			return true;
+		}
 
-        public IEnumerable<T> GetAttributes<T>(bool canInherit = true) where T : Attribute
-        {
-            return Attribute.GetCustomAttributes(MemberInfo, typeof(T), canInherit).Cast<T>();
-        }
-    }
+		public IEnumerable<T> GetAttributes<T>(bool canInherit = true) where T : Attribute
+		{
+			return Attribute.GetCustomAttributes(MemberInfo, typeof(T), canInherit).Cast<T>();
+		}
+	}
 }

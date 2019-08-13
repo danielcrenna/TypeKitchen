@@ -5,9 +5,9 @@ using System;
 
 namespace TypeKitchen
 {
-    public interface ITypeCallAccessor
-    {
-        Type Type { get; }
-        object Call(object target, string key, params object[] args);
-    }
+	public interface ITypeCallAccessor
+	{
+		Type Type { get; }
+		object Call(object target, string key, params object[] args);
+	}
 }

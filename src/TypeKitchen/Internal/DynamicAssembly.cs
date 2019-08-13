@@ -6,17 +6,17 @@ using System.Reflection.Emit;
 
 namespace TypeKitchen.Internal
 {
-    internal static class DynamicAssembly
-    {
-        public static readonly AssemblyName Name;
-        public static readonly AssemblyBuilder Builder;
-        public static readonly ModuleBuilder Module;
+	internal static class DynamicAssembly
+	{
+		public static readonly AssemblyName Name;
+		public static readonly AssemblyBuilder Builder;
+		public static readonly ModuleBuilder Module;
 
-        static DynamicAssembly()
-        {
-            Name = new AssemblyName("__TypeKitchen");
-            Builder = AssemblyBuilder.DefineDynamicAssembly(Name, AssemblyBuilderAccess.Run);
-            Module = Builder.DefineDynamicModule(Name.Name);
-        }
-    }
+		static DynamicAssembly()
+		{
+			Name = new AssemblyName("__TypeKitchen");
+			Builder = AssemblyBuilder.DefineDynamicAssembly(Name, AssemblyBuilderAccess.Run);
+			Module = Builder.DefineDynamicModule(Name.Name);
+		}
+	}
 }

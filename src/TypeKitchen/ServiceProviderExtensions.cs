@@ -19,12 +19,14 @@ namespace TypeKitchen
 		private static readonly IDictionary<ConstructorInfo, ParameterInfo[]> ConstructorParameters =
 			new ConcurrentDictionary<ConstructorInfo, ParameterInfo[]>();
 
-		public static object AutoResolve<T>(this IServiceProvider serviceProvider, bool throwIfCantResolve = true, params Assembly[] assemblies)
+		public static object AutoResolve<T>(this IServiceProvider serviceProvider, bool throwIfCantResolve = true,
+			params Assembly[] assemblies)
 		{
 			return serviceProvider.AutoResolve(typeof(T), throwIfCantResolve, assemblies);
 		}
 
-		public static object AutoResolve(this IServiceProvider serviceProvider, Type serviceType, bool throwIfCantResolve = true, params Assembly[] assemblies)
+		public static object AutoResolve(this IServiceProvider serviceProvider, Type serviceType,
+			bool throwIfCantResolve = true, params Assembly[] assemblies)
 		{
 			while (true)
 			{
@@ -52,7 +54,8 @@ namespace TypeKitchen
 			}
 		}
 
-		private static object CreateInstance(this IServiceProvider serviceProvider, Type implementationType, bool throwIfCantResolve, params Assembly[] assemblies)
+		private static object CreateInstance(this IServiceProvider serviceProvider, Type implementationType,
+			bool throwIfCantResolve, params Assembly[] assemblies)
 		{
 			if (!Constructors.TryGetValue(implementationType, out var ctor))
 				Constructors[implementationType] = ctor = implementationType.GetWidestConstructor();

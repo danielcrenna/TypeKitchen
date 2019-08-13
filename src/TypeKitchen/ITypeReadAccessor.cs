@@ -5,10 +5,10 @@ using System;
 
 namespace TypeKitchen
 {
-    public interface ITypeReadAccessor
-    {
-        Type Type { get; }
-        object this[object target, string key] { get; }
-        bool TryGetValue(object target, string key, out object value);
-    }
+	public interface ITypeReadAccessor
+	{
+		Type Type { get; }
+		object this[object target, string key] { get; }
+		bool TryGetValue(object target, string key, out object value);
+	}
 }

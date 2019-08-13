@@ -6,24 +6,24 @@ using System.Reflection;
 
 namespace TypeKitchen.Internal
 {
-    internal static class KnownMethods
-    {
-        public static readonly MethodInfo StringEquals =
-            typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)});
+	internal static class KnownMethods
+	{
+		public static readonly MethodInfo StringEquals =
+			typeof(string).GetMethod("op_Equality", new[] {typeof(string), typeof(string)});
 
-        public static readonly MethodInfo GetTypeFromHandle =
-            typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public);
+		public static readonly MethodInfo GetTypeFromHandle =
+			typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public);
 
-        public static MethodInfo GetMethodFromHandle =
-            typeof(MethodBase).GetMethod(nameof(MethodBase.GetMethodFromHandle), new[] {typeof(RuntimeMethodHandle)});
+		public static MethodInfo GetMethodFromHandle =
+			typeof(MethodBase).GetMethod(nameof(MethodBase.GetMethodFromHandle), new[] {typeof(RuntimeMethodHandle)});
 
-        public static MethodInfo GetFieldFromHandle =
-            typeof(FieldInfo).GetMethod(nameof(FieldInfo.GetFieldFromHandle), new[] {typeof(RuntimeFieldHandle)});
+		public static MethodInfo GetFieldFromHandle =
+			typeof(FieldInfo).GetMethod(nameof(FieldInfo.GetFieldFromHandle), new[] {typeof(RuntimeFieldHandle)});
 
-        public static MethodInfo CallWithArgs = typeof(MethodCallAccessor).GetMethod(nameof(MethodCallAccessor.Call),
+		public static MethodInfo CallWithArgs = typeof(MethodCallAccessor).GetMethod(nameof(MethodCallAccessor.Call),
 			BindingFlags.Public | BindingFlags.Instance,
 			null, CallingConventions.HasThis,
 			new[] {typeof(object), typeof(object[])},
 			null);
-    }
+	}
 }

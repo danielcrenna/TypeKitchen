@@ -3,10 +3,10 @@
 
 namespace TypeKitchen
 {
-    public enum AccessorMemberType : byte
-    {
-        Field,
-        Property,
-        Method
-    }
+	public enum AccessorMemberType : byte
+	{
+		Field,
+		Property,
+		Method
+	}
 }

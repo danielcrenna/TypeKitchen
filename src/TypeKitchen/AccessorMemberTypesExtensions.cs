@@ -3,11 +3,11 @@
 
 namespace TypeKitchen
 {
-    internal static class AccessorMemberTypesExtensions
-    {
-        public static bool HasFlagFast(this AccessorMemberTypes value, AccessorMemberTypes flag)
-        {
-            return (value & flag) != 0;
-        }
-    }
+	internal static class AccessorMemberTypesExtensions
+	{
+		public static bool HasFlagFast(this AccessorMemberTypes value, AccessorMemberTypes flag)
+		{
+			return (value & flag) != 0;
+		}
+	}
 }
