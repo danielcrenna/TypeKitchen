@@ -31,7 +31,7 @@ namespace TypeKitchen
 			}
 		}
 
-		private static string[] SkipRuntimeAssemblies = { "Microsoft.VisualStudio.ArchitectureTools.PEReader"};
+		private static readonly string[] SkipRuntimeAssemblies = { "Microsoft.VisualStudio.ArchitectureTools.PEReader"};
 
 		private static IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, params Assembly[] skipAssemblies)
 		{
@@ -99,6 +99,17 @@ namespace TypeKitchen
 			{
 				if (m.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase))
 					yield return m.DeclaringType;
+			}
+		}
+
+		public IEnumerable<Type> FindByInterface<TInterface>()
+		{
+			foreach (var type in _loadedTypes.Value)
+			{
+				var info = type.GetTypeInfo();
+				foreach(var @interface in info.ImplementedInterfaces)
+					if (typeof(TInterface) == @interface)
+						yield return type;
 			}
 		}
 	}

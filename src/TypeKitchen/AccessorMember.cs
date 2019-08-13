@@ -70,7 +70,7 @@ namespace TypeKitchen
 
         public bool HasAttribute<T>() where T : Attribute
         {
-            foreach (var attr in Attributes)
+			foreach (var attr in Attributes)
                 if (attr is T)
                     return true;
             return false;

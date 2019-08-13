@@ -158,7 +158,37 @@ namespace TypeKitchen
 	        return provider.IsDefined(typeof(T), inherit);
         }
 
-        public static IEnumerable<T> GetAttributes<T>(this ICustomAttributeProvider provider, bool inherit = true)
+        public static bool TryGetAttribute<T>(this ICustomAttributeProvider provider, bool inherit, out T attribute) where T : Attribute
+        {
+	        if (!provider.HasAttribute<T>())
+	        {
+		        attribute = default;
+		        return false;
+	        }
+
+			foreach (var attr in provider.GetAttributes<T>(inherit))
+	        {
+		        attribute = attr;
+		        return true;
+	        }
+
+	        attribute = default;
+	        return false;
+        }
+
+        public static bool TryGetAttributes<T>(this ICustomAttributeProvider provider, bool inherit, out IEnumerable<T> attributes) where T : Attribute
+        {
+	        if (!provider.HasAttribute<T>())
+	        {
+		        attributes = Enumerable.Empty<T>();
+		        return false;
+	        }
+
+	        attributes = provider.GetAttributes<T>(inherit);
+	        return true;
+        }
+
+		public static IEnumerable<T> GetAttributes<T>(this ICustomAttributeProvider provider, bool inherit = true)
 	        where T : Attribute
         {
 	        return provider.GetCustomAttributes(typeof(T), inherit).OfType<T>();

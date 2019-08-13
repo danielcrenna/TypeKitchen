@@ -12,5 +12,6 @@ namespace TypeKitchen
         Type FindFirstByName(string name);
 		Type FindFirstByMethodName(string methodName);
         IEnumerable<Type> FindByMethodName(string methodName);
-	}
+        IEnumerable<Type> FindByInterface<TInterface>();
+    }
 }
