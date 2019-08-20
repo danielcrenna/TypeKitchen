@@ -4,14 +4,17 @@
 using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Primitives;
 
 namespace TypeKitchen
 {
 	public static class ComputedExpressions
 	{
-		internal static string ResolveExpression(object @this, string expression, bool quoted)
+		internal static string ResolveExpression(object @this, string expression, bool inline = false)
 		{
-			var accessor = ReadAccessor.Create(@this.GetType());
+			bool IsQuoted(Type type) => !inline && (type == typeof(string) || type == typeof(StringValues) || type == typeof(char));
+
+			var accessor = ReadAccessor.Create(@this.GetType(), out var members);
 			foreach (Match match in Regex.Matches(expression, @"{{([a-zA-Z\.,\""()\s]+)}}",
 				RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled))
 			{
@@ -21,23 +24,21 @@ namespace TypeKitchen
 				{
 					var key = keys[0];
 
-					if (accessor.TryGetValue(@this, key, out var value))
+					if (members.TryGetValue(key, out var propertyMember) && accessor.TryGetValue(@this, key, out var value))
 					{
-						var replacer = value?.ToString();
-						expression = expression.Replace(match.Groups[0].Value, quoted ? $"\"{replacer}\"" : replacer);
+						expression = expression.Replace(match.Groups[0].Value, IsQuoted(propertyMember.Type) ? $"\"{value}\"" : $"{value}");
 					}
 					else if (key.Contains("("))
 					{
-						var members = AccessorMembers.Create(@this, AccessorMemberScope.Public,
-							AccessorMemberTypes.Methods);
-						foreach (var member in members)
+						var callMembers = AccessorMembers.Create(@this, AccessorMemberScope.Public, AccessorMemberTypes.Methods);
+						foreach (var member in callMembers)
 							if (key.StartsWith(member.Name) && member.MemberInfo is MethodInfo method)
 							{
 								var caller = CallAccessor.Create(method);
 								var result = caller.Call(@this, new object[0]); // FIXME: parse parameters
-								var replacer = result?.ToString();
+								var resultType = result.GetType();
 								expression = expression.Replace(match.Groups[0].Value,
-									quoted ? $"\"{replacer}\"" : replacer);
+									IsQuoted(resultType) ? $"\"{result}\"" : $"{result}");
 							}
 					}
 

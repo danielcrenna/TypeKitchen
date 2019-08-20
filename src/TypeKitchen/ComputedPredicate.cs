@@ -23,7 +23,7 @@ namespace TypeKitchen
 			var code = Pooling.StringBuilderPool.Scoped(sb =>
 			{
 				sb.Append(
-					$"public static bool Method() {{ return {ComputedExpressions.ResolveExpression(@this, expression, true)}; }}");
+					$"public static bool Method() {{ return {ComputedExpressions.ResolveExpression(@this, expression, false)}; }}");
 			});
 
 			//

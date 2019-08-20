@@ -22,8 +22,7 @@ namespace TypeKitchen
 			// Pass 1: Resolve any {{ Member }} against self.
 			var code = Pooling.StringBuilderPool.Scoped(sb =>
 			{
-				sb.Append(
-					$"public static string Method() {{ return \"{ComputedExpressions.ResolveExpression(@this, expression, false)}\"; }}");
+				sb.Append($"public static string Method() {{ return \"{ComputedExpressions.ResolveExpression(@this, expression, true)}\"; }}");
 			});
 
 			//

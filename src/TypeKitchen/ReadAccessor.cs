@@ -263,8 +263,8 @@ namespace TypeKitchen
 		private static string CreateNameForType(Type type)
 		{
 			return type.IsAnonymous()
-				? $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}"
-				: $"ReadAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}";
+				? $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? $"Dynamic_{type.Name}_{type.MetadataToken}" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}"
+				: $"ReadAccessor_{(type.Assembly.IsDynamic ? $"Dynamic_{type.Name}_{type.MetadataToken}" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}";
 		}
 
 		private static AccessorMembers CreateReadAccessorMembers(Type type,
