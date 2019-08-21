@@ -262,9 +262,11 @@ namespace TypeKitchen
 
 		private static string CreateNameForType(Type type)
 		{
-			return type.IsAnonymous()
-				? $"ReadAccessor_Anonymous_{(type.Assembly.IsDynamic ? $"Dynamic_{type.Name}_{type.MetadataToken}" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}"
-				: $"ReadAccessor_{(type.Assembly.IsDynamic ? $"Dynamic_{type.Name}_{type.MetadataToken}" : type.Assembly.GetName().Name)}_{type.Name}_{type.MetadataToken}";
+			var assemblyName = type.Assembly.IsDynamic ? "Dynamic" : type.Assembly.GetName().Name;
+			var name = type.IsAnonymous()
+				? $"ReadAccessor_Anonymous_{assemblyName}_{type.AssemblyQualifiedName}"
+				: $"ReadAccessor_{assemblyName}_{type.AssemblyQualifiedName}";
+			return name;
 		}
 
 		private static AccessorMembers CreateReadAccessorMembers(Type type,
@@ -288,7 +290,9 @@ namespace TypeKitchen
 		{
 			members = CreateAnonymousReadAccessorMembers(type);
 
-			var tb = DynamicAssembly.Module.DefineType(CreateNameForType(type),
+			var typeName = CreateNameForType(type);
+
+			var tb = DynamicAssembly.Module.DefineType(typeName,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
