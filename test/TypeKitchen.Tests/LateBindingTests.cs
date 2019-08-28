@@ -106,7 +106,7 @@ namespace TypeKitchen.Tests
 		private static Dictionary<string, Func<object, object>> BindGet(LateBindingStrategy strategy, object target,
 			AccessorMemberScope scope, AccessorMemberTypes memberTypes)
 		{
-			var members = AccessorMembers.Create(target.GetType(), scope, memberTypes);
+			var members = AccessorMembers.Create(target.GetType(), memberTypes, scope);
 			Dictionary<string, Func<object, object>> map;
 			switch (strategy)
 			{
@@ -135,7 +135,7 @@ namespace TypeKitchen.Tests
 		private static Dictionary<string, Action<object, object>> BindSet(LateBindingStrategy strategy, object target,
 			AccessorMemberScope scope, AccessorMemberTypes memberTypes)
 		{
-			var members = AccessorMembers.Create(target.GetType(), scope, memberTypes);
+			var members = AccessorMembers.Create(target.GetType(), memberTypes, scope);
 			Dictionary<string, Action<object, object>> map;
 			switch (strategy)
 			{
@@ -164,7 +164,7 @@ namespace TypeKitchen.Tests
 		private static Dictionary<string, Func<object, object[], object>> BindCall(LateBindingStrategy strategy,
 			object target, AccessorMemberScope scope, AccessorMemberTypes memberTypes)
 		{
-			var members = AccessorMembers.Create(target.GetType(), scope, memberTypes);
+			var members = AccessorMembers.Create(target.GetType(), memberTypes, scope);
 			Dictionary<string, Func<object, object[], object>> map;
 			switch (strategy)
 			{

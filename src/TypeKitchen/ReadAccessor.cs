@@ -273,12 +273,12 @@ namespace TypeKitchen
 			AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
 			AccessorMemberScope scope = AccessorMemberScope.All)
 		{
-			return AccessorMembers.Create(type, scope, types);
+			return AccessorMembers.Create(type, types, scope);
 		}
 
 		private static AccessorMembers CreateAnonymousReadAccessorMembers(Type type)
 		{
-			return AccessorMembers.Create(type, AccessorMemberScope.Public, AccessorMemberTypes.Properties);
+			return AccessorMembers.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public);
 		}
 
 		/// <summary>

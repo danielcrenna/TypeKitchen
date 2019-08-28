@@ -63,7 +63,7 @@ namespace TypeKitchen
 		private static ITypeCallAccessor CreateTypeCallAccessor(Type type,
 			AccessorMemberScope scope = AccessorMemberScope.All)
 		{
-			var members = AccessorMembers.Create(type, scope, AccessorMemberTypes.Methods);
+			var members = AccessorMembers.Create(type, AccessorMemberTypes.Methods, scope);
 
 			var tb = DynamicAssembly.Module.DefineType(
 				$"CallAccessor_Type_{type.Assembly.GetHashCode()}_{type.MetadataToken}",

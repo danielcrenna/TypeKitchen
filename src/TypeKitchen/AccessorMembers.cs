@@ -15,7 +15,7 @@ namespace TypeKitchen
 		private static readonly ConcurrentDictionary<AccessorMembersKey, AccessorMembers> Cache =
 			new ConcurrentDictionary<AccessorMembersKey, AccessorMembers>();
 
-		private AccessorMembers(Type type, AccessorMemberScope scope, AccessorMemberTypes memberTypes)
+		private AccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
 			DeclaringType = type;
 			NameToMember = new Dictionary<string, AccessorMember>();
@@ -26,7 +26,7 @@ namespace TypeKitchen
 			if (scope.HasFlagFast(AccessorMemberScope.Private))
 				flags |= BindingFlags.NonPublic;
 
-			if (memberTypes.HasFlagFast(AccessorMemberTypes.Properties))
+			if (types.HasFlagFast(AccessorMemberTypes.Properties))
 			{
 				PropertyInfo = type.GetProperties(flags).OrderBy(p => p.Name).ToArray();
 				foreach (var property in PropertyInfo)
@@ -35,7 +35,7 @@ namespace TypeKitchen
 							false, scope, AccessorMemberType.Property, property));
 			}
 
-			if (memberTypes.HasFlagFast(AccessorMemberTypes.Fields))
+			if (types.HasFlagFast(AccessorMemberTypes.Fields))
 			{
 				FieldInfo = type.GetFields(flags).OrderBy(f => f.Name).ToArray();
 				foreach (var field in FieldInfo)
@@ -44,7 +44,7 @@ namespace TypeKitchen
 							AccessorMemberType.Field, field));
 			}
 
-			if (memberTypes.HasFlagFast(AccessorMemberTypes.Methods))
+			if (types.HasFlagFast(AccessorMemberTypes.Methods))
 			{
 				MethodInfo = type.GetMethods().OrderBy(m => m.Name).ToArray();
 				foreach (var method in MethodInfo)
@@ -92,20 +92,22 @@ namespace TypeKitchen
 			return NameToMember.ContainsKey(key);
 		}
 
-		public static AccessorMembers Create(object instance, AccessorMemberScope scope = AccessorMemberScope.All,
-			AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
+		public static AccessorMembers Create(object instance, 
+			AccessorMemberTypes types = AccessorMemberTypes.All,
+			AccessorMemberScope scope = AccessorMemberScope.All)
 		{
 			return instance is Type type
-				? Create(type, scope, memberTypes)
-				: Create(instance.GetType(), scope, memberTypes);
+				? Create(type, types, scope)
+				: Create(instance.GetType(), types, scope);
 		}
 
-		public static AccessorMembers Create(Type type, AccessorMemberScope scope = AccessorMemberScope.All,
-			AccessorMemberTypes memberTypes = AccessorMemberTypes.All)
+		public static AccessorMembers Create(Type type,
+			AccessorMemberTypes types = AccessorMemberTypes.All,
+			AccessorMemberScope scope = AccessorMemberScope.All)
 		{
-			var cacheKey = new AccessorMembersKey(type, memberTypes, scope);
+			var cacheKey = new AccessorMembersKey(type, types, scope);
 			if (!Cache.TryGetValue(cacheKey, out var members))
-				Cache.TryAdd(cacheKey, members = new AccessorMembers(type, scope, memberTypes));
+				Cache.TryAdd(cacheKey, members = new AccessorMembers(type, types, scope));
 			return members;
 		}
 

@@ -12,7 +12,10 @@ namespace TypeKitchen
 	{
 		internal static string ResolveExpression(object @this, string expression, bool inline = false)
 		{
-			bool IsQuoted(Type type) => !inline && (type == typeof(string) || type == typeof(StringValues) || type == typeof(char));
+			bool IsQuoted(Type type)
+			{
+				return !inline && (type == typeof(string) || type == typeof(StringValues) || type == typeof(char));
+			}
 
 			var accessor = ReadAccessor.Create(@this.GetType(), out var members);
 			foreach (Match match in Regex.Matches(expression, @"{{([a-zA-Z\.,\""()\s]+)}}",
@@ -24,13 +27,14 @@ namespace TypeKitchen
 				{
 					var key = keys[0];
 
-					if (members.TryGetValue(key, out var propertyMember) && accessor.TryGetValue(@this, key, out var value))
-					{
-						expression = expression.Replace(match.Groups[0].Value, IsQuoted(propertyMember.Type) ? $"\"{value}\"" : $"{value}");
-					}
+					if (members.TryGetValue(key, out var propertyMember) &&
+					    accessor.TryGetValue(@this, key, out var value))
+						expression = expression.Replace(match.Groups[0].Value,
+							IsQuoted(propertyMember.Type) ? $"\"{value}\"" : $"{value}");
 					else if (key.Contains("("))
 					{
-						var callMembers = AccessorMembers.Create(@this, AccessorMemberScope.Public, AccessorMemberTypes.Methods);
+						var callMembers = AccessorMembers.Create(@this,
+							AccessorMemberTypes.Methods, AccessorMemberScope.Public);
 						foreach (var member in callMembers)
 							if (key.StartsWith(member.Name) && member.MemberInfo is MethodInfo method)
 							{

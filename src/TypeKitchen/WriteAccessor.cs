@@ -283,7 +283,7 @@ namespace TypeKitchen
 		private static AccessorMembers CreateWriteAccessorMembers(Type type,
 			AccessorMemberScope scope = AccessorMemberScope.All)
 		{
-			return AccessorMembers.Create(type, scope, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties);
+			return AccessorMembers.Create(type, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, scope);
 		}
 	}
 }
