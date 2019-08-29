@@ -19,26 +19,11 @@ namespace TypeKitchen.Composition
 
 		private readonly List<ISystem> _systems = new List<ISystem>();
 		private readonly Dictionary<Value128, List<uint>> _entitiesByArchetype = new Dictionary<Value128, List<uint>>();
-
 		private readonly Dictionary<uint, List<object>> _componentsByEntity = new Dictionary<uint, List<object>>();
-		private readonly Dictionary<Value128, Type[]> _componentTypesByArchetype = new Dictionary<Value128, Type[]>();
 		
 		public static Container Create(Value128 seed = default)
 		{
 			return new Container(seed);
-		}
-		
-		private void IndexArchetypes(IList<Type> componentTypes)
-		{
-			for (var i = 1; i < componentTypes.Count + 1; i++)
-			{
-				var combinations = componentTypes.GetCombinations(i);
-				foreach (var combination in combinations)
-				{
-					var types = combination.ToArray();
-					_componentTypesByArchetype[types.Archetype(_seed)] = types;
-				}
-			}
 		}
 
 		private IEnumerable<ExecutionPlanLine> _executionPlan;
@@ -107,6 +92,7 @@ namespace TypeKitchen.Composition
 		private IEnumerable<ExecutionPlanLine> BuildExecutionPlan()
 		{
 			var dependencyMap = new Dictionary<Type, List<ISystem>>();
+
 			foreach (var system in _systems)
 			{
 				var dependencies = system.GetType().GetTypeInfo().ImplementedInterfaces
@@ -132,19 +118,17 @@ namespace TypeKitchen.Composition
 					: dependents.Select(x => _systems.IndexOf(x));
 			}).ToArray();
 
-			var executionPlan = _systems.OrderBy(x =>
+			foreach (var system in _systems.OrderBy(x =>
 			{
 				var index = Array.IndexOf(order, _systems.IndexOf(x));
 				return index < 0 ? int.MaxValue : index;
-			});
-
-			foreach (var line in executionPlan)
+			}))
 			{
 				yield return new ExecutionPlanLine
 				{
-					System = line,
-					Archetype = line.Archetype(_seed),
-					Update = line.GetType().GetMethod("Update")
+					System = system,
+					Archetype = system.Archetype(_seed),
+					Update = system.GetType().GetMethod(nameof(ExecutionPlanLine.Update))
 				};
 			}
 		}
