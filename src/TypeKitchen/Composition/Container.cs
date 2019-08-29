@@ -5,61 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
 {
-	public partial class Container
-	{
-		public uint CreateEntity<T1>() where T1: struct
-		{
-			return CreateEntity(typeof(T1));
-		}
-
-		public uint CreateEntity<T1, T2>() where T1 : struct where T2 : struct
-		{
-			return CreateEntity(typeof(T1), typeof(T2));
-		}
-
-		public uint CreateEntity(params Type[] componentTypes)
-		{
-			var stable = componentTypes.NetworkOrder(x => x.Name).ToArray();
-
-			var archetype = componentTypes.Archetype(_seed);
-
-			if (!_entitiesByArchetype.TryGetValue(archetype, out var entities))
-				_entitiesByArchetype.Add(archetype, entities = new List<uint>());
-			var entity = (uint) EntityIds.IncrementAndGet();
-			entities.Add(entity);
-
-			foreach (var component in stable)
-			{
-				/*
-				var members = AccessorMembers.Create(component,
-					AccessorMemberTypes.Properties | AccessorMemberTypes.Fields, AccessorMemberScope.Public);
-				foreach (var member in members.NetworkOrder(x => x.Name))
-				{
-					if(member.Type == typeof(float))
-					{
-						
-					}
-				}
-				*/
-
-				if (!_componentsByEntity.TryGetValue(entity, out var list))
-					_componentsByEntity.Add(entity, list = new List<object>());
-
-				var instance = Instancing.CreateInstance(component);
-				list.Add(instance);
-			}
-
-			IndexArchetypes(stable);
-
-			return entity;
-		}
-	}
-
 	public partial class Container
 	{
 		private readonly Value128 _seed;
@@ -87,9 +35,8 @@ namespace TypeKitchen.Composition
 		{
 			for (var i = 1; i < componentTypes.Count + 1; i++)
 			{
-				IEnumerable<IEnumerable<Type>> combinations = componentTypes.GetCombinations(i);
-
-				foreach (IEnumerable<Type> combination in combinations)
+				var combinations = componentTypes.GetCombinations(i);
+				foreach (var combination in combinations)
 				{
 					var types = combination.ToArray();
 					_componentTypesByArchetype[types.Archetype(_seed)] = types;
@@ -97,7 +44,14 @@ namespace TypeKitchen.Composition
 			}
 		}
 
-		private IEnumerable<ISystem> _executionPlan;
+		private IEnumerable<ExecutionPlanLine> _executionPlan;
+
+		private struct ExecutionPlanLine
+		{
+			public ISystem System;
+			public Value128 Archetype;
+			public MethodInfo Update;
+		}
 
 		public void AddSystem<T>() where T : ISystem, new()
 		{
@@ -108,21 +62,20 @@ namespace TypeKitchen.Composition
 
 		public void Update()
 		{
-			foreach (var system in _executionPlan)
+			foreach (var line in _executionPlan)
 			{
-				var archetype = system.Archetype(_seed);
-				if (!_entitiesByArchetype.TryGetValue(archetype, out var entities))
+				if (!_entitiesByArchetype.TryGetValue(line.Archetype, out var entities))
 					continue;
 
-				var method = system.GetType().GetMethod("Update");
-				if (method == null)
+				var update = line.Update;
+				if (update == null)
 					continue;
 
 				foreach (var entity in entities)
 				{
 					var components = _componentsByEntity[entity];
 
-					var parameters = method.GetParameters();
+					var parameters = update.GetParameters();
 					var arguments = Pooling.Arguments.Get(parameters.Length);
 					var setters = Pooling.ListPool<int>.Get();
 					try
@@ -140,7 +93,7 @@ namespace TypeKitchen.Composition
 							}
 						}
 
-						method.Invoke(system, arguments);
+						update.Invoke(line.System, arguments);
 
 						for (var i = 0; i < arguments.Length; i++)
 							components[setters[i]] = arguments[i];
@@ -154,7 +107,7 @@ namespace TypeKitchen.Composition
 			}
 		}
 
-		private IEnumerable<ISystem> BuildExecutionPlan()
+		private IEnumerable<ExecutionPlanLine> BuildExecutionPlan()
 		{
 			var dependencyMap = new Dictionary<Type, List<ISystem>>();
 			foreach (var system in _systems)
@@ -188,7 +141,15 @@ namespace TypeKitchen.Composition
 				return index < 0 ? int.MaxValue : index;
 			});
 
-			return executionPlan;
+			foreach (var line in executionPlan)
+			{
+				yield return new ExecutionPlanLine
+				{
+					System = line,
+					Archetype = line.Archetype(_seed),
+					Update = line.GetType().GetMethod("Update")
+				};
+			}
 		}
 
 		public void SetComponent<T>(uint entity, T value) where T : struct
