@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TypeKitchen.StateMachine
+namespace TypeKitchen.Internal
 {
 	internal static class EnumerableExtensions
 	{

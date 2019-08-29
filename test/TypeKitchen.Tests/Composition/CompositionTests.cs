@@ -11,33 +11,36 @@ namespace TypeKitchen.Tests.Composition
 		public void BasicTests_compose_simple_system()
 		{
             var container = Container.Create();
-            container.CreateEntity(typeof(A), typeof(B));
-            container.AddSystem<System>();
+            var entity = container.CreateEntity<Velocity, Position2D>();
+			entity.Set(new Velocity { Value = 10f }, container);
+            container.AddSystem<VelocitySystem>();
             container.Update();
 
-            var c = container.GetComponents(1).ToArray();
-			Assert.Equal(+1, ((A) c[0]).Value);
-			Assert.Equal(-1, ((B) c[1]).Value);
+            var c = container.GetComponents(entity).ToArray();
+            Assert.Equal(1, ((Position2D) c[0]).X);
+            Assert.Equal(1, ((Position2D) c[0]).Y);
+			Assert.Equal(10, ((Velocity) c[1]).Value);
 		}
 
-		[DebuggerDisplay("{GetType().Name}: {Value}")]
-		public class A
+		[DebuggerDisplay("{" + nameof(Value) + "}")]
+		public struct Velocity
 		{
-			public float Value { get; set; }
+			public float Value;
 		}
 
-		[DebuggerDisplay("{GetType().Name}: {Value}")]
-		public class B
+		[DebuggerDisplay("({" + nameof(X) + "}, {" + nameof(Y) + "})")]
+		public struct Position2D
 		{
-			public float Value { get; set; }
+			public int X;
+			public int Y;
 		}
 
-		public class System : ISystem<A, B>
+		public sealed class VelocitySystem : ISystem<Velocity, Position2D>
 		{
-			public void Update(ref A a, ref B b)
+			public void Update(ref Velocity velocity, ref Position2D position)
 			{
-				a.Value += 1;
-				b.Value -= 1;
+				position.X += (int) (velocity.Value * 0.1f);
+				position.Y += (int) (velocity.Value * 0.1f);
 			}
 		}
 	}
