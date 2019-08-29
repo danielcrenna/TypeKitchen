@@ -3,11 +3,5 @@
 
 namespace TypeKitchen.Composition
 {
-	public static class EntityExtensions
-	{
-		public static void Set<T>(this uint entity, T value, Container container) where T : struct
-		{
-			container.SetComponent(entity, value);
-		}
-	}
+	public interface IDependOn<T> { }
 }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
@@ -25,7 +26,7 @@ namespace TypeKitchen.Composition
 		{
 			var stable = componentTypes.NetworkOrder(x => x.Name).ToArray();
 
-			var archetype = GetArchetype(componentTypes);
+			var archetype = componentTypes.Archetype(_seed);
 
 			if (!_entitiesByArchetype.TryGetValue(archetype, out var entities))
 				_entitiesByArchetype.Add(archetype, entities = new List<uint>());
@@ -71,28 +72,17 @@ namespace TypeKitchen.Composition
 		private static readonly AtomicLong EntityIds = new AtomicLong(0);
 
 		
-		private readonly Dictionary<Value128, List<ISystem>> _systemsByArchetype = new Dictionary<Value128, List<ISystem>>();
+		private readonly List<ISystem> _systems = new List<ISystem>();
 		private readonly Dictionary<Value128, List<uint>> _entitiesByArchetype = new Dictionary<Value128, List<uint>>();
 
 		private readonly Dictionary<uint, List<object>> _componentsByEntity = new Dictionary<uint, List<object>>();
 		private readonly Dictionary<Value128, Type[]> _componentTypesByArchetype = new Dictionary<Value128, Type[]>();
-
+		
 		public static Container Create(Value128 seed = default)
 		{
 			return new Container(seed);
 		}
-
-		private Value128 GetArchetype(IEnumerable<Type> componentTypes)
-		{
-			Value128 archetype = default;
-			foreach (var component in componentTypes.NetworkOrder(x => x.Name))
-			{
-				var componentId = Hashing.MurmurHash3(component.FullName, _seed);
-				archetype = componentId ^ archetype;
-			}
-			return archetype;
-		}
-
+		
 		private void IndexArchetypes(IList<Type> componentTypes)
 		{
 			for (var i = 1; i < componentTypes.Count + 1; i++)
@@ -101,78 +91,104 @@ namespace TypeKitchen.Composition
 
 				foreach (IEnumerable<Type> combination in combinations)
 				{
-					var array = combination.ToArray();
-					var archetype = GetArchetype(array);
-					_componentTypesByArchetype[archetype] = array;
+					var types = combination.ToArray();
+					_componentTypesByArchetype[types.Archetype(_seed)] = types;
 				}
 			}
 		}
 
+		private IEnumerable<ISystem> _executionPlan;
+
 		public void AddSystem<T>() where T : ISystem, new()
 		{
-			var componentTypes = typeof(T).GetTypeInfo().ImplementedInterfaces.Single(x => typeof(ISystem).IsAssignableFrom(x) && x.IsGenericType).GetGenericArguments();
-			var archetype = GetArchetype(componentTypes);
-			if(!_systemsByArchetype.TryGetValue(archetype, out var systems))
-				_systemsByArchetype.Add(archetype, systems = new List<ISystem>());
 			var system = new T();
-			systems.Add(system);
+			_systems.Add(system);
+			_executionPlan = BuildExecutionPlan();
 		}
 
 		public void Update()
 		{
-			foreach (KeyValuePair<Value128, List<ISystem>> systemList in _systemsByArchetype)
+			foreach (var system in _executionPlan)
 			{
-				List<ISystem> systems = systemList.Value;
-
-				if (systems.Count == 0)
-					continue;
-
-				Value128 archetype = systemList.Key;
+				var archetype = system.Archetype(_seed);
 				if (!_entitiesByArchetype.TryGetValue(archetype, out var entities))
 					continue;
 
-				foreach (ISystem system in systems)
+				var method = system.GetType().GetMethod("Update");
+				if (method == null)
+					continue;
+
+				foreach (var entity in entities)
 				{
-					var method = system.GetType().GetMethod("Update");
-					if (method == null)
-						continue;
+					var components = _componentsByEntity[entity];
 
-					foreach (var entity in entities)
+					var parameters = method.GetParameters();
+					var arguments = Pooling.Arguments.Get(parameters.Length);
+					var setters = Pooling.ListPool<int>.Get();
+					try
 					{
-						var components = _componentsByEntity[entity];
-
-						var parameters = method.GetParameters();
-						var arguments = Pooling.Arguments.Get(parameters.Length);
-						var setters = Pooling.ListPool<int>.Get();
-						try
+						for (var i = 0; i < parameters.Length; i++)
 						{
-							for (var i = 0; i < parameters.Length; i++)
+							var type = parameters[i].ParameterType;
+							for (var j = 0; j < components.Count; j++)
 							{
-								var type = parameters[i].ParameterType;
-								for (var j = 0; j < components.Count; j++)
-								{
-									var c = components[j];
-									if (c.GetType().MakeByRefType() == type)
-									{
-										arguments[i] = c;
-										setters.Add(j);
-									}
-								}
+								var c = components[j];
+								if (c.GetType().MakeByRefType() != type)
+									continue;
+								arguments[i] = c;
+								setters.Add(j);
 							}
-
-							method.Invoke(system, arguments);
-
-							for(var i = 0; i < arguments.Length; i++)
-								components[setters[i]] = arguments[i];
 						}
-						finally
-						{
-							Pooling.Arguments.Return(arguments);
-							Pooling.ListPool<int>.Return(setters);
-						}
+
+						method.Invoke(system, arguments);
+
+						for (var i = 0; i < arguments.Length; i++)
+							components[setters[i]] = arguments[i];
+					}
+					finally
+					{
+						Pooling.Arguments.Return(arguments);
+						Pooling.ListPool<int>.Return(setters);
 					}
 				}
 			}
+		}
+
+		private IEnumerable<ISystem> BuildExecutionPlan()
+		{
+			var dependencyMap = new Dictionary<Type, List<ISystem>>();
+			foreach (var system in _systems)
+			{
+				var dependencies = system.GetType().GetTypeInfo().ImplementedInterfaces
+					.Where(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(IDependOn<>))
+					.SelectMany(y => y.GetGenericArguments());
+
+				foreach (var dependency in dependencies)
+				{
+					if (!dependencyMap.TryGetValue(dependency, out var dependents))
+						dependencyMap.Add(dependency, dependents = new List<ISystem>());
+
+					dependents.Add(system);
+				}
+			}
+
+			var indices = Enumerable.Range(0, _systems.Count).ToList();
+
+			var order = indices.TopologicalSort(i =>
+			{
+				var s = _systems[i];
+				return !dependencyMap.TryGetValue(s.GetType(), out var dependents)
+					? Enumerable.Empty<int>()
+					: dependents.Select(x => _systems.IndexOf(x));
+			}).ToArray();
+
+			var executionPlan = _systems.OrderBy(x =>
+			{
+				var index = Array.IndexOf(order, _systems.IndexOf(x));
+				return index < 0 ? int.MaxValue : index;
+			});
+
+			return executionPlan;
 		}
 
 		public void SetComponent<T>(uint entity, T value) where T : struct

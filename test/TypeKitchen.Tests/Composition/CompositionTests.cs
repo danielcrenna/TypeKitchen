@@ -14,7 +14,8 @@ namespace TypeKitchen.Tests.Composition
             var entity = container.CreateEntity<Velocity, Position2D>();
 			entity.Set(new Velocity { Value = 10f }, container);
             container.AddSystem<VelocitySystem>();
-            container.Update();
+            container.AddSystem<ClockSystem>();
+			container.Update();
 
             var c = container.GetComponents(entity).ToArray();
             Assert.Equal(1, ((Position2D) c[0]).X);
@@ -35,7 +36,15 @@ namespace TypeKitchen.Tests.Composition
 			public int Y;
 		}
 
-		public sealed class VelocitySystem : ISystem<Velocity, Position2D>
+		public sealed class ClockSystem : ISystem<float>
+		{
+			public void Update(ref float elapsed)
+			{
+				
+			}
+		}
+
+		public sealed class VelocitySystem : ISystem<Velocity, Position2D>, IDependOn<ClockSystem>
 		{
 			public void Update(ref Velocity velocity, ref Position2D position)
 			{
