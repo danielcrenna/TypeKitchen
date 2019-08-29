@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.Collections.Generic;
 using TypeKitchen.Internal;
 
@@ -18,18 +21,20 @@ namespace TypeKitchen.Composition
 
 		public uint CreateEntity(params Type[] componentTypes)
 		{
-			var archetype = componentTypes.Archetype(_seed);
+			Array.Resize(ref _archetypes, _archetypes.Length + 1);
+			Array.Resize(ref _entities, _entities.Length + 1);
 
-			if (!_entitiesByArchetype.TryGetValue(archetype, out var entities))
-				_entitiesByArchetype.Add(archetype, entities = new List<uint>());
-			var entity = (uint) entities.Count + 1;
-			entities.Add(entity);
+			var entity = (uint) _entities.Length + 1;
+			var archetype = componentTypes.Archetype(_seed);
+			
+			_archetypes[_archetypes.Length - 1] = archetype;
+			_entities[_entities.Length - 1] = entity;
 
 			foreach (var component in componentTypes.NetworkOrder(x => x.Name))
 			{
 				if (!_componentsByEntity.TryGetValue(entity, out var list))
-					_componentsByEntity.Add(entity, list = new List<object>());
-				var instance = Instancing.CreateInstance(component);
+					_componentsByEntity.Add(entity, list = new List<ValueType>());
+				var instance = (ValueType) Instancing.CreateInstance(component);
 				list.Add(instance);
 			}
 

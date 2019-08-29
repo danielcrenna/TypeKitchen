@@ -3,5 +3,6 @@
 
 namespace TypeKitchen.Composition
 {
+	// ReSharper disable once UnusedTypeParameter (accessed via reflection)
 	public interface IDependOn<T> { }
 }
