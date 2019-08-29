@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -23,7 +24,7 @@ namespace TypeKitchen.Composition
 		private readonly Dictionary<Value128, Type[]> _componentTypesByArchetype = new Dictionary<Value128, Type[]>();
 		private readonly Dictionary<Value128, List<ISystem>> _systemsByArchetype = new Dictionary<Value128, List<ISystem>>();
 		private readonly Dictionary<Value128, List<uint>> _entitiesByArchetype = new Dictionary<Value128, List<uint>>();
-		private readonly Dictionary<uint, List<IComponent>> _componentsByEntity = new Dictionary<uint, List<IComponent>>();
+		private readonly Dictionary<uint, List<object>> _componentsByEntity = new Dictionary<uint, List<object>>();
 		
 		public static Container Create(Value128 seed = default)
 		{
@@ -56,9 +57,9 @@ namespace TypeKitchen.Composition
 				*/
 				
 				if (!_componentsByEntity.TryGetValue(entity, out var list))
-					_componentsByEntity.Add(entity, list = new List<IComponent>());
+					_componentsByEntity.Add(entity, list = new List<object>());
 
-				list.Add((IComponent) Instancing.CreateInstance(component));
+				list.Add((object) Instancing.CreateInstance(component));
 			}
 			
 			IndexArchetypes(stable);
@@ -131,7 +132,7 @@ namespace TypeKitchen.Composition
 			}
 		}
 
-		public IEnumerable<IComponent> GetComponents(Entity entity)
+		public IEnumerable<object> GetComponents(Entity entity)
 		{
 			foreach (var component in _componentsByEntity[entity])
 				yield return component;

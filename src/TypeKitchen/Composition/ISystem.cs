@@ -7,12 +7,12 @@ namespace TypeKitchen.Composition
 		
 	}
 
-	public interface ISystem<T> : ISystem where T : IComponent
+	public interface ISystem<T> : ISystem
 	{
-		void Update(ref T component);
+		void Update(ref T component1);
 	}
 
-	public interface ISystem<T1, T2> : ISystem where T1 : IComponent where T2 : IComponent
+	public interface ISystem<T1, T2> : ISystem
 	{
 		void Update(ref T1 component1, ref T2 component2);
 	}

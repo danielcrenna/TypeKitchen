@@ -21,13 +21,13 @@ namespace TypeKitchen.Tests.Composition
 		}
 
 		[DebuggerDisplay("{GetType().Name}: {Value}")]
-		public class A : IComponent<float>
+		public class A
 		{
 			public float Value { get; set; }
 		}
 
 		[DebuggerDisplay("{GetType().Name}: {Value}")]
-		public class B : IComponent<float>
+		public class B
 		{
 			public float Value { get; set; }
 		}
