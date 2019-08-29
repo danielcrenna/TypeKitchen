@@ -17,9 +17,6 @@ namespace TypeKitchen.Composition
 			_seed = seed;
 		}
 
-		private static readonly AtomicLong EntityIds = new AtomicLong(0);
-
-		
 		private readonly List<ISystem> _systems = new List<ISystem>();
 		private readonly Dictionary<Value128, List<uint>> _entitiesByArchetype = new Dictionary<Value128, List<uint>>();
 

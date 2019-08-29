@@ -25,7 +25,7 @@ namespace TypeKitchen.Composition
 
 			if (!_entitiesByArchetype.TryGetValue(archetype, out var entities))
 				_entitiesByArchetype.Add(archetype, entities = new List<uint>());
-			var entity = (uint) EntityIds.IncrementAndGet();
+			var entity = (uint) entities.Count + 1;
 			entities.Add(entity);
 
 			foreach (var component in stable)
