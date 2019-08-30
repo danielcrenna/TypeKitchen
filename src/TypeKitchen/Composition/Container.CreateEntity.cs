@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
@@ -15,9 +16,19 @@ namespace TypeKitchen.Composition
 			return CreateEntity(typeof(T1));
 		}
 
+		public uint CreateEntity<T1>(T1 component1) where T1 : struct
+		{
+			return CreateEntity((object) component1);
+		}
+
 		public uint CreateEntity<T1, T2>() where T1 : struct where T2 : struct
 		{
 			return CreateEntity(typeof(T1), typeof(T2));
+		}
+
+		public uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : struct where T2 : struct
+		{
+			return CreateEntity((object) component1, component2);
 		}
 
 		private readonly Dictionary<uint, List<IProxy>> _componentsByEntity = new Dictionary<uint, List<IProxy>>();
@@ -41,70 +52,89 @@ namespace TypeKitchen.Composition
 
 		public uint CreateEntity(params Type[] componentTypes)
 		{
+			var entity = InitializeEntity(componentTypes);
+			foreach (var componentType in componentTypes.NetworkOrder(x => x.Name))
+				CreateProxy(entity, componentType, null);
+			return entity;
+		}
+
+		public uint CreateEntity(params object[] components)
+		{
+			var entity = InitializeEntity(components.Select(x => x.GetType()));
+			foreach (var component in components.NetworkOrder(x => x.GetType().Name))
+				CreateProxy(entity, component.GetType(), component);
+			return entity;
+		}
+
+		private uint InitializeEntity(IEnumerable<Type> componentTypes)
+		{
 			Array.Resize(ref _archetypes, _archetypes.Length + 1);
 			Array.Resize(ref _entities, _entities.Length + 1);
 
-			var entity = (uint) _entities.Length + 1;
+			var entity = (uint) _entities.Length;
 			var archetype = componentTypes.Archetype(_seed);
-			
+
 			_archetypes[_archetypes.Length - 1] = archetype;
 			_entities[_entities.Length - 1] = entity;
-
-			foreach (var componentType in componentTypes.NetworkOrder(x => x.Name))
-			{
-				if (!_componentsByEntity.TryGetValue(entity, out var list))
-					_componentsByEntity.Add(entity, list = new List<IProxy>());
-
-				var members = AccessorMembers.Create(componentType,
-					AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public);
-
-				var type = GenerateComponentProxy(componentType, members);
-
-				var arguments = Pooling.Arguments.Get(members.Count);
-				try
-				{
-					var count = 0;
-					foreach (var member in members)
-					{
-						if (!member.Type.IsValueType)
-							throw new NotSupportedException("Components do not support mutable structs");
-
-						if (TryMapToMemory(member, _bools, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _sbytes, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _bytes, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _ushorts, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _shorts, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _uints, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _ints, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _ulongs, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _longs, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _floats, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _doubles, arguments, ref count))
-							continue;
-						if (TryMapToMemory(member, _decimals, arguments, ref count))
-							continue;
-					}
-
-					var instance = (IProxy) Activator.CreateInstance(type, arguments);
-					list.Add(instance);
-				}
-				finally
-				{
-					Pooling.Arguments.Return(arguments);
-				}
-			}
-
 			return entity;
+		}
+
+		private void CreateProxy(uint entity, Type componentType, object initializer)
+		{
+			if (!_componentsByEntity.TryGetValue(entity, out var list))
+				_componentsByEntity.Add(entity, list = new List<IProxy>());
+
+			var members = AccessorMembers.Create(componentType,
+				AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public);
+
+			var type = GenerateComponentProxy(componentType, members);
+
+			var arguments = Pooling.Arguments.Get(members.Count);
+			try
+			{
+				var count = 0;
+				foreach (var member in members)
+				{
+					if (!member.Type.IsValueType)
+						throw new NotSupportedException("Components do not support mutable structs");
+
+					if (TryMapToMemory(member, _bools, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _sbytes, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _bytes, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _ushorts, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _shorts, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _uints, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _ints, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _ulongs, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _longs, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _floats, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _doubles, arguments, ref count))
+						continue;
+					if (TryMapToMemory(member, _decimals, arguments, ref count))
+						continue;
+				}
+
+				var instance = (IProxy) Activator.CreateInstance(type, arguments);
+
+				if(initializer != null)
+					SetComponent(entity, componentType, initializer);
+
+				list.Add(instance);
+			}
+			finally
+			{
+				Pooling.Arguments.Return(arguments);
+			}
 		}
 
 		private static bool TryMapToMemory<T>(AccessorMember member, T[] array, IList<object> arguments, ref int count)

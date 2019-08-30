@@ -7,7 +7,7 @@ using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
 {
-	public static class TypeExtensions
+	internal static class TypeExtensions
 	{
 		public static Value128 Archetype(this IEnumerable<Type> componentTypes, Value128 seed = default)
 		{
