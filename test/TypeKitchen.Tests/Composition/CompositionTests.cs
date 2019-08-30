@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using TypeKitchen.Composition;
 using Xunit;
@@ -15,7 +16,7 @@ namespace TypeKitchen.Tests.Composition
 			entity.Set(new Velocity { Value = 10f }, container);
             container.AddSystem<VelocitySystem>();
             container.AddSystem<ClockSystem>();
-			container.Update();
+			container.Update(TimeSpan.FromSeconds(0.1));
 
 			var c = container.GetComponents(entity).ToArray();
 
@@ -38,12 +39,13 @@ namespace TypeKitchen.Tests.Composition
 			}
 		}
 
-		public sealed class VelocitySystem : ISystem<Velocity, Position2D>, IDependOn<ClockSystem>
+		public sealed class VelocitySystem : ISystemWithState<TimeSpan, Velocity, Position2D>, IDependOn<ClockSystem>
 		{
-			public void Update(ref Velocity velocity, ref Position2D position)
+			public void Update(TimeSpan elapsedTime, ref Velocity velocity, ref Position2D position)
 			{
-				position.X += (int) (velocity.Value * 0.1f);
-				position.Y += (int) (velocity.Value * 0.1f);
+				var delta = elapsedTime.Milliseconds * 0.001;
+				position.X += (int) (velocity.Value * delta);
+				position.Y += (int) (velocity.Value * delta);
 			}
 		}
 

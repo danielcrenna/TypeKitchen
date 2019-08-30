@@ -6,7 +6,7 @@ using System;
 namespace TypeKitchen.Composition
 {
 	// FIXME: This still boxes: https://stackoverflow.com/questions/3032750/structs-interfaces-and-boxing
-	public interface IProxy
+	public interface IComponentProxy
 	{
 		Type RefType { get; }
 	}

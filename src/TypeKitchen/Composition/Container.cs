@@ -112,6 +112,11 @@ namespace TypeKitchen.Composition
 
 		public void Update()
 		{
+			Update<object>();
+		}
+
+		public void Update<TState>(TState state = default)
+		{
 			_executionPlan = _executionPlan ?? BuildExecutionPlan();
 
 			foreach (var line in _executionPlan)
@@ -127,35 +132,28 @@ namespace TypeKitchen.Composition
 					foreach (var entity in entities)
 					{
 						var components = _componentsByEntity[entity];
-						var setters = Pooling.ListPool<int>.Get();
-						try
+						for (var i = 0; i < line.Parameters.Length; i++)
 						{
-							for (var i = 0; i < line.Parameters.Length; i++)
+							var type = line.Parameters[i].ParameterType;
+							if (type == typeof(TState))
 							{
-								var type = line.Parameters[i].ParameterType;
-								for (var j = 0; j < components.Count; j++)
-								{
-									var c = components[j];
-									if (c.RefType != type)
-										continue;
-
-									var refMethod = c.GetType().GetProperty("Ref");
-									var surrogate = refMethod?.GetValue(c);
-
-									arguments[i] = surrogate;
-									setters.Add(j);
-								}
+								arguments[i] = state;
+								continue;
 							}
-
-							line.Update.Invoke(line.System, arguments);
-
-							foreach(var argument in arguments)
-								SetComponent(entity, argument.GetType(), argument);
+							foreach (var c in components)
+							{
+								if (c.RefType != type)
+									continue;
+								var refMethod = c.GetType().GetProperty("Ref");
+								var surrogate = refMethod?.GetValue(c);
+								arguments[i] = surrogate;
+							}
 						}
-						finally
-						{
-							Pooling.ListPool<int>.Return(setters);
-						}
+
+						line.Update.Invoke(line.System, arguments);
+
+						foreach (var argument in arguments)
+							SetComponent(entity, argument.GetType(), argument);
 					}
 				}
 				finally

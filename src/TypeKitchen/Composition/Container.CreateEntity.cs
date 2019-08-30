@@ -32,7 +32,7 @@ namespace TypeKitchen.Composition
 			return CreateEntity((object) component1, component2);
 		}
 
-		private readonly Dictionary<uint, List<IProxy>> _componentsByEntity = new Dictionary<uint, List<IProxy>>();
+		private readonly Dictionary<uint, List<IComponentProxy>> _componentsByEntity = new Dictionary<uint, List<IComponentProxy>>();
 
 		#region SoA
 
@@ -55,7 +55,7 @@ namespace TypeKitchen.Composition
 		{
 			var entity = InitializeEntity(componentTypes);
 			foreach (var componentType in componentTypes.NetworkOrder(x => x.Name))
-				CreateProxy(entity, componentType, null);
+				CreateComponentProxy(entity, componentType, null);
 			return entity;
 		}
 
@@ -63,7 +63,7 @@ namespace TypeKitchen.Composition
 		{
 			var entity = InitializeEntity(components.Select(x => x.GetType()));
 			foreach (var component in components.NetworkOrder(x => x.GetType().Name))
-				CreateProxy(entity, component.GetType(), component);
+				CreateComponentProxy(entity, component.GetType(), component);
 			return entity;
 		}
 
@@ -80,10 +80,10 @@ namespace TypeKitchen.Composition
 			return entity;
 		}
 
-		private void CreateProxy(uint entity, Type componentType, object initializer)
+		private void CreateComponentProxy(uint entity, Type componentType, object initializer)
 		{
 			if (!_componentsByEntity.TryGetValue(entity, out var list))
-				_componentsByEntity.Add(entity, list = new List<IProxy>());
+				_componentsByEntity.Add(entity, list = new List<IComponentProxy>());
 
 			var members = AccessorMembers.Create(componentType,
 				AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public);
@@ -125,7 +125,7 @@ namespace TypeKitchen.Composition
 						continue;
 				}
 
-				var instance = (IProxy) Activator.CreateInstance(type, arguments);
+				var instance = (IComponentProxy) Activator.CreateInstance(type, arguments);
 
 				if(initializer != null)
 					SetComponent(entity, componentType, initializer);
@@ -159,7 +159,7 @@ namespace TypeKitchen.Composition
 					Debug.Assert(type.FullName != null, "type.FullName != null");
 					var qualifiedName = type.FullName.Replace("+", ".");
 
-					sb.AppendLine($"public readonly struct {type.Name}Proxy : IProxy");
+					sb.AppendLine($"public readonly struct {type.Name}Proxy : IComponentProxy");
 					sb.AppendLine("{");
 					sb.AppendLine();
 					sb.AppendLine($"    public Type RefType => typeof({qualifiedName}).MakeByRefType();");
@@ -237,7 +237,7 @@ namespace TypeKitchen.Composition
 				});
 
 				var builder = Snippet.GetBuilder()
-					.Add<IProxy>()
+					.Add<IComponentProxy>()
 					.Add(type);
 
 				var proxyType = Snippet.CreateType(code, builder.Build());

@@ -13,9 +13,15 @@ namespace TypeKitchen.Composition
 		private static IEnumerable<Type> GetDeclaredSystemComponentTypes<T>(this T system) where T : ISystem
 		{
 			var implemented = system.GetType().GetTypeInfo().ImplementedInterfaces;
-			return implemented
-				.Single(x => typeof(ISystem).IsAssignableFrom(x) && x.IsGenericType)
-				.GetGenericArguments();
+			var contract = implemented
+				.Single(x => typeof(ISystem).IsAssignableFrom(x) && x.IsGenericType);
+
+			IEnumerable<Type> componentTypes = contract.GetGenericArguments();
+			if (typeof(ISystemWithState).IsAssignableFrom(contract))
+				componentTypes = componentTypes.Skip(1);
+			
+			foreach (var argument in componentTypes)
+				yield return argument;
 		}
 	}
 }
