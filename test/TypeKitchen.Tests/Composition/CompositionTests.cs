@@ -5,6 +5,19 @@ using Xunit;
 
 namespace TypeKitchen.Tests.Composition
 {
+	[DebuggerDisplay("{" + nameof(Value) + "}")]
+	public struct Velocity
+	{
+		public float Value;
+	}
+
+	[DebuggerDisplay("({" + nameof(X) + "}, {" + nameof(Y) + "})")]
+	public struct Position2D
+	{
+		public int X;
+		public int Y;
+	}
+
 	public class CompositionTests
 	{
 		[Fact]
@@ -17,23 +30,17 @@ namespace TypeKitchen.Tests.Composition
             container.AddSystem<ClockSystem>();
 			container.Update();
 
-            var c = container.GetComponents(entity).ToArray();
-            Assert.Equal(1, ((Position2D) c[0]).X);
-            Assert.Equal(1, ((Position2D) c[0]).Y);
-			Assert.Equal(10, ((Velocity) c[1]).Value);
-		}
+			var c = container.GetComponents(entity).ToArray();
 
-		[DebuggerDisplay("{" + nameof(Value) + "}")]
-		public struct Velocity
-		{
-			public float Value;
-		}
+			var c0 = c[0];
+			var c1 = c[1];
 
-		[DebuggerDisplay("({" + nameof(X) + "}, {" + nameof(Y) + "})")]
-		public struct Position2D
-		{
-			public int X;
-			public int Y;
+			var position = c0.GetType().GetProperty("Ref").GetValue(c0);
+			var velocity = c1.GetType().GetProperty("Ref").GetValue(c1);
+
+			Assert.Equal(1, ((Position2D) position).X);
+			Assert.Equal(1, ((Position2D) position).Y);
+			Assert.Equal(10, ((Velocity) velocity).Value);
 		}
 
 		public sealed class ClockSystem : ISystem<float>

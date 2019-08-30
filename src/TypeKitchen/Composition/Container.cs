@@ -18,8 +18,6 @@ namespace TypeKitchen.Composition
 		}
 
 		private readonly List<ISystem> _systems = new List<ISystem>();
-		private readonly Dictionary<uint, List<ValueType>> _componentsByEntity = new Dictionary<uint, List<ValueType>>();
-
 		private Value128[] _archetypes = new Value128[0];
 		private uint[] _entities = new uint[0];
 		
@@ -34,6 +32,7 @@ namespace TypeKitchen.Composition
 		{
 			public ISystem System;
 			public MethodInfo Update;
+			public ParameterInfo[] Parameters;
 			public int Start;
 			public int Length;
 		}
@@ -82,7 +81,7 @@ namespace TypeKitchen.Composition
 				var archetype = system.Archetype(_seed);
 				int? start = null;
 				var length = 0;
-				for (var i = 0; i < _entities.Length; i++)
+				for (var i = 0; i < _archetypes.Length; i++)
 				{
 					if (_archetypes[i] == archetype)
 					{
@@ -94,12 +93,17 @@ namespace TypeKitchen.Composition
 						break;
 				}
 
+				var update = system.GetType().GetMethod(nameof(ExecutionPlanLine.Update));
+				if (update == null)
+					continue;
+
 				var line = new ExecutionPlanLine
 				{
 					System = system,
-					Update = system.GetType().GetMethod(nameof(ExecutionPlanLine.Update)),
+					Update = update,
 					Start = start.GetValueOrDefault(),
-					Length = length
+					Length = length,
+					Parameters = update.GetParameters()
 				};
 
 				yield return line;
@@ -115,12 +119,7 @@ namespace TypeKitchen.Composition
 				if (line.Length == 0)
 					continue;
 
-				var update = line.Update;
-				if (update == null)
-					continue;
-
-				var parameters = update.GetParameters();
-				var arguments = Pooling.Arguments.Get(parameters.Length);
+				var arguments = Pooling.Arguments.Get(line.Parameters.Length);
 				try
 				{
 					var entities = new ReadOnlySpan<uint>(_entities, line.Start, line.Length);
@@ -131,23 +130,27 @@ namespace TypeKitchen.Composition
 						var setters = Pooling.ListPool<int>.Get();
 						try
 						{
-							for (var i = 0; i < parameters.Length; i++)
+							for (var i = 0; i < line.Parameters.Length; i++)
 							{
-								var type = parameters[i].ParameterType;
+								var type = line.Parameters[i].ParameterType;
 								for (var j = 0; j < components.Count; j++)
 								{
 									var c = components[j];
-									if (c.GetType().MakeByRefType() != type)
+									if (c.RefType != type)
 										continue;
-									arguments[i] = c;
+
+									var refMethod = c.GetType().GetProperty("Ref");
+									var surrogate = refMethod?.GetValue(c);
+
+									arguments[i] = surrogate;
 									setters.Add(j);
 								}
 							}
 
-							update.Invoke(line.System, arguments);
+							line.Update.Invoke(line.System, arguments);
 
-							for (var i = 0; i < arguments.Length; i++)
-								components[setters[i]] = (ValueType) arguments[i];
+							foreach(var argument in arguments)
+								SetComponent(entity, argument.GetType(), argument);
 						}
 						finally
 						{
@@ -159,21 +162,71 @@ namespace TypeKitchen.Composition
 				{
 					Pooling.Arguments.Return(arguments);
 				}
-
-				
 			}
 		}
 
-		
-
 		public void SetComponent<T>(uint entity, T value) where T : struct
+		{
+			SetComponent(entity, typeof(T), value);
+		}
+
+		private void SetComponent(uint entity, Type type, object value)
 		{
 			for (var i = 0; i < _componentsByEntity[entity].Count; i++)
 			{
-				var component = _componentsByEntity[entity][i];
-				if (!(component is T))
+				var c = _componentsByEntity[entity][i];
+				if (type.MakeByRefType() != c.RefType)
 					continue;
-				_componentsByEntity[entity][i] = value;
+
+				// FIXME: accessors violate memory :-(
+				var readProxy = ReadAccessor.Create(c, AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var proxyMembers);
+				var readSurrogate = ReadAccessor.Create(value, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var surrogateMembers);
+				
+				foreach (var member in surrogateMembers)
+				{
+					switch (member.MemberInfo)
+					{
+						case FieldInfo field:
+						{
+							var o = field.GetValue(value);
+							var pm = proxyMembers.Single(x => x.Name == member.Name);
+							switch (pm.MemberInfo)
+							{
+								case FieldInfo f:
+								{
+									f.SetValue(c, o);
+									break;
+								}
+								case PropertyInfo p:
+								{
+									p.SetValue(c, o);
+									break;
+								}
+							}
+							break;
+						}
+						case PropertyInfo property:
+						{
+							var o = property.GetValue(value);
+							var pm = proxyMembers.Single(x => x.Name == member.Name);
+							switch (pm.MemberInfo)
+							{
+								case FieldInfo f:
+								{
+									f.SetValue(c, o);
+									break;
+								}
+								case PropertyInfo p:
+								{
+									p.SetValue(c, o);
+									break;
+								}
+							}
+							break;
+						}
+					}
+				}
+
 				break;
 			}
 		}
