@@ -22,8 +22,22 @@ namespace TypeKitchen.Composition
 
 		private readonly Dictionary<uint, List<IProxy>> _componentsByEntity = new Dictionary<uint, List<IProxy>>();
 
-		private int[] _integers = new int[0];
+		#region SoA
+
+		private bool[] _bools = new bool[0];
+		private byte[] _bytes = new byte[0];
+		private sbyte[] _sbytes = new sbyte[0];
+		private ushort[] _ushorts = new ushort[0];
+		private short[] _shorts = new short[0];
+		private uint[] _uints = new uint[0];
+		private int[] _ints = new int[0];
+		private ulong[] _ulongs = new ulong[0];
+		private long[] _longs = new long[0];
 		private float[] _floats = new float[0];
+		private double[] _doubles = new double[0];
+		private decimal[] _decimals = new decimal[0];
+
+		#endregion
 
 		public uint CreateEntity(params Type[] componentTypes)
 		{
@@ -55,25 +69,30 @@ namespace TypeKitchen.Composition
 						if (!member.Type.IsValueType)
 							throw new NotSupportedException("Components do not support mutable structs");
 
-						if (member.Type == typeof(int))
-						{
-							var i = _integers.Length;
-							Array.Resize(ref _integers, i + 1);
-
-							var span = new Span<int>(_integers, i, 1);
-							arguments[count] = span.GetPinnableReference();
-						}
-
-						if (member.Type == typeof(float))
-						{
-							var i = _floats.Length;
-							Array.Resize(ref _floats, i + 1);
-
-							var span = new Span<float>(_floats, i, 1);
-							arguments[count] = span.GetPinnableReference();
-						}
-
-						count++;
+						if (TryMapToMemory(member, _bools, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _sbytes, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _bytes, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _ushorts, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _shorts, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _uints, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _ints, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _ulongs, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _longs, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _floats, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _doubles, arguments, ref count))
+							continue;
+						if (TryMapToMemory(member, _decimals, arguments, ref count))
+							continue;
 					}
 
 					var instance = (IProxy) Activator.CreateInstance(type, arguments);
@@ -88,6 +107,17 @@ namespace TypeKitchen.Composition
 			return entity;
 		}
 
+		private static bool TryMapToMemory<T>(AccessorMember member, T[] array, IList<object> arguments, ref int count)
+		{
+			if (member.Type != typeof(T))
+				return false;
+			var i = array.Length;
+			Array.Resize(ref array, i + 1);
+			var span = new Span<T>(array, i, 1);
+			arguments[count++] = span.GetPinnableReference();
+			return true;
+		}
+
 		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
 		private static Type GenerateComponentProxy(Type componentType, AccessorMembers members)
 		{
@@ -99,19 +129,6 @@ namespace TypeKitchen.Composition
 					sb.AppendLine("{");
 					sb.AppendLine();
 					sb.AppendLine($"    public Type RefType => typeof({type.Name}).MakeByRefType();");
-
-					//var count = 0;
-					//sb.Append($"    public {type.Name} Ref => new {type.Name} {{");
-					//foreach (var member in members)
-					//{
-					//	if (count != 0)
-					//		sb.Append(", ");
-					//	sb.Append(member.Name);
-					//	sb.Append(" = ");
-					//	sb.Append(member.Name);
-					//	count++;
-					//}
-					//sb.AppendLine("};");
 
 					var count = 0;
 					sb.AppendLine($"    public unsafe {type.Name} Ref");
