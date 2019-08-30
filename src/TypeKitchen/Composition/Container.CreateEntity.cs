@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using TypeKitchen.Internal;
 
@@ -155,13 +156,16 @@ namespace TypeKitchen.Composition
 			{
 				var code = Pooling.StringBuilderPool.Scoped(sb =>
 				{
+					Debug.Assert(type.FullName != null, "type.FullName != null");
+					var qualifiedName = type.FullName.Replace("+", ".");
+
 					sb.AppendLine($"public readonly struct {type.Name}Proxy : IProxy");
 					sb.AppendLine("{");
 					sb.AppendLine();
-					sb.AppendLine($"    public Type RefType => typeof({type.Name}).MakeByRefType();");
+					sb.AppendLine($"    public Type RefType => typeof({qualifiedName}).MakeByRefType();");
 
 					var count = 0;
-					sb.AppendLine($"    public unsafe {type.Name} Ref");
+					sb.AppendLine($"    public unsafe {qualifiedName} Ref");
 					sb.AppendLine("    {");
 					sb.AppendLine("        get");
 					sb.AppendLine("        {");
@@ -170,7 +174,7 @@ namespace TypeKitchen.Composition
 						var name = member.Name.ToLowerInvariant();
 						sb.AppendLine($"            ref var {name} = ref _{name}[0];");
 					}
-					sb.Append($"            var {type.Name.ToLowerInvariant()} = new {type.Name} {{");
+					sb.Append($"            var {type.Name.ToLowerInvariant()} = new {qualifiedName} {{");
 					foreach (var member in members)
 					{
 						var name = member.Name.ToLowerInvariant();

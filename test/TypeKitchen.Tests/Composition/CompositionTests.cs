@@ -5,19 +5,6 @@ using Xunit;
 
 namespace TypeKitchen.Tests.Composition
 {
-	[DebuggerDisplay("{" + nameof(Value) + "}")]
-	public struct Velocity
-	{
-		public float Value;
-	}
-
-	[DebuggerDisplay("({" + nameof(X) + "}, {" + nameof(Y) + "})")]
-	public struct Position2D
-	{
-		public int X;
-		public int Y;
-	}
-
 	public class CompositionTests
 	{
 		[Fact]
@@ -58,6 +45,19 @@ namespace TypeKitchen.Tests.Composition
 				position.X += (int) (velocity.Value * 0.1f);
 				position.Y += (int) (velocity.Value * 0.1f);
 			}
+		}
+
+		[DebuggerDisplay("{" + nameof(Value) + "}")]
+		public struct Velocity
+		{
+			public float Value;
+		}
+
+		[DebuggerDisplay("({" + nameof(X) + "}, {" + nameof(Y) + "})")]
+		public struct Position2D
+		{
+			public int X;
+			public int Y;
 		}
 	}
 }
