@@ -26,8 +26,7 @@ namespace TypeKitchen
 			public object[] Get(int length)
 			{
 				var comparator = _firstItem;
-				if (comparator != null &&
-				    Interlocked.CompareExchange(ref _firstItem, default, comparator) == comparator)
+				if (comparator != null && Interlocked.CompareExchange(ref _firstItem, default, comparator) == comparator && comparator.Length == length)
 					return comparator;
 				var items = _items;
 				for (var index = 0; index < items.Length; ++index)
