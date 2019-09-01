@@ -20,40 +20,17 @@ namespace TypeKitchen
 			DeclaringType = type;
 			NameToMember = new Dictionary<string, AccessorMember>();
 
-			var flags = BindingFlags.Instance;
+			var flags = BindingFlags.Instance | BindingFlags.Static;
 			if (scope.HasFlagFast(AccessorMemberScope.Public))
 				flags |= BindingFlags.Public;
 			if (scope.HasFlagFast(AccessorMemberScope.Private))
 				flags |= BindingFlags.NonPublic;
 
-			if (types.HasFlagFast(AccessorMemberTypes.Properties))
-			{
-				PropertyInfo = type.GetProperties(flags).OrderBy(p => p.Name).ToArray();
-				foreach (var property in PropertyInfo)
-					NameToMember.Add(property.Name,
-						new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite,
-							false, scope, AccessorMemberType.Property, property));
-			}
+			// First pass: everything
+			SetWith(type, types, scope, flags);
 
-			if (types.HasFlagFast(AccessorMemberTypes.Fields))
-			{
-				FieldInfo = type.GetFields(flags).OrderBy(f => f.Name).ToArray();
-				foreach (var field in FieldInfo)
-					NameToMember.Add(field.Name,
-						new AccessorMember(field.Name, field.FieldType, true, true, false, scope,
-							AccessorMemberType.Field, field));
-			}
-
-			if (types.HasFlagFast(AccessorMemberTypes.Methods))
-			{
-				MethodInfo = type.GetMethods().OrderBy(m => m.Name).ToArray();
-				foreach (var method in MethodInfo)
-					// this willfully ignores the concept of overloads, last in wins
-					NameToMember[method.Name] =
-						new AccessorMember(method.Name, method.ReturnType, false, false, true, scope,
-							AccessorMemberType.Method,
-							method);
-			}
+			// Second pass: declared only (prefer overrides)
+			SetWith(type, types, scope, flags | BindingFlags.DeclaredOnly);
 
 			var fields = FieldInfo ?? Enumerable.Empty<FieldInfo>();
 			var properties = PropertyInfo ?? Enumerable.Empty<PropertyInfo>();
@@ -63,10 +40,41 @@ namespace TypeKitchen
 			Members = NameToMember.Values.OrderBy(m => m.Name).ToList();
 		}
 
+		private void SetWith(IReflect type, AccessorMemberTypes types, AccessorMemberScope scope, BindingFlags flags)
+		{
+			if (types.HasFlagFast(AccessorMemberTypes.Fields))
+			{
+				FieldInfo = type.GetFields(flags).OrderBy(f => f.Name).ToArray();
+				foreach (var field in FieldInfo)
+					NameToMember[field.Name] =
+						new AccessorMember(field.Name, field.FieldType, true, true, false, scope,
+							AccessorMemberType.Field, field);
+			}
+
+			if (types.HasFlagFast(AccessorMemberTypes.Properties))
+			{
+				PropertyInfo = type.GetProperties(flags).OrderBy(p => p.Name).ToArray();
+				foreach (var property in PropertyInfo)
+					NameToMember[property.Name] =
+						new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite,
+							false, scope, AccessorMemberType.Property, property);
+			}
+
+			if (types.HasFlagFast(AccessorMemberTypes.Methods))
+			{
+				MethodInfo = type.GetMethods(flags).OrderBy(m => m.Name).ToArray();
+				foreach (var method in MethodInfo)
+					NameToMember[method.Name] =
+						new AccessorMember(method.Name, method.ReturnType, false, false, true, scope,
+							AccessorMemberType.Method,
+							method);
+			}
+		}
+
 		public Type DeclaringType { get; }
-		public PropertyInfo[] PropertyInfo { get; }
-		public FieldInfo[] FieldInfo { get; }
-		public MethodInfo[] MethodInfo { get; }
+		public PropertyInfo[] PropertyInfo { get; set; }
+		public FieldInfo[] FieldInfo { get; set; }
+		public MethodInfo[] MethodInfo { get; set; }
 		public MemberInfo[] MemberInfo { get; }
 		public List<AccessorMember> Members { get; }
 
@@ -75,7 +83,6 @@ namespace TypeKitchen
 		public AccessorMember this[string name] => NameToMember[name];
 		public int Count => NameToMember.Count;
 		public IEnumerable<string> Names => NameToMember.Keys;
-
 
 		public IEnumerator<AccessorMember> GetEnumerator()
 		{

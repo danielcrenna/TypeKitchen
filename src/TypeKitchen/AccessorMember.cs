@@ -3,11 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
 namespace TypeKitchen
 {
+	[DebuggerDisplay("{" + nameof(MemberInfo) + "}")]
 	public sealed class AccessorMember
 	{
 		public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall,
