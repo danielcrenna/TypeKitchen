@@ -33,7 +33,7 @@ namespace TypeKitchen
 				il.LoadArgument(i);
 				il.LoadConstant(i);
 				il.Ldelem_Ref();
-				il.CastOrUnbox(parameters[i].ParameterType);
+				il.CastOrUnboxAny(parameters[i].ParameterType);
 			}
 
 			il.Newobj(ctor);

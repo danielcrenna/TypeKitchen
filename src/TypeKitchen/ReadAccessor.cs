@@ -174,12 +174,11 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
-					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_3(); //     value
-					il.Ldarg_1(); //     target
-					il.CastOrUnbox(type); // ({Type}) target
-
-					switch (member.MemberInfo) //     result = target.{member.Name}
+					il.MarkLabel(branches[member]);		// found:
+					il.Ldarg_3();						// value
+					il.Ldarg_1();						// target
+					il.CastOrUnbox(type);				// ({Type}) target
+					switch (member.MemberInfo)			// result = target.{member.Name}
 					{
 						case PropertyInfo property:
 							il.Callvirt(property.GetGetMethod(true));
@@ -189,19 +188,18 @@ namespace TypeKitchen
 							break;
 					}
 
-					if (member.Type.IsValueType)
-						il.Box(member.Type); //     (object) result
-					il.Stind_Ref(); //     value = result
-					il.Ldc_I4_1(); //     1
-					il.Ret(); //     return 1  (true)
+					il.MaybeBox(member.Type);			// (object) result
+					il.Stind_Ref();						// value = result
+					il.Ldc_I4_1();						// 1
+					il.Ret();							// return 1 (true)
 				}
 
 				il.MarkLabel(fail);
-				il.Ldarg_3(); //     value
-				il.Ldnull(); //     null
-				il.Stind_Ref(); //     value = null
-				il.Ldc_I4_0(); //     0
-				il.Ret(); //     return 0 (false)
+				il.Ldarg_3();							// value
+				il.Ldnull();							// null
+				il.Stind_Ref();							// value = null
+				il.Ldc_I4_0();							// 0
+				il.Ret();								// return 0 (false)
 
 				tb.DefineMethodOverride(tryGetValue, typeof(ITypeReadAccessor).GetMethod("TryGetValue"));
 			}
@@ -222,17 +220,17 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
-					il.Ldarg_2(); // key
-					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
+					il.Ldarg_2();											// key
+					il.GotoIfStringEquals(member.Name, branches[member]);	// if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
 				{
 					il.MarkLabel(branches[member]);
-					il.Ldarg_1(); // target
-					il.CastOrUnbox(type); // ({Type}) target
+					il.Ldarg_1();					// target
+					il.CastOrUnbox(type);			// ({Type}) target
 
-					switch (member.MemberInfo) // result = target.Foo
+					switch (member.MemberInfo)		// result = target.Foo
 					{
 						case PropertyInfo property:
 							il.Callvirt(property.GetGetMethod(true));
@@ -242,9 +240,8 @@ namespace TypeKitchen
 							break;
 					}
 
-					if (member.Type.IsValueType)
-						il.Box(member.Type); // (object) result
-					il.Ret(); // return result;
+					il.MaybeBox(member.Type);       // (object) result
+					il.Ret();						// return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));

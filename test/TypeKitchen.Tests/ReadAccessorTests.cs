@@ -230,5 +230,22 @@ namespace TypeKitchen.Tests
 
 			Assert.Equal(typeof(OnePropertyOneFieldStrings), accessor.Type);
 		}
+
+		[Fact]
+		public void GetTests_can_read_value_type()
+		{
+			var target = new FooStruct { Foo = "Bar", Baz = 123 };
+			var accessor = ReadAccessor.Create(target);
+			var foo = accessor[target, "Foo"];
+			var bar = accessor[target, "Baz"];
+			Assert.Equal("Bar", foo);
+			Assert.Equal(123, bar);
+		}
+
+		public struct FooStruct
+		{
+			public string Foo { get; set; }
+			public int Baz;
+		}
 	}
 }

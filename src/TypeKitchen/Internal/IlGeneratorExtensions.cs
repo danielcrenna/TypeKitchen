@@ -143,6 +143,19 @@ namespace TypeKitchen.Internal
 				return il;
 
 			if (type.IsValueType)
+				il.Unbox(type);
+			else
+				il.Castclass(type);
+
+			return il;
+		}
+
+		public static ILSugar CastOrUnboxAny(this ILSugar il, Type type)
+		{
+			if (type == typeof(object))
+				return il;
+
+			if (type.IsValueType)
 				il.Unbox_Any(type);
 			else
 				il.Castclass(type);

@@ -164,8 +164,8 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.Ldarg_2(); // key
-					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
+					il.Ldarg_2();											// key
+					il.GotoIfStringEquals(member.Name, branches[member]);   // if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
@@ -174,30 +174,30 @@ namespace TypeKitchen
 						continue;
 
 					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_1(); //     target
-					il.CastOrUnbox(type); //     ({Type}) target
-					il.Ldarg_3(); //     value
+					il.Ldarg_1();					// target
+					il.CastOrUnbox(type);			// ({Type}) target
+					il.Ldarg_3();					// value
 
-					switch (member.MemberInfo) //     result = target.{member.Name}
+					switch (member.MemberInfo)		// result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							il.CastOrUnbox(property.PropertyType);
+							il.CastOrUnboxAny(property.PropertyType);
 							il.Callvirt(property.GetSetMethod(true));
 							break;
 						case FieldInfo field:
-							il.CastOrUnbox(field.FieldType);
+							il.CastOrUnboxAny(field.FieldType);
 							il.Stfld(field);
 							break;
 					}
 
-					il.Ldc_I4_1(); //     1
-					il.Ret(); //     return 1  (true)
+					il.Ldc_I4_1();					//     1
+					il.Ret();						//     return 1 (true)
 				}
 
-				il.Ldnull(); //     null
-				il.Starg_S(); //     value = null
-				il.Ldc_I4_0(); //     0
-				il.Ret(); //     return 0 (false)
+				il.Ldnull();						//     null
+				il.Starg_S();						//     value = null
+				il.Ldc_I4_0();						//     0
+				il.Ret();							//     return 0 (false)
 
 				tb.DefineMethodOverride(trySetValue,
 					typeof(ITypeWriteAccessor).GetMethod(nameof(ITypeWriteAccessor.TrySetValue)));
@@ -227,7 +227,7 @@ namespace TypeKitchen
 						continue;
 
 					il.Ldarg_2(); // key
-					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
+					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
@@ -235,24 +235,24 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_1(); //     target
-					il.CastOrUnbox(type); //     ({Type}) target
-					il.Ldarg_3(); //     value
+					il.MarkLabel(branches[member]);		// found:
+					il.Ldarg_1();						// target
+					il.CastOrUnboxAny(type);				// ({Type}) target
+					il.Ldarg_3();						// value
 
-					switch (member.MemberInfo) //     result = target.{member.Name}
+					switch (member.MemberInfo)			// result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							il.CastOrUnbox(property.PropertyType);
+							il.CastOrUnboxAny(property.PropertyType);
 							il.Callvirt(property.GetSetMethod(true));
 							break;
 						case FieldInfo field:
-							il.CastOrUnbox(field.FieldType);
+							il.CastOrUnboxAny(field.FieldType);
 							il.Stfld(field);
 							break;
 					}
 
-					il.Ret(); // return result;
+					il.Ret();							// return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes)).Throw();

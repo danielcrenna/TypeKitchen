@@ -509,6 +509,13 @@ namespace TypeKitchen.Internal
 			return this;
 		}
 
+		/// <summary>Converts the boxed representation of a value type to its unboxed form.</summary>
+		public ILSugar Unbox(Type type)
+		{
+			_il.Emit(OpCodes.Unbox, type);
+			return this;
+		}
+
 		/// <summary>Converts the boxed representation of a type specified in the instruction to its unboxed form.</summary>
 		public ILSugar Unbox_Any(Type type)
 		{
