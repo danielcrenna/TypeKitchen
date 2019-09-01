@@ -35,14 +35,14 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void Can_duck_cast_class_to_struct()
 		{
-			var foo = new Baz { Bar = 123 }.QuackLike<BazStruct>();
+			BazStruct foo = new Baz { Bar = 123 }.QuackLike<BazStruct>();
 			Assert.Equal(123, foo.Bar);
 		}
 
 		[Fact]
 		public void Can_duck_cast_struct_to_class()
 		{
-			var foo = new BazStruct { Bar = 123 }.QuackLike<Baz>();
+			Baz foo = new BazStruct { Bar = 123 }.QuackLike<Baz>();
 			Assert.Equal(123, foo.Bar);
 		}
 
