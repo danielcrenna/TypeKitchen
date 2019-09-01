@@ -70,6 +70,7 @@ namespace TypeKitchen.Tests
 			TestAntecedent<FooClass>(ProxyType.Mimic);
 			TestAntecedent<FooClassSealed>(ProxyType.Mimic);
 			TestAntecedent<FooStruct>(ProxyType.Mimic);
+			TestDescendent<IFoo>(ProxyType.Mimic);
 		}
 
 		private static void TestDescendent<T>(ProxyType proxyType)
@@ -125,13 +126,10 @@ namespace TypeKitchen.Tests
 			public int Baz;
 		}
 
-		public class FooClassDerived : FooClass
+		public interface IFoo
 		{
-			public new int Baz
-			{
-				get => base.Baz;
-				set => base.Baz = value;
-			}
+			string Bar { get; set; }
+			int Baz { get; set; }
 		}
 
 		public sealed class FooClassSealed

@@ -98,7 +98,12 @@ namespace TypeKitchen
 
 			var proxyName = CreateNameForType(type, proxyType);
 			var tb = DynamicAssembly.Module.DefineType(proxyName, TypeAttributes.Public, parent);
+			if(type.IsInterface)
+				tb.AddInterfaceImplementation(type);
+
 			members = AccessorMembers.Create(type, AccessorMemberTypes.All, AccessorMemberScope.Public);
+
+			const MethodAttributes ma = MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
 
 			foreach (var member in members)
 			{
@@ -118,11 +123,13 @@ namespace TypeKitchen
 						switch (proxyType)
 						{
 							case ProxyType.Pure:
+							{
 								break;
+							}
 							case ProxyType.Hybrid:
-
+							{
 								var pb = tb.DefineProperty(field.Name, PropertyAttributes.None, field.FieldType, null);
-								var get = tb.DefineMethod($"get_{field.Name}", MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, field.FieldType, Type.EmptyTypes);
+								var get = tb.DefineMethod($"get_{field.Name}", ma, field.FieldType, Type.EmptyTypes);
 								var il = get.GetILGeneratorInternal();
 								if (field.IsStatic)
 								{
@@ -136,7 +143,7 @@ namespace TypeKitchen
 								il.Ret();
 								pb.SetGetMethod(get);
 
-								var set = tb.DefineMethod($"set_{field.Name}", MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, typeof(void), new[] {field.FieldType});
+								var set = tb.DefineMethod($"set_{field.Name}", ma, typeof(void), new[] {field.FieldType});
 								il = set.GetILGeneratorInternal();
 								if (field.IsStatic)
 								{
@@ -152,9 +159,14 @@ namespace TypeKitchen
 								il.Ret();
 								pb.SetSetMethod(set);
 								break;
+							}
+
 							case ProxyType.Mimic:
+							{
 								tb.DefineField(field.Name, field.FieldType, field.Attributes);
 								break;
+							}
+
 							default:
 								throw new ArgumentOutOfRangeException();
 						}
@@ -195,7 +207,7 @@ namespace TypeKitchen
 
 								if (member.CanRead)
 								{
-									var mb = tb.DefineMethod($"get_{propertyName}", MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, propertyType, Type.EmptyTypes);
+									var mb = tb.DefineMethod($"get_{propertyName}", type.IsInterface ? ma | MethodAttributes.Virtual : ma, propertyType, Type.EmptyTypes);
 									var il = mb.GetILGeneratorInternal();
 									il.Ldarg_0();
 									il.Ldfld(fb);
@@ -205,7 +217,7 @@ namespace TypeKitchen
 
 								if (member.CanWrite)
 								{
-									var mb = tb.DefineMethod($"set_{propertyName}", MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, typeof(void), new [] { propertyType });
+									var mb = tb.DefineMethod($"set_{propertyName}", type.IsInterface ? ma | MethodAttributes.Virtual : ma, typeof(void), new [] { propertyType });
 									var il = mb.GetILGeneratorInternal();
 									il.Ldarg_0();
 									il.Ldarg_1();
