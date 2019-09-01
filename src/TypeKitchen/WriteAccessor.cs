@@ -38,7 +38,7 @@ namespace TypeKitchen
 			out AccessorMembers members)
 		{
 			if (@object is Type type)
-				return Create(type, out members);
+				return Create(type, types, scope, out members);
 			type = @object.GetType();
 			return Create(type, types, scope, out members);
 		}
@@ -96,7 +96,7 @@ namespace TypeKitchen
 					return accessor;
 				}
 
-				accessor = CreateWriteAccessor(type, out members);
+				accessor = CreateWriteAccessor(type, out members, scope);
 				AccessorCache[key] = accessor;
 				return accessor;
 			}

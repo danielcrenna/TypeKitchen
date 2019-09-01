@@ -38,7 +38,7 @@ namespace TypeKitchen
 			out AccessorMembers members)
 		{
 			if (@object is Type type)
-				return Create(type, out members);
+				return Create(type, types, scope, out members);
 			type = @object.GetType();
 			return Create(type, @object, types, scope, out members);
 		}
