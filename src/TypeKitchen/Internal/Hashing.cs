@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace TypeKitchen.Composition
+namespace TypeKitchen.Internal
 {
 	internal class Hashing
 	{

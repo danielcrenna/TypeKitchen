@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace TypeKitchen.Composition
+namespace TypeKitchen.Internal
 {
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Value128
