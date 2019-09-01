@@ -65,8 +65,10 @@ namespace TypeKitchen
 		{
 			var members = AccessorMembers.Create(type, AccessorMemberTypes.Methods, scope);
 
+			var name = type.CreateNameForCallAccessor();
+
 			var tb = DynamicAssembly.Module.DefineType(
-				$"CallAccessor_Type_{type.Assembly.GetHashCode()}_{type.MetadataToken}",
+				name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeCallAccessor));
@@ -162,8 +164,10 @@ namespace TypeKitchen
 
 		private static IMethodCallAccessor CreateMethodCallAccessor(Type type, MethodInfo method)
 		{
+			var name = type.CreateNameForMethodCallAccessor(method);
+
 			var tb = DynamicAssembly.Module.DefineType(
-				$"CallAccessor_Method_{type.Assembly.GetHashCode()}_{method.MetadataToken}",
+				name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.SetParent(typeof(MethodCallAccessor));

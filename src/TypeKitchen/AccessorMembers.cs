@@ -18,6 +18,9 @@ namespace TypeKitchen
 		private AccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
 			DeclaringType = type;
+			Types = types;
+			Scope = scope;
+
 			NameToMember = new Dictionary<string, AccessorMember>();
 
 			var flags = BindingFlags.Instance | BindingFlags.Static;
@@ -72,6 +75,8 @@ namespace TypeKitchen
 		}
 
 		public Type DeclaringType { get; }
+		public AccessorMemberTypes Types { get; }
+		public AccessorMemberScope Scope { get; }
 		public PropertyInfo[] PropertyInfo { get; set; }
 		public FieldInfo[] FieldInfo { get; set; }
 		public MethodInfo[] MethodInfo { get; set; }

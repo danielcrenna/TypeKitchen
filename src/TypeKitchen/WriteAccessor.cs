@@ -108,13 +108,14 @@ namespace TypeKitchen
 			return key;
 		}
 
-		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members,
-			AccessorMemberScope scope = AccessorMemberScope.All)
+		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members, AccessorMemberScope scope = AccessorMemberScope.All)
 		{
 			members = CreateWriteAccessorMembers(type, scope);
 
+			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);
+
 			var tb = DynamicAssembly.Module.DefineType(
-				$"WriteAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
+				name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));

@@ -123,13 +123,13 @@ namespace TypeKitchen
 		{
 			members = CreateReadAccessorMembers(type, types, scope);
 
-			var typeName = CreateNameForType(type);
+			var name = type.CreateNameForReadAccessor(members.Types, members.Scope);
 
 			TypeBuilder tb;
 			try
 			{
 				tb = DynamicAssembly.Module.DefineType(
-					typeName,
+					name,
 					TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 					TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 
@@ -138,7 +138,7 @@ namespace TypeKitchen
 			catch (ArgumentException e)
 			{
 				if (e.Message == "Duplicate type name within an assembly.")
-					throw new ArgumentException($"Duplicate type name within an assembly: {typeName}", nameof(typeName),
+					throw new ArgumentException($"Duplicate type name within an assembly: {name}", nameof(name),
 						e);
 				throw;
 			}
@@ -258,15 +258,6 @@ namespace TypeKitchen
 			return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
 		}
 		
-		private static string CreateNameForType(Type type)
-		{
-			var assemblyName = type.Assembly.IsDynamic ? "Dynamic" : type.Assembly.GetName().Name;
-			var name = type.IsAnonymous()
-				? $"ReadAccessor_Anonymous_{assemblyName}_{type.AssemblyQualifiedName}"
-				: $"ReadAccessor_{assemblyName}_{type.AssemblyQualifiedName}";
-			return name;
-		}
-
 		private static AccessorMembers CreateReadAccessorMembers(Type type,
 			AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
 			AccessorMemberScope scope = AccessorMemberScope.All)
@@ -288,9 +279,9 @@ namespace TypeKitchen
 		{
 			members = CreateAnonymousReadAccessorMembers(type);
 
-			var typeName = CreateNameForType(type);
+			var name = type.CreateNameForReadAccessor(members.Types, members.Scope);
 
-			var tb = DynamicAssembly.Module.DefineType(typeName,
+			var tb = DynamicAssembly.Module.DefineType(name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));

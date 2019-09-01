@@ -96,7 +96,7 @@ namespace TypeKitchen
 					throw new ArgumentOutOfRangeException();
 			}
 
-			var proxyName = CreateNameForType(type, proxyType);
+			var proxyName = type.CreateNameForProxy(proxyType);
 			var tb = DynamicAssembly.Module.DefineType(proxyName, TypeAttributes.Public, parent);
 			if(type.IsInterface)
 				tb.AddInterfaceImplementation(type);
@@ -284,13 +284,6 @@ namespace TypeKitchen
 			return mb;
 		}
 
-		private static string CreateNameForType(Type type, ProxyType proxyType)
-		{
-			var assemblyName = type.Assembly.IsDynamic ? "Dynamic" : type.Assembly.GetName().Name;
-			var name = type.IsAnonymous()
-				? $"Proxy_Anonymous_{assemblyName}_{type.AssemblyQualifiedName}_{proxyType}"
-				: $"Proxy_{assemblyName}_{type.AssemblyQualifiedName}_{proxyType}";
-			return name;
-		}
+		
 	}
 }
