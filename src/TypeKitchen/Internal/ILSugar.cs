@@ -299,6 +299,20 @@ namespace TypeKitchen.Internal
 			return this;
 		}
 
+		/// <summary>Copies the value type object pointed to by an address to the top of the evaluation stack.</summary>
+		public ILSugar Ldobj(Type type)
+		{
+			_il.Emit(OpCodes.Ldobj, type);
+			return this;
+		}
+
+		/// <summary>Loads an object reference as a type O (object reference) onto the evaluation stack indirectly.</summary>
+		public ILSugar Ldind_Ref()
+		{
+			_il.Emit(OpCodes.Ldind_Ref);
+			return this;
+		}
+
 		/// <summary>Loads the local variable at a specific index onto the evaluation stack.</summary>
 		public ILSugar Ldloc(int index)
 		{

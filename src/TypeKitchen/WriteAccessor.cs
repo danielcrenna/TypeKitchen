@@ -175,9 +175,10 @@ namespace TypeKitchen
 					il.MarkLabel(branches[member]); // found:
 					il.Ldarg_1();					// target
 					il.CastOrUnbox(type);			// ({Type}) target
-					il.Ldarg_3();					// value
 
-					switch (member.MemberInfo)		// result = target.{member.Name}
+					il.Ldarg_3();                   // value
+
+					switch (member.MemberInfo)      // target.{member.Name} = value
 					{
 						case PropertyInfo property:
 							il.CastOrUnboxAny(property.PropertyType);
@@ -188,7 +189,7 @@ namespace TypeKitchen
 							il.Stfld(field);
 							break;
 					}
-
+					
 					il.Ldc_I4_1();					//     1
 					il.Ret();						//     return 1 (true)
 				}

@@ -8,30 +8,142 @@ namespace TypeKitchen.Tests
 {
 	public class ProxyTests
 	{
+		private static readonly object Sync = new object();
+
 		[Fact]
-		public void Can_create_vanilla_proxy()
+		public void Can_create_proxies_for_all_types()
 		{
-			var proxyType = Proxy.Create(typeof(Foo));
-			Assert.NotNull(proxyType);
+			//
+			// Pure Proxy:
+			var pureProxy = Proxy.Create(typeof(FooClass));
+			Assert.NotNull(pureProxy);
+			var pureInstance = Activator.CreateInstance(pureProxy);
+			Assert.NotNull(pureInstance);
 
-			var instance = Activator.CreateInstance(proxyType);
-			Assert.NotNull(instance);
+			//
+			// Hybrid Proxy:
+			var hybridProxy = Proxy.Create(typeof(FooClass), ProxyType.Hybrid);
+			Assert.NotNull(hybridProxy);
+			var hybridInstance = Activator.CreateInstance(hybridProxy);
+			Assert.NotNull(hybridInstance);
 
-			var write = WriteAccessor.Create(proxyType);
-			Assert.True(write.TrySetValue(instance, nameof(Foo.Bar), "Baz"));
-			Assert.True(write.TrySetValue(instance, nameof(Foo.Baz), 123));
+			//
+			// Mimic Reference Type:
+			var sealedClassProxy = Proxy.Create(typeof(FooClassSealed), ProxyType.Mimic);
+			Assert.NotNull(sealedClassProxy);
+			var sealedClassInstance = Activator.CreateInstance(sealedClassProxy);
+			Assert.NotNull(sealedClassInstance);
 
-			var read = ReadAccessor.Create(proxyType);
-			Assert.True(read.TryGetValue(instance, nameof(Foo.Bar), out var value));
-			Assert.Equal("Baz", value);
-			Assert.True(read.TryGetValue(instance, nameof(Foo.Baz), out value));
-			Assert.Equal(123, value);
+			//
+			// Mimic Value Type:
+			var structProxy = Proxy.Create(typeof(FooStruct), ProxyType.Mimic);
+			Assert.NotNull(structProxy);
+			var structInstance = Activator.CreateInstance(structProxy);
+			Assert.NotNull(structInstance);
 		}
 
-		public class Foo
+		[Fact]
+		public void Can_access_pure_proxy()
+		{
+			TestDescendent<FooClass>(ProxyType.Pure);
+			Assert.Throws<InvalidOperationException>(() =>
+			{
+				TestDescendent<FooClassSealed>(ProxyType.Pure);	// sealed
+				TestDescendent<FooStruct>(ProxyType.Pure);		// sealed
+			});
+		}
+
+		[Fact]
+		public void Can_access_hybrid_proxy()
+		{
+			TestDescendent<FooClass>(ProxyType.Hybrid);
+			Assert.Throws<InvalidOperationException>(() =>
+			{
+				TestDescendent<FooClassSealed>(ProxyType.Hybrid); // sealed
+				TestDescendent<FooStruct>(ProxyType.Hybrid);      // sealed
+			});
+		}
+
+		[Fact]
+		public void Can_access_mimic_proxy()
+		{
+			TestAntecedent<FooClass>(ProxyType.Mimic);
+			TestAntecedent<FooClassSealed>(ProxyType.Mimic);
+			TestAntecedent<FooStruct>(ProxyType.Mimic);
+		}
+
+		private static void TestDescendent<T>(ProxyType proxyType)
+		{
+			var type = Proxy.Create(typeof(T), proxyType);
+			Assert.NotNull(type);
+
+			object target = Activator.CreateInstance(type);
+			Assert.NotNull(target);
+
+			var write = WriteAccessor.Create(type);
+			Assert.True(write.TrySetValue(target, nameof(FooClass.Bar), "Baz"));
+			Assert.True(write.TrySetValue(target, nameof(FooClass.Baz), 123));
+
+			var read = ReadAccessor.Create(type);
+			Assert.True(read.TryGetValue(target, nameof(FooClass.Bar), out var value));
+			Assert.Equal("Baz", value);
+			Assert.True(read.TryGetValue(target, nameof(FooClass.Baz), out value));
+			Assert.Equal(123, value);
+
+			var direct = (T)target;
+			Assert.NotNull(direct);
+		}
+
+		private static void TestAntecedent<T>(ProxyType proxyType)
+		{
+			var type = Proxy.Create(typeof(T), proxyType);
+			Assert.NotNull(type);
+
+			object target = Activator.CreateInstance(type);
+			Assert.NotNull(target);
+
+			var write = WriteAccessor.Create(type);
+			Assert.True(write.TrySetValue(target, nameof(FooClass.Bar), "Baz"));
+			Assert.True(write.TrySetValue(target, nameof(FooClass.Baz), 123));
+
+			var read = ReadAccessor.Create(type);
+			Assert.True(read.TryGetValue(target, nameof(FooClass.Bar), out var value));
+			Assert.Equal("Baz", value);
+			Assert.True(read.TryGetValue(target, nameof(FooClass.Baz), out value));
+			Assert.Equal(123, value);
+
+			Assert.Throws<InvalidCastException>(() =>
+			{
+				var direct = (T) target;
+				Assert.Null(direct); // does not inherit
+			});
+		}
+
+		public class FooClass
 		{
 			public string Bar { get; set; }
-			public int Baz { get; set; }
+			public int Baz;
+		}
+
+		public class FooClassDerived : FooClass
+		{
+			public new int Baz
+			{
+				get => base.Baz;
+				set => base.Baz = value;
+			}
+		}
+
+		public sealed class FooClassSealed
+		{
+			public string Bar { get; set; }
+			public int Baz;
+		}
+
+		public struct FooStruct
+		{
+			public string Bar { get; set; }
+			public int Baz;
 		}
 	}
 }
