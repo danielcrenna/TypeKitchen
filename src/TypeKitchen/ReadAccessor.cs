@@ -9,7 +9,7 @@ using TypeKitchen.Internal;
 
 namespace TypeKitchen
 {
-	public sealed class ReadAccessor
+	public static class ReadAccessor
 	{
 		private static readonly object Sync = new object();
 
@@ -177,7 +177,8 @@ namespace TypeKitchen
 					il.MarkLabel(branches[member]); // found:
 					il.Ldarg_3(); //     value
 					il.Ldarg_1(); //     target
-					il.Castclass(type); //     ({Type}) target
+					il.CastOrUnbox(type); // ({Type}) target
+
 					switch (member.MemberInfo) //     result = target.{member.Name}
 					{
 						case PropertyInfo property:
@@ -229,7 +230,7 @@ namespace TypeKitchen
 				{
 					il.MarkLabel(branches[member]);
 					il.Ldarg_1(); // target
-					il.Castclass(type); // ({Type}) target
+					il.CastOrUnbox(type); // ({Type}) target
 
 					switch (member.MemberInfo) // result = target.Foo
 					{
@@ -259,7 +260,7 @@ namespace TypeKitchen
 			var typeInfo = tb.CreateTypeInfo();
 			return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
 		}
-
+		
 		private static string CreateNameForType(Type type)
 		{
 			var assemblyName = type.Assembly.IsDynamic ? "Dynamic" : type.Assembly.GetName().Name;
@@ -428,8 +429,7 @@ namespace TypeKitchen
 
 				tb.DefineMethodOverride(getItem, typeof(ITypeReadAccessor).GetMethod("get_Item"));
 			}
-
-
+			
 			var typeInfo = tb.CreateTypeInfo();
 
 			//
@@ -446,11 +446,9 @@ namespace TypeKitchen
 				{
 					var memberName = setter.Key.Name.Replace("_SetGet", string.Empty);
 
-					var staticFieldFunc =
-						(Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
+					var staticFieldFunc = (Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
 					if (staticFieldFunc != setter.Value)
-						throw new ArgumentException(
-							$"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
+						throw new ArgumentException($"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
 
 					var backingField = type.GetField($"<{memberName}>i__Field",
 						BindingFlags.NonPublic | BindingFlags.Instance);
@@ -460,23 +458,22 @@ namespace TypeKitchen
 					var backingFieldValue = backingField.GetValue(debugObject);
 					var cachedDelegateValue = setter.Value(debugObject);
 					if (!backingFieldValue.Equals(cachedDelegateValue))
-						throw new ArgumentException(
-							$"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
+						throw new ArgumentException($"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
 				}
 			}
 
 			var accessor = (ITypeReadAccessor) Activator.CreateInstance(typeInfo, false);
 
 			if (debugObject != null)
+			{
 				foreach (var member in members)
 				{
 					var byAccessor = accessor[debugObject, member.Name];
-					var byReflection =
-						((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(
-							debugObject);
+					var byReflection = ((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(debugObject);
 					if (!byAccessor.Equals(byReflection))
 						throw new InvalidOperationException("IL produced incorrect accessor");
 				}
+			}
 
 			return accessor;
 		}

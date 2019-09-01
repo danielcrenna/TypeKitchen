@@ -123,7 +123,7 @@ namespace TypeKitchen
 
 					il.MarkLabel(branches[member]);
 					il.Ldarg_1();
-					il.Castclass(method.DeclaringType);
+					il.CastOrUnbox(method.DeclaringType);
 
 					var returns = method.ReturnType != typeof(void);
 					if (returns)

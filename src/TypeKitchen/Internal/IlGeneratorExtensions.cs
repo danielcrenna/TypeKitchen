@@ -137,6 +137,19 @@ namespace TypeKitchen.Internal
 			return il;
 		}
 
+		public static ILSugar CastOrUnbox(this ILSugar il, Type type)
+		{
+			if (type == typeof(object))
+				return il;
+
+			if (type.IsValueType)
+				il.Unbox_Any(type);
+			else
+				il.Castclass(type);
+
+			return il;
+		}
+
 		/// <summary> Creates a property with the specified name and a fixed reflection member value, known at runtime.</summary>
 		public static void MemberProperty(this TypeBuilder tb, string propertyName, MemberInfo value,
 			MethodInfo overrides = null)

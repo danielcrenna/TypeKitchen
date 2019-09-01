@@ -175,23 +175,17 @@ namespace TypeKitchen
 
 					il.MarkLabel(branches[member]); // found:
 					il.Ldarg_1(); //     target
-					il.Castclass(type); //     ({Type}) target
+					il.CastOrUnbox(type); //     ({Type}) target
 					il.Ldarg_3(); //     value
 
 					switch (member.MemberInfo) //     result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							if (!property.PropertyType.IsValueType)
-								il.Castclass(property.PropertyType);
-							else
-								il.Unbox_Any(property.PropertyType);
+							il.CastOrUnbox(property.PropertyType);
 							il.Callvirt(property.GetSetMethod(true));
 							break;
 						case FieldInfo field:
-							if (!field.FieldType.IsValueType)
-								il.Castclass(field.FieldType);
-							else
-								il.Unbox_Any(field.FieldType);
+							il.CastOrUnbox(field.FieldType);
 							il.Stfld(field);
 							break;
 					}
@@ -243,23 +237,17 @@ namespace TypeKitchen
 
 					il.MarkLabel(branches[member]); // found:
 					il.Ldarg_1(); //     target
-					il.Castclass(type); //     ({Type}) target
+					il.CastOrUnbox(type); //     ({Type}) target
 					il.Ldarg_3(); //     value
 
 					switch (member.MemberInfo) //     result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							if (!property.PropertyType.IsValueType)
-								il.Castclass(property.PropertyType);
-							else
-								il.Unbox_Any(property.PropertyType);
+							il.CastOrUnbox(property.PropertyType);
 							il.Callvirt(property.GetSetMethod(true));
 							break;
 						case FieldInfo field:
-							if (!field.FieldType.IsValueType)
-								il.Castclass(field.FieldType);
-							else
-								il.Unbox_Any(field.FieldType);
+							il.CastOrUnbox(field.FieldType);
 							il.Stfld(field);
 							break;
 					}
