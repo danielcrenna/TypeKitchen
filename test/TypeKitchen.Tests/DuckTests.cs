@@ -5,10 +5,45 @@ namespace TypeKitchen.Tests
 	public class DuckTests
 	{
 		[Fact]
-		public void Can_duck_cast_as_interface()
+		public void Can_duck_cast_class_to_interface()
 		{
-			var foo = new Foo { Bar = "Baz" }.QuackLike<IFoo>();
+			IFoo foo = new Foo { Bar = "Baz" }.QuackLike<IFoo>();
 			Assert.Equal("Baz", foo.Bar);
+		}
+
+		[Fact]
+		public void Can_duck_cast_struct_to_interface()
+		{
+			IBar foo = new BazStruct { Bar = 123 }.QuackLike<IBar>();
+			Assert.Equal(123, foo.Bar);
+		}
+
+		[Fact]
+		public void Can_duck_cast_struct_to_struct()
+		{
+			BazStruct foo = new FooStruct { Bar = 123 }.QuackLike<BazStruct>();
+			Assert.Equal(123, foo.Bar);
+		}
+
+		[Fact]
+		public void Can_duck_cast_class_to_class()
+		{
+			Biff biff = new Foo { Bar = "123" }.QuackLike<Biff>();
+			Assert.Equal("123", biff.Bar);
+		}
+
+		[Fact]
+		public void Can_duck_cast_class_to_struct()
+		{
+			var foo = new Baz { Bar = 123 }.QuackLike<BazStruct>();
+			Assert.Equal(123, foo.Bar);
+		}
+
+		[Fact]
+		public void Can_duck_cast_struct_to_class()
+		{
+			var foo = new BazStruct { Bar = 123 }.QuackLike<Baz>();
+			Assert.Equal(123, foo.Bar);
 		}
 
 		public class Foo
@@ -16,9 +51,34 @@ namespace TypeKitchen.Tests
 			public string Bar { get; set; }
 		}
 
+		public class Biff
+		{
+			public string Bar { get; set; }
+		}
+
+		public class Baz
+		{
+			public int Bar;
+		}
+
+		public struct FooStruct
+		{
+			public int Bar { get; set; }
+		}
+
+		public struct BazStruct
+		{
+			public int Bar;
+		}
+
 		public interface IFoo
 		{
 			string Bar { get; }
+		}
+
+		public interface IBar
+		{
+			int Bar { get; }
 		}
 	}
 }
