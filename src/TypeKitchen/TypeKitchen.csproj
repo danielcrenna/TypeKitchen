@@ -13,6 +13,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil\**\*.cs" Exclude="..\..\submodules\cecil\Mono.Cecil\AssemblyInfo.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Collections.Generic\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil.Metadata\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil.PE\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil.Cil\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Security.Cryptography\**\*.cs" Exclude="..\..\submodules\cecil\Mono.Cecil\AssemblyInfo.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Primitives" Version="2.2.0" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />
