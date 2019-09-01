@@ -144,7 +144,7 @@ namespace TypeKitchen
 					il.Nop();
 
 					il.Ldtoken(typeof(void));
-					il.CallOrCallvirt(KnownMethods.GetTypeFromHandle);
+					il.CallOrCallvirt(KnownMethods.GetTypeFromHandle, type);
 					il.Stloc_1();
 					il.Ldloc_1();
 					il.Ret();

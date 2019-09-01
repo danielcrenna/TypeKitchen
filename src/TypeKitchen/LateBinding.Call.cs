@@ -73,7 +73,7 @@ namespace TypeKitchen
 					il.Ldloc(arg);
 			}
 
-			il.CallOrCallvirt(method);
+			il.CallOrCallvirt(method, type);
 
 			if (method.ReturnType == typeof(void))
 				il.Ldnull();

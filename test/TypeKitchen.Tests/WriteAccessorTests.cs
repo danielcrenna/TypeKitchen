@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Runtime.CompilerServices;
 using TypeKitchen.Tests.Fakes;
 using Xunit;
 
@@ -84,18 +85,19 @@ namespace TypeKitchen.Tests
 
 			var set = WriteAccessor.Create(target);
 
-			Assert.True(set.TrySetValue(target, nameof(FooStruct.Foo), "Baz"));
-			Assert.True(set.TrySetValue(target, nameof(FooStruct.Baz), 321));
+			var blah = RuntimeHelpers.GetObjectValue(target);
 
-			//Assert.Equal("Baz", get[target, nameof(FooStruct.Foo)]);
-			//Assert.Equal(321, get[target, nameof(FooStruct.Baz)]);
+			Assert.True(set.TrySetValue(blah, nameof(FooStruct.Foo), "Baz"));
+			Assert.True(set.TrySetValue(blah, nameof(FooStruct.Baz), 321));
 
-			set[target, nameof(FooStruct.Foo)] = "Biff";
-			set[target, nameof(FooStruct.Baz)] = 999;
+			Assert.Equal("Baz", get[blah, nameof(FooStruct.Foo)]);
+			Assert.Equal(321, get[blah, nameof(FooStruct.Baz)]);
 
-			//Assert.Equal("Biff", get[target, nameof(FooStruct.Foo)]);
-			//Assert.Equal(999, get[target, nameof(FooStruct.Baz)]);
+			set[blah, nameof(FooStruct.Foo)] = "Biff";
+			set[blah, nameof(FooStruct.Baz)] = 999;
 
+			Assert.Equal("Biff", get[blah, nameof(FooStruct.Foo)]);
+			Assert.Equal(999, get[blah, nameof(FooStruct.Baz)]);
 		}
 
 		public struct FooStruct

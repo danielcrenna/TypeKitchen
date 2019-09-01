@@ -163,9 +163,9 @@ namespace TypeKitchen.Internal
 			return il;
 		}
 
-		public static ILSugar CallOrCallvirt(this ILSugar il, MethodInfo method)
+		public static ILSugar CallOrCallvirt(this ILSugar il, MethodInfo method, Type type)
 		{
-			if (method.IsVirtual)
+			if (method.IsVirtual && !type.IsValueType)
 				il.Callvirt(method);
 			else
 				il.Call(method);
