@@ -215,7 +215,7 @@ namespace TypeKitchen
 									pb.SetGetMethod(mb);
 								}
 
-								if (member.CanWrite)
+								if (member.CanWrite || type.IsInterface)
 								{
 									var mb = tb.DefineMethod($"set_{propertyName}", type.IsInterface ? ma | MethodAttributes.Virtual : ma, typeof(void), new [] { propertyType });
 									var il = mb.GetILGeneratorInternal();
