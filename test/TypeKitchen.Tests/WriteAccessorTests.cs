@@ -87,16 +87,15 @@ namespace TypeKitchen.Tests
 			Assert.True(set.TrySetValue(target, nameof(FooStruct.Foo), "Baz"));
 			Assert.True(set.TrySetValue(target, nameof(FooStruct.Baz), 321));
 
-			/*
-			Assert.Equal("Baz", get[target, nameof(FooStruct.Foo)]);
-			Assert.Equal(321, get[target, nameof(FooStruct.Baz)]);
+			//Assert.Equal("Baz", get[target, nameof(FooStruct.Foo)]);
+			//Assert.Equal(321, get[target, nameof(FooStruct.Baz)]);
 
 			set[target, nameof(FooStruct.Foo)] = "Biff";
 			set[target, nameof(FooStruct.Baz)] = 999;
 
-			Assert.Equal("Biff", get[target, nameof(FooStruct.Foo)]);
-			Assert.Equal(999, get[target, nameof(FooStruct.Baz)]);
-			*/
+			//Assert.Equal("Biff", get[target, nameof(FooStruct.Foo)]);
+			//Assert.Equal(999, get[target, nameof(FooStruct.Baz)]);
+
 		}
 
 		public struct FooStruct

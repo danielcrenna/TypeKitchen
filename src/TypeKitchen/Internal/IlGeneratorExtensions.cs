@@ -163,6 +163,16 @@ namespace TypeKitchen.Internal
 			return il;
 		}
 
+		public static ILSugar CallOrCallvirt(this ILSugar il, MethodInfo method)
+		{
+			if (method.IsVirtual)
+				il.Callvirt(method);
+			else
+				il.Call(method);
+
+			return il;
+		}
+
 		/// <summary> Creates a property with the specified name and a fixed reflection member value, known at runtime.</summary>
 		public static void MemberProperty(this TypeBuilder tb, string propertyName, MemberInfo value,
 			MethodInfo overrides = null)

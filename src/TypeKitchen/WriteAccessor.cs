@@ -129,8 +129,7 @@ namespace TypeKitchen
 					Type.EmptyTypes);
 				var il = getType.GetILGeneratorInternal();
 				il.Ldtoken(type);
-				il.Call(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle),
-					BindingFlags.Static | BindingFlags.Public));
+				il.CallOrCallvirt(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
 				il.Ret();
 
 				var getTypeProperty = tb.DefineProperty(nameof(ITypeWriteAccessor.Type), PropertyAttributes.None,
@@ -142,7 +141,7 @@ namespace TypeKitchen
 			}
 
 			//
-			// bool TryGetValue(object target, string key, out object value):
+			// bool TrySetValue(object target, string key, object value):
 			//
 			{
 				var trySetValue = tb.DefineMethod(nameof(ITypeWriteAccessor.TrySetValue),
@@ -182,7 +181,7 @@ namespace TypeKitchen
 					{
 						case PropertyInfo property:
 							il.CastOrUnboxAny(property.PropertyType);
-							il.Callvirt(property.GetSetMethod(true));
+							il.CallOrCallvirt(property.GetSetMethod(true));
 							break;
 						case FieldInfo field:
 							il.CastOrUnboxAny(field.FieldType);
@@ -237,14 +236,14 @@ namespace TypeKitchen
 
 					il.MarkLabel(branches[member]);		// found:
 					il.Ldarg_1();						// target
-					il.CastOrUnboxAny(type);				// ({Type}) target
+					il.CastOrUnbox(type);				// ({Type}) target
 					il.Ldarg_3();						// value
 
 					switch (member.MemberInfo)			// result = target.{member.Name}
 					{
 						case PropertyInfo property:
 							il.CastOrUnboxAny(property.PropertyType);
-							il.Callvirt(property.GetSetMethod(true));
+							il.CallOrCallvirt(property.GetSetMethod(true));
 							break;
 						case FieldInfo field:
 							il.CastOrUnboxAny(field.FieldType);
