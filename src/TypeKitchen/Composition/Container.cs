@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
 {
@@ -142,18 +143,24 @@ namespace TypeKitchen.Composition
 							}
 							foreach (var c in components)
 							{
-								if (c.RefType != type)
+								var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
+								if (Proxies[argumentType] != c.GetType())
 									continue;
-								var refMethod = c.GetType().GetProperty("Ref");
-								var surrogate = refMethod?.GetValue(c);
-								arguments[i] = surrogate;
+
+								var argument = c.QuackLike(argumentType);
+								arguments[i] = argument;
 							}
 						}
 
 						line.Update.Invoke(line.System, arguments);
 
 						foreach (var argument in arguments)
-							SetComponent(entity, argument.GetType(), argument);
+						{
+							var argumentType = argument.GetType();
+							if (argumentType == typeof(TState))
+								continue;
+							SetComponent(entity, argumentType, argument);
+						}
 					}
 				}
 				finally
@@ -173,63 +180,31 @@ namespace TypeKitchen.Composition
 			for (var i = 0; i < _componentsByEntity[entity].Count; i++)
 			{
 				var c = _componentsByEntity[entity][i];
-				if (type.MakeByRefType() != c.RefType)
+
+				if (c.GetType() != Proxies[type])
 					continue;
 
-				// FIXME: accessors violate memory :-(
-				var readProxy = ReadAccessor.Create(c, AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var proxyMembers);
-				var readSurrogate = ReadAccessor.Create(value, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var surrogateMembers);
-				
-				foreach (var member in surrogateMembers)
-				{
-					switch (member.MemberInfo)
-					{
-						case FieldInfo field:
-						{
-							var o = field.GetValue(value);
-							var pm = proxyMembers.Single(x => x.Name == member.Name);
-							switch (pm.MemberInfo)
-							{
-								case FieldInfo f:
-								{
-									f.SetValue(c, o);
-									break;
-								}
-								case PropertyInfo p:
-								{
-									p.SetValue(c, o);
-									break;
-								}
-							}
-							break;
-						}
-						case PropertyInfo property:
-						{
-							var o = property.GetValue(value);
-							var pm = proxyMembers.Single(x => x.Name == member.Name);
-							switch (pm.MemberInfo)
-							{
-								case FieldInfo f:
-								{
-									f.SetValue(c, o);
-									break;
-								}
-								case PropertyInfo p:
-								{
-									p.SetValue(c, o);
-									break;
-								}
-							}
-							break;
-						}
-					}
-				}
+				const AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties;
+				const AccessorMemberScope scope = AccessorMemberScope.Public;
 
-				break;
+				var cm = AccessorMembers.Create(c, types, scope);
+				var vr = ReadAccessor.Create(value, types, scope, out var vm);
+				var cw = WriteAccessor.Create(c);
+				
+				foreach (var member in vm)
+				{
+					var componentHasMember = cm.TryGetValue(member.Name, out var m);
+					var componentCanWrite = m.CanWrite;
+					var memberTypesMatch = m.Type == member.Type;
+					var valueHasValue = vr.TryGetValue(value, member.Name, out var v);
+
+					if (componentHasMember && componentCanWrite && memberTypesMatch && valueHasValue)
+						cw.TrySetValue(c, member.Name, v);
+				}
 			}
 		}
 
-		public IEnumerable<object> GetComponents(Entity entity)
+		public IEnumerable<IComponentProxy> GetComponents(Entity entity)
 		{
 			foreach (var component in _componentsByEntity[entity])
 				yield return component;

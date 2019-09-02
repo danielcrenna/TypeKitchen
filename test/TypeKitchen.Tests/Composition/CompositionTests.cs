@@ -12,23 +12,19 @@ namespace TypeKitchen.Tests.Composition
 		public void BasicTests_compose_simple_system()
 		{
             var container = Container.Create();
-            var entity = container.CreateEntity<Velocity, Position2D>();
-			entity.Set(new Velocity { Value = 10f }, container);
             container.AddSystem<VelocitySystem>();
             container.AddSystem<ClockSystem>();
+
+			var entity = container.CreateEntity(new Velocity { Value = 10f }, new Position2D());
 			container.Update(TimeSpan.FromSeconds(0.1));
 
 			var c = container.GetComponents(entity).ToArray();
+			var position = c[0].QuackLike<Position2D>();
+			var velocity = c[1].QuackLike<Velocity>();
 
-			var c0 = c[0];
-			var c1 = c[1];
-
-			var position = c0.GetType().GetProperty("Ref").GetValue(c0);
-			var velocity = c1.GetType().GetProperty("Ref").GetValue(c1);
-
-			Assert.Equal(1, ((Position2D) position).X);
-			Assert.Equal(1, ((Position2D) position).Y);
-			Assert.Equal(10, ((Velocity) velocity).Value);
+			Assert.Equal(1, position.X);
+			Assert.Equal(1, position.Y);
+			Assert.Equal(10, velocity.Value);
 		}
 
 		public sealed class ClockSystem : ISystem<float>
