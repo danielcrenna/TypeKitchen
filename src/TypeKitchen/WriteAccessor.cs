@@ -38,7 +38,7 @@ namespace TypeKitchen
 			out AccessorMembers members)
 		{
 			if (@object is Type type)
-				return Create(type, out members);
+				return Create(type, types, scope, out members);
 			type = @object.GetType();
 			return Create(type, types, scope, out members);
 		}
@@ -96,7 +96,7 @@ namespace TypeKitchen
 					return accessor;
 				}
 
-				accessor = CreateWriteAccessor(type, out members);
+				accessor = CreateWriteAccessor(type, out members, scope);
 				AccessorCache[key] = accessor;
 				return accessor;
 			}
@@ -108,13 +108,14 @@ namespace TypeKitchen
 			return key;
 		}
 
-		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members,
-			AccessorMemberScope scope = AccessorMemberScope.All)
+		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members, AccessorMemberScope scope = AccessorMemberScope.All)
 		{
 			members = CreateWriteAccessorMembers(type, scope);
 
+			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);
+
 			var tb = DynamicAssembly.Module.DefineType(
-				$"WriteAccessor_{(type.Assembly.IsDynamic ? "DynamicAssembly" : type.Assembly.GetName().Name)}_{type.FullName}",
+				name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));
@@ -129,8 +130,7 @@ namespace TypeKitchen
 					Type.EmptyTypes);
 				var il = getType.GetILGeneratorInternal();
 				il.Ldtoken(type);
-				il.Call(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle),
-					BindingFlags.Static | BindingFlags.Public));
+				il.CallOrCallvirt(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public), type);
 				il.Ret();
 
 				var getTypeProperty = tb.DefineProperty(nameof(ITypeWriteAccessor.Type), PropertyAttributes.None,
@@ -142,7 +142,7 @@ namespace TypeKitchen
 			}
 
 			//
-			// bool TryGetValue(object target, string key, out object value):
+			// bool TrySetValue(object target, string key, object value):
 			//
 			{
 				var trySetValue = tb.DefineMethod(nameof(ITypeWriteAccessor.TrySetValue),
@@ -164,8 +164,8 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.Ldarg_2(); // key
-					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
+					il.Ldarg_2();											// key
+					il.GotoIfStringEquals(member.Name, branches[member]);   // if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
@@ -174,36 +174,31 @@ namespace TypeKitchen
 						continue;
 
 					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_1(); //     target
-					il.Castclass(type); //     ({Type}) target
-					il.Ldarg_3(); //     value
+					il.Ldarg_1();					// target
+					il.CastOrUnbox(type);			// ({Type}) target
 
-					switch (member.MemberInfo) //     result = target.{member.Name}
+					il.Ldarg_3();                   // value
+
+					switch (member.MemberInfo)      // target.{member.Name} = value
 					{
 						case PropertyInfo property:
-							if (!property.PropertyType.IsValueType)
-								il.Castclass(property.PropertyType);
-							else
-								il.Unbox_Any(property.PropertyType);
-							il.Callvirt(property.GetSetMethod(true));
+							il.CastOrUnboxAny(property.PropertyType);
+							il.CallOrCallvirt(property.GetSetMethod(true), type);
 							break;
 						case FieldInfo field:
-							if (!field.FieldType.IsValueType)
-								il.Castclass(field.FieldType);
-							else
-								il.Unbox_Any(field.FieldType);
+							il.CastOrUnboxAny(field.FieldType);
 							il.Stfld(field);
 							break;
 					}
-
-					il.Ldc_I4_1(); //     1
-					il.Ret(); //     return 1  (true)
+					
+					il.Ldc_I4_1();					//     1
+					il.Ret();						//     return 1 (true)
 				}
 
-				il.Ldnull(); //     null
-				il.Starg_S(); //     value = null
-				il.Ldc_I4_0(); //     0
-				il.Ret(); //     return 0 (false)
+				il.Ldnull();						//     null
+				il.Starg_S();						//     value = null
+				il.Ldc_I4_0();						//     0
+				il.Ret();							//     return 0 (false)
 
 				tb.DefineMethodOverride(trySetValue,
 					typeof(ITypeWriteAccessor).GetMethod(nameof(ITypeWriteAccessor.TrySetValue)));
@@ -233,7 +228,7 @@ namespace TypeKitchen
 						continue;
 
 					il.Ldarg_2(); // key
-					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
+					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
@@ -241,30 +236,24 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_1(); //     target
-					il.Castclass(type); //     ({Type}) target
-					il.Ldarg_3(); //     value
+					il.MarkLabel(branches[member]);		// found:
+					il.Ldarg_1();						// target
+					il.CastOrUnbox(type);				// ({Type}) target
+					il.Ldarg_3();						// value
 
-					switch (member.MemberInfo) //     result = target.{member.Name}
+					switch (member.MemberInfo)			// result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							if (!property.PropertyType.IsValueType)
-								il.Castclass(property.PropertyType);
-							else
-								il.Unbox_Any(property.PropertyType);
-							il.Callvirt(property.GetSetMethod(true));
+							il.CastOrUnboxAny(property.PropertyType);
+							il.CallOrCallvirt(property.GetSetMethod(true), type);
 							break;
 						case FieldInfo field:
-							if (!field.FieldType.IsValueType)
-								il.Castclass(field.FieldType);
-							else
-								il.Unbox_Any(field.FieldType);
+							il.CastOrUnboxAny(field.FieldType);
 							il.Stfld(field);
 							break;
 					}
 
-					il.Ret(); // return result;
+					il.Ret();							// return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes)).Throw();

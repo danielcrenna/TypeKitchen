@@ -33,12 +33,7 @@ namespace TypeKitchen
 				il.LoadArgument(i);
 				il.LoadConstant(i);
 				il.Ldelem_Ref();
-
-				var parameter = parameters[i];
-				if (parameter.ParameterType.IsValueType)
-					il.Unbox_Any(parameter.ParameterType);
-				else
-					il.Castclass(parameter.ParameterType);
+				il.CastOrUnboxAny(parameters[i].ParameterType);
 			}
 
 			il.Newobj(ctor);

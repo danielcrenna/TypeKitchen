@@ -69,5 +69,38 @@ namespace TypeKitchen.Tests
 
 			Assert.Equal(typeof(OnePropertyOneFieldInts), set.Type);
 		}
+
+		[Fact]
+		public void SetTests_can_write_value_type()
+		{
+			object target = new FooStruct { Foo = "Bar", Baz = 123 };
+			var get = ReadAccessor.Create(target);
+			
+			var foo = get[target, nameof(FooStruct.Foo)];
+			var baz = get[target, nameof(FooStruct.Baz)];
+
+			Assert.Equal("Bar", foo);
+			Assert.Equal(123, baz);
+
+			var set = WriteAccessor.Create(target);
+
+			Assert.True(set.TrySetValue(target, nameof(FooStruct.Foo), "Baz"));
+			Assert.True(set.TrySetValue(target, nameof(FooStruct.Baz), 321));
+
+			Assert.Equal("Baz", get[target, nameof(FooStruct.Foo)]);
+			Assert.Equal(321, get[target, nameof(FooStruct.Baz)]);
+
+			set[target, nameof(FooStruct.Foo)] = "Biff";
+			set[target, nameof(FooStruct.Baz)] = 999;
+
+			Assert.Equal("Biff", get[target, nameof(FooStruct.Foo)]);
+			Assert.Equal(999, get[target, nameof(FooStruct.Baz)]);
+		}
+
+		public struct FooStruct
+		{
+			public string Foo { get; set; }
+			public int Baz;
+		}
 	}
 }

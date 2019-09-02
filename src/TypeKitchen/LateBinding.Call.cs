@@ -73,10 +73,7 @@ namespace TypeKitchen
 					il.Ldloc(arg);
 			}
 
-			if (method.IsVirtual)
-				il.Callvirt(method);
-			else
-				il.Call(method);
+			il.CallOrCallvirt(method, type);
 
 			if (method.ReturnType == typeof(void))
 				il.Ldnull();

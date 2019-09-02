@@ -9,7 +9,7 @@ using TypeKitchen.Internal;
 
 namespace TypeKitchen
 {
-	public sealed class ReadAccessor
+	public static class ReadAccessor
 	{
 		private static readonly object Sync = new object();
 
@@ -38,7 +38,7 @@ namespace TypeKitchen
 			out AccessorMembers members)
 		{
 			if (@object is Type type)
-				return Create(type, out members);
+				return Create(type, types, scope, out members);
 			type = @object.GetType();
 			return Create(type, @object, types, scope, out members);
 		}
@@ -123,13 +123,13 @@ namespace TypeKitchen
 		{
 			members = CreateReadAccessorMembers(type, types, scope);
 
-			var typeName = CreateNameForType(type);
+			var name = type.CreateNameForReadAccessor(members.Types, members.Scope);
 
 			TypeBuilder tb;
 			try
 			{
 				tb = DynamicAssembly.Module.DefineType(
-					typeName,
+					name,
 					TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 					TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 
@@ -138,7 +138,7 @@ namespace TypeKitchen
 			catch (ArgumentException e)
 			{
 				if (e.Message == "Duplicate type name within an assembly.")
-					throw new ArgumentException($"Duplicate type name within an assembly: {typeName}", nameof(typeName),
+					throw new ArgumentException($"Duplicate type name within an assembly: {name}", nameof(name),
 						e);
 				throw;
 			}
@@ -174,11 +174,11 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
-					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_3(); //     value
-					il.Ldarg_1(); //     target
-					il.Castclass(type); //     ({Type}) target
-					switch (member.MemberInfo) //     result = target.{member.Name}
+					il.MarkLabel(branches[member]);		// found:
+					il.Ldarg_3();						// value
+					il.Ldarg_1();						// target
+					il.CastOrUnbox(type);				// ({Type}) target
+					switch (member.MemberInfo)			// result = target.{member.Name}
 					{
 						case PropertyInfo property:
 							il.Callvirt(property.GetGetMethod(true));
@@ -188,19 +188,18 @@ namespace TypeKitchen
 							break;
 					}
 
-					if (member.Type.IsValueType)
-						il.Box(member.Type); //     (object) result
-					il.Stind_Ref(); //     value = result
-					il.Ldc_I4_1(); //     1
-					il.Ret(); //     return 1  (true)
+					il.MaybeBox(member.Type);			// (object) result
+					il.Stind_Ref();						// value = result
+					il.Ldc_I4_1();						// 1
+					il.Ret();							// return 1 (true)
 				}
 
 				il.MarkLabel(fail);
-				il.Ldarg_3(); //     value
-				il.Ldnull(); //     null
-				il.Stind_Ref(); //     value = null
-				il.Ldc_I4_0(); //     0
-				il.Ret(); //     return 0 (false)
+				il.Ldarg_3();							// value
+				il.Ldnull();							// null
+				il.Stind_Ref();							// value = null
+				il.Ldc_I4_0();							// 0
+				il.Ret();								// return 0 (false)
 
 				tb.DefineMethodOverride(tryGetValue, typeof(ITypeReadAccessor).GetMethod("TryGetValue"));
 			}
@@ -221,17 +220,17 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
-					il.Ldarg_2(); // key
-					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "Foo") goto found;
+					il.Ldarg_2();											// key
+					il.GotoIfStringEquals(member.Name, branches[member]);	// if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
 				{
 					il.MarkLabel(branches[member]);
-					il.Ldarg_1(); // target
-					il.Castclass(type); // ({Type}) target
+					il.Ldarg_1();					// target
+					il.CastOrUnbox(type);			// ({Type}) target
 
-					switch (member.MemberInfo) // result = target.Foo
+					switch (member.MemberInfo)		// result = target.Foo
 					{
 						case PropertyInfo property:
 							il.Callvirt(property.GetGetMethod(true));
@@ -241,9 +240,8 @@ namespace TypeKitchen
 							break;
 					}
 
-					if (member.Type.IsValueType)
-						il.Box(member.Type); // (object) result
-					il.Ret(); // return result;
+					il.MaybeBox(member.Type);       // (object) result
+					il.Ret();						// return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
@@ -259,16 +257,7 @@ namespace TypeKitchen
 			var typeInfo = tb.CreateTypeInfo();
 			return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
 		}
-
-		private static string CreateNameForType(Type type)
-		{
-			var assemblyName = type.Assembly.IsDynamic ? "Dynamic" : type.Assembly.GetName().Name;
-			var name = type.IsAnonymous()
-				? $"ReadAccessor_Anonymous_{assemblyName}_{type.AssemblyQualifiedName}"
-				: $"ReadAccessor_{assemblyName}_{type.AssemblyQualifiedName}";
-			return name;
-		}
-
+		
 		private static AccessorMembers CreateReadAccessorMembers(Type type,
 			AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
 			AccessorMemberScope scope = AccessorMemberScope.All)
@@ -290,9 +279,9 @@ namespace TypeKitchen
 		{
 			members = CreateAnonymousReadAccessorMembers(type);
 
-			var typeName = CreateNameForType(type);
+			var name = type.CreateNameForReadAccessor(members.Types, members.Scope);
 
-			var tb = DynamicAssembly.Module.DefineType(typeName,
+			var tb = DynamicAssembly.Module.DefineType(name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
@@ -428,8 +417,7 @@ namespace TypeKitchen
 
 				tb.DefineMethodOverride(getItem, typeof(ITypeReadAccessor).GetMethod("get_Item"));
 			}
-
-
+			
 			var typeInfo = tb.CreateTypeInfo();
 
 			//
@@ -446,11 +434,9 @@ namespace TypeKitchen
 				{
 					var memberName = setter.Key.Name.Replace("_SetGet", string.Empty);
 
-					var staticFieldFunc =
-						(Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
+					var staticFieldFunc = (Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
 					if (staticFieldFunc != setter.Value)
-						throw new ArgumentException(
-							$"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
+						throw new ArgumentException($"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
 
 					var backingField = type.GetField($"<{memberName}>i__Field",
 						BindingFlags.NonPublic | BindingFlags.Instance);
@@ -460,23 +446,22 @@ namespace TypeKitchen
 					var backingFieldValue = backingField.GetValue(debugObject);
 					var cachedDelegateValue = setter.Value(debugObject);
 					if (!backingFieldValue.Equals(cachedDelegateValue))
-						throw new ArgumentException(
-							$"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
+						throw new ArgumentException($"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
 				}
 			}
 
 			var accessor = (ITypeReadAccessor) Activator.CreateInstance(typeInfo, false);
 
 			if (debugObject != null)
+			{
 				foreach (var member in members)
 				{
 					var byAccessor = accessor[debugObject, member.Name];
-					var byReflection =
-						((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(
-							debugObject);
+					var byReflection = ((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(debugObject);
 					if (!byAccessor.Equals(byReflection))
 						throw new InvalidOperationException("IL produced incorrect accessor");
 				}
+			}
 
 			return accessor;
 		}

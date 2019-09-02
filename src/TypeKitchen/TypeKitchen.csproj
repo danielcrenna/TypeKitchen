@@ -8,9 +8,19 @@
     <LangVersion>7.3</LangVersion>
     <Configurations>Debug;Release;Package</Configurations>
     <Version>1.0.11</Version>
-    <PackageReleaseNotes>v1.0.11 - add serialization and state machine sub-systems.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.11 - add serialization, composition, and state machine sub-systems.</PackageReleaseNotes>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil\**\*.cs" Exclude="..\..\submodules\cecil\Mono.Cecil\AssemblyInfo.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Collections.Generic\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil.Metadata\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil.PE\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Cecil.Cil\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono\**\*.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\submodules\cecil\Mono.Security.Cryptography\**\*.cs" Exclude="..\..\submodules\cecil\Mono.Cecil\AssemblyInfo.cs" Link="Internal\Cecil\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Primitives" Version="2.2.0" />
