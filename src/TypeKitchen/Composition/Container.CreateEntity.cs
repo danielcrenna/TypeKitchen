@@ -2,9 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using TypeKitchen.Internal;
 
@@ -12,26 +10,6 @@ namespace TypeKitchen.Composition
 {
 	partial class Container
 	{
-		public uint CreateEntity<T1>() where T1 : struct
-		{
-			return CreateEntity(typeof(T1));
-		}
-
-		public uint CreateEntity<T1>(T1 component1) where T1 : struct
-		{
-			return CreateEntity((object) component1);
-		}
-
-		public uint CreateEntity<T1, T2>() where T1 : struct where T2 : struct
-		{
-			return CreateEntity(typeof(T1), typeof(T2));
-		}
-
-		public uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : struct where T2 : struct
-		{
-			return CreateEntity((object) component1, component2);
-		}
-
 		private readonly Dictionary<uint, List<IComponentProxy>> _componentsByEntity = new Dictionary<uint, List<IComponentProxy>>();
 
 		public uint CreateEntity(params Type[] componentTypes)
@@ -50,61 +28,312 @@ namespace TypeKitchen.Composition
 			return entity;
 		}
 
-		private uint InitializeEntity(IEnumerable<Type> componentTypes)
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		public uint CreateEntity<T1>() where T1 : struct
 		{
-			Array.Resize(ref _archetypes, _archetypes.Length + 1);
-			Array.Resize(ref _entities, _entities.Length + 1);
-
-			var entity = (uint) _entities.Length;
-			var archetype = componentTypes.Archetype(_seed);
-
-			_archetypes[_archetypes.Length - 1] = archetype;
-			_entities[_entities.Length - 1] = entity;
-			return entity;
+			return CreateEntity((object) typeof(T1));
 		}
 
-		private void CreateComponentProxy(uint entity, Type componentType, object initializer)
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2>() where T1 : struct where T2 : struct
 		{
-			if (!_componentsByEntity.TryGetValue(entity, out var list))
-				_componentsByEntity.Add(entity, list = new List<IComponentProxy>());
-
-			var members = AccessorMembers.Create(componentType, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public);
-			var type = GenerateComponentProxy(componentType, members);
-			var instance = (IComponentProxy) Activator.CreateInstance(type);
-
-			list.Add(instance);
-
-			if (initializer != null)
-				SetComponent(entity, componentType, initializer);
+			return CreateEntity((object) typeof(T1), typeof(T2));
 		}
-		
-		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
-		private static Type GenerateComponentProxy(Type componentType, AccessorMembers members)
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3>() where T1 : struct where T2 : struct where T3 : struct
 		{
-			return Proxies.GetOrAdd(componentType, type =>
-			{
-				var code = Pooling.StringBuilderPool.Scoped(sb =>
-				{
-					Debug.Assert(type.FullName != null, "type.FullName != null");
-					sb.AppendLine($"public struct {type.Name}Proxy : IComponentProxy");
-					sb.AppendLine("{");
-					sb.AppendLine();
-					foreach (var member in members)
-					{
-						var alias = member.Type.GetPreferredTypeName();
-						sb.AppendLine($"    public {alias} {member.Name} {{ get; set; }}");
-						sb.AppendLine();
-					}
-					sb.AppendLine("}");
-				});
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3));
+		}
 
-				var builder = Snippet.GetBuilder()
-					.Add<IComponentProxy>()
-					.Add(type);
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4));
+		}
 
-				var proxyType = Snippet.CreateType(code, builder.Build());
-				return proxyType;
-			});
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		/// <typeparam name="T9">The ninth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8), typeof(T9));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		/// <typeparam name="T9">The ninth type of declared component data.</typeparam>
+		/// <typeparam name="T10">The tenth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct where T10 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8), typeof(T9), typeof(T10));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		/// <typeparam name="T9">The ninth type of declared component data.</typeparam>
+		/// <typeparam name="T10">The tenth type of declared component data.</typeparam>
+		/// <typeparam name="T11">The eleventh type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct where T10 : struct where T11 : struct
+		{
+			return CreateEntity((object) typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8), typeof(T9), typeof(T10), typeof(T11));
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		public uint CreateEntity<T1>(T1 component1) where T1 : struct
+		{
+			return CreateEntity((object) component1);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2>(T1 component1, T2 component2) where T1 : struct where T2 : struct
+		{
+			return CreateEntity((object) component1, component2);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3>(T1 component1, T2 component2, T3 component3) where T1 : struct where T2 : struct where T3 : struct
+		{
+			return CreateEntity((object) component1, component2, component3);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4>(T1 component1, T2 component2, T3 component3, T4 component4) where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5, component6);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5, component6, component7);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5, component6, component7, component8);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		/// <typeparam name="T9">The ninth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5, component6, component7, component8, component9);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		/// <typeparam name="T9">The ninth type of declared component data.</typeparam>
+		/// <typeparam name="T10">The tenth type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct where T10 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5, component6, component7, component8, component9, component10);
+		}
+
+		/// <summary>
+		/// Create a new entity possessing the specified component data.
+		/// </summary>
+		/// <typeparam name="T1">The first type of declared component data.</typeparam>
+		/// <typeparam name="T2">The second type of declared component data.</typeparam>
+		/// <typeparam name="T3">The third type of declared component data.</typeparam>
+		/// <typeparam name="T4">The fourth type of declared component data.</typeparam>
+		/// <typeparam name="T5">The fifth type of declared component data.</typeparam>
+		/// <typeparam name="T6">The sixth type of declared component data.</typeparam>
+		/// <typeparam name="T7">The seventh type of declared component data.</typeparam>
+		/// <typeparam name="T8">The eighth type of declared component data.</typeparam>
+		/// <typeparam name="T9">The ninth type of declared component data.</typeparam>
+		/// <typeparam name="T10">The tenth type of declared component data.</typeparam>
+		/// <typeparam name="T11">The eleventh type of declared component data.</typeparam>
+		public uint CreateEntity<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 component1, T2 component2, T3 component3, T4 component4, T5 component5, T6 component6, T7 component7, T8 component8, T9 component9, T10 component10, T11 component11) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct where T10 : struct where T11 : struct
+		{
+			return CreateEntity((object) component1, component2, component3, component4, component5, component6, component7, component8, component9, component10, component11);
 		}
 	}
 }
