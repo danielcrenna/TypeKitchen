@@ -82,7 +82,7 @@ namespace TypeKitchen
 			else if (type.IsValueType())
 				typeName = type.Name;
 			else if (type.IsNullableValueType())
-				typeName = $"{type.Name}?";
+				typeName = $"{Nullable.GetUnderlyingType(type)?.Name}?";
 			else
 				typeName = type.Name;
 
