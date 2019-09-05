@@ -29,19 +29,20 @@ namespace TypeKitchen.Tests.Composition
 
 		public sealed class ClockSystem : ISystem<float>
 		{
-			public void Update(ref float elapsed)
+			public bool Update(UpdateContext updateContext, ref float elapsed)
 			{
-				
+				return false;
 			}
 		}
 
 		public sealed class VelocitySystem : ISystemWithState<TimeSpan, Velocity, Position2D>, IDependOn<ClockSystem>
 		{
-			public void Update(TimeSpan elapsedTime, ref Velocity velocity, ref Position2D position)
+			public bool Update(UpdateContext updateContext, TimeSpan elapsedTime, ref Velocity velocity, ref Position2D position)
 			{
 				var delta = elapsedTime.Milliseconds * 0.001;
 				position.X += (int) (velocity.Value * delta);
 				position.Y += (int) (velocity.Value * delta);
+				return true;
 			}
 		}
 
