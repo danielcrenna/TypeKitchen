@@ -19,8 +19,8 @@ namespace TypeKitchen
 			if (target.IsInterface)
 				return Proxy<T>(target, instance, ProxyType.Mimic);
 
-			if (source.IsValueType && target.IsValueType)
-				return Marshal<T>(ref instance);
+			//if (source.IsValueType && target.IsValueType)
+			//	return Marshal<T>(ref instance);
 
 			return ShallowCopy<T>(instance, target);
 		}
@@ -36,8 +36,8 @@ namespace TypeKitchen
 			if (target.IsInterface)
 				return Proxy(target, instance, ProxyType.Mimic);
 
-			if (source.IsValueType && target.IsValueType)
-				return Marshal(ref instance, type);
+			//if (source.IsValueType && target.IsValueType)
+			//	return Marshal(ref instance, type);
 
 			return ShallowCopy(instance, target);
 		}
@@ -90,22 +90,38 @@ namespace TypeKitchen
 
 		private static T Marshal<T>(ref object instance)
 		{
-			// FIXME: Investigate converting T to a formatted class: 
-			// See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/0372911d-c200-47f0-91ac-a35428751e6b/what-is-a-formatted-class?forum=clr
-			var handle = GCHandle.Alloc(instance, GCHandleType.Pinned);
-			var allocated = (T) System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
-			handle.Free();
-			return allocated;
+			try
+			{
+				// FIXME: Investigate converting T to a formatted class: 
+				// See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/0372911d-c200-47f0-91ac-a35428751e6b/what-is-a-formatted-class?forum=clr
+				var handle = GCHandle.Alloc(instance, GCHandleType.Pinned);
+				var allocated = (T) System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+				handle.Free();
+				return allocated;
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+				throw;
+			}
 		}
 
 		private static object Marshal(ref object instance, Type type)
 		{
-			// FIXME: Investigate converting T to a formatted class: 
-			// See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/0372911d-c200-47f0-91ac-a35428751e6b/what-is-a-formatted-class?forum=clr
-			var handle = GCHandle.Alloc(instance, GCHandleType.Pinned);
-			var allocated = System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), type);
-			handle.Free();
-			return allocated;
+			try
+			{
+				// FIXME: Investigate converting T to a formatted class: 
+				// See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/0372911d-c200-47f0-91ac-a35428751e6b/what-is-a-formatted-class?forum=clr
+				var handle = GCHandle.Alloc(instance, GCHandleType.Pinned);
+				var allocated = System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), type);
+				handle.Free();
+				return allocated;
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+				throw;
+			}
 		}
 	}
 }

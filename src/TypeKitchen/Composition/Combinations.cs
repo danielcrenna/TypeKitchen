@@ -44,7 +44,7 @@ namespace TypeKitchen.Composition
 			}
 			finally
 			{
-				Pool.Return(indices);
+				//Pool.Return(indices);
 			}
 		}
 
@@ -60,6 +60,8 @@ namespace TypeKitchen.Composition
 
 		private static int[] GetIndices(int k)
 		{
+			return InitializeIndices(k);
+
 			var prototype = Indices.GetOrAdd(k, InitializeIndices);
 			var set = Pool.Rent(k);
 			unsafe

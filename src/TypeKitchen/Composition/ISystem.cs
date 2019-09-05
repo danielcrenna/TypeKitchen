@@ -11,7 +11,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T1">The first type of required component data.</typeparam>
 	public interface ISystem<T1> : ISystem where T1 : struct
 	{
-		void Update(ref T1 component1);
+		bool Update(UpdateContext context, ref T1 component1);
 	}
 
 	/// <summary>
@@ -21,7 +21,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T2">The second type of required component data.</typeparam>
 	public interface ISystem<T1, T2> : ISystem where T1 : struct where T2 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2);
 	}
 
 	/// <summary>
@@ -32,7 +32,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T3">The third type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3> : ISystem where T1 : struct where T2 : struct where T3 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3);
 	}
 
 	/// <summary>
@@ -44,7 +44,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T4">The fourth type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4);
 	}
 
 	/// <summary>
@@ -57,7 +57,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T5">The fifth type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5);
 	}
 
 	/// <summary>
@@ -71,7 +71,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T6">The sixth type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5, T6> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6);
 	}
 
 	/// <summary>
@@ -86,7 +86,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T7">The seventh type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5, T6, T7> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7);
 	}
 
 	/// <summary>
@@ -102,7 +102,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T8">The eighth type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5, T6, T7, T8> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8);
 	}
 
 	/// <summary>
@@ -119,7 +119,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T9">The ninth type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5, T6, T7, T8, T9> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8, ref T9 component9);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8, ref T9 component9);
 	}
 
 	/// <summary>
@@ -137,7 +137,7 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T10">The tenth type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct where T10 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8, ref T9 component9, ref T10 component10);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8, ref T9 component9, ref T10 component10);
 	}
 
 	/// <summary>
@@ -156,9 +156,6 @@ namespace TypeKitchen.Composition
 	/// <typeparam name="T11">The eleventh type of required component data.</typeparam>
 	public interface ISystem<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> : ISystem where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct where T6 : struct where T7 : struct where T8 : struct where T9 : struct where T10 : struct where T11 : struct
 	{
-		void Update(ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8, ref T9 component9, ref T10 component10, ref T11 component11);
+		bool Update(UpdateContext context, ref T1 component1, ref T2 component2, ref T3 component3, ref T4 component4, ref T5 component5, ref T6 component6, ref T7 component7, ref T8 component8, ref T9 component9, ref T10 component10, ref T11 component11);
 	}
-
-
-
 }

@@ -4,7 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using TypeKitchen.Internal;
@@ -18,11 +20,13 @@ namespace TypeKitchen.Composition
 		private Container(Value128 seed)
 		{
 			_seed = seed;
+			_context = new UpdateContext();
 		}
 
 		private readonly List<ISystem> _systems = new List<ISystem>();
-		private Value128[] _archetypes = new Value128[0];
+		//private Value128[] _archetypes = new Value128[0];
 		private uint[] _entities = new uint[0];
+		private readonly Dictionary<Value128, uint[]> _archetypes = new Dictionary<Value128, uint[]>();
 		
 		public static Container Create(Value128 seed = default)
 		{
@@ -36,14 +40,15 @@ namespace TypeKitchen.Composition
 			public ISystem System;
 			public MethodInfo Update;
 			public ParameterInfo[] Parameters;
-			public int Start;
-			public int Length;
+			//public int Start;
+			//public int Length;
+			public Value128 Key;
 		}
-
-		public void AddSystem<T>() where T : ISystem, new()
+		public Container AddSystem<T>() where T : ISystem, new()
 		{
 			var system = new T();
 			_systems.Add(system);
+			return this;
 		}
 
 		private IEnumerable<ExecutionPlanLine> BuildExecutionPlan()
@@ -82,20 +87,6 @@ namespace TypeKitchen.Composition
 			}))
 			{
 				var archetype = system.Archetype(_seed);
-				int? start = null;
-				var length = 0;
-				for (var i = 0; i < _archetypes.Length; i++)
-				{
-					if (_archetypes[i] == archetype)
-					{
-						if(!start.HasValue)
-							start = i;
-						length++;
-					}
-					else if (start.HasValue)
-						break;
-				}
-
 				var update = system.GetType().GetMethod(nameof(ExecutionPlanLine.Update));
 				if (update == null)
 					continue;
@@ -104,8 +95,9 @@ namespace TypeKitchen.Composition
 				{
 					System = system,
 					Update = update,
-					Start = start.GetValueOrDefault(),
-					Length = length,
+					//Start = start.GetValueOrDefault(),
+					//Length = length,
+					Key = archetype,
 					Parameters = update.GetParameters()
 				};
 
@@ -113,32 +105,43 @@ namespace TypeKitchen.Composition
 			}
 		}
 
-		public void Update()
+		private readonly UpdateContext _context;
+
+		public UpdateContext Update()
 		{
-			Update<object>();
+			return Update<object>();
 		}
 
-		public void Update<TState>(TState state = default)
+		public UpdateContext Update<TState>(TState state = default)
 		{
+			_context.Reset();
 			_executionPlan = _executionPlan ?? BuildExecutionPlan();
 
 			foreach (var line in _executionPlan)
 			{
-				if (line.Length == 0)
+				if (line.Key == default)
 					continue;
 
 				var arguments = Pooling.Arguments.Get(line.Parameters.Length);
 				try
 				{
-					var entities = new ReadOnlySpan<uint>(_entities, line.Start, line.Length);
+					var array = _archetypes[line.Key];
+					var span = new ReadOnlySpan<uint>(array, 0, array.Length);
 
-					foreach (var entity in entities)
+					foreach (var entity in span)
 					{
 						var components = _componentsByEntity[entity];
 						for (var i = 0; i < line.Parameters.Length; i++)
 						{
 							var type = line.Parameters[i].ParameterType;
-							if (type == typeof(TState))
+							if (type == typeof(UpdateContext))
+							{
+								arguments[i] = _context;
+								continue;
+							}
+
+							var stateType = typeof(TState);
+							if (type == stateType || stateType.IsAssignableFrom(type))
 							{
 								arguments[i] = state;
 								continue;
@@ -154,13 +157,19 @@ namespace TypeKitchen.Composition
 							}
 						}
 
-						line.Update.Invoke(line.System, arguments);
+						if ((bool) line.Update.Invoke(line.System, arguments))
+						{
+							if(!_context.ActiveEntities.Contains(entity))
+								_context.ActiveEntities.Add(entity);
+						}
 
 						foreach (var argument in arguments)
 						{
-							var argumentType = argument.GetType();
-							if (argumentType == typeof(TState))
+							if (argument is UpdateContext || argument is TState)
 								continue;
+							var argumentType = argument.GetType();
+							if (argumentType.IsByRef)
+								argumentType = argumentType.GetElementType();
 							SetComponent(entity, argumentType, argument);
 						}
 					}
@@ -170,6 +179,8 @@ namespace TypeKitchen.Composition
 					Pooling.Arguments.Return(arguments);
 				}
 			}
+
+			return _context;
 		}
 
 		public void SetComponent<T>(uint entity, T value) where T : struct
@@ -212,16 +223,43 @@ namespace TypeKitchen.Composition
 				yield return component;
 		}
 
+		public T GetComponent<T>(Entity entity) where T : struct
+		{
+			var key = typeof(T);
+			foreach (var c in GetComponents(entity))
+			{
+				var componentType = key.IsByRef ? key.GetElementType() ?? key : key;
+				if (Proxies[componentType] != c.GetType())
+					continue;
+				return (T) c.QuackLike(componentType);
+			}
+
+			return default;
+		}
+
 		private uint InitializeEntity(IEnumerable<Type> componentTypes)
 		{
-			Array.Resize(ref _archetypes, _archetypes.Length + 1);
+			var entity = (uint) _entities.Length + 1;
 			Array.Resize(ref _entities, _entities.Length + 1);
-
-			var entity = (uint) _entities.Length;
-			var archetype = componentTypes.Archetype(_seed);
-
-			_archetypes[_archetypes.Length - 1] = archetype;
 			_entities[_entities.Length - 1] = entity;
+
+			var list = componentTypes.ToList();
+			for (var i = 0; i < list.Count; i++)
+			{
+				var k = i + 1;
+				foreach (var combination in list.GetCombinations(k))
+				{
+					var archetype = combination.Archetype(_seed);
+
+					if (!_archetypes.TryGetValue(archetype, out var array))
+						_archetypes.Add(archetype, array = new uint[0]);
+
+					Array.Resize(ref array, array.Length + 1);
+					array[array.Length - 1] = entity;
+					_archetypes[archetype] = array;
+				}
+			}
+
 			return entity;
 		}
 
@@ -241,6 +279,7 @@ namespace TypeKitchen.Composition
 		}
 
 		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
+		
 		private static Type GenerateComponentProxy(Type componentType, AccessorMembers members)
 		{
 			return Proxies.GetOrAdd(componentType, type =>
@@ -267,6 +306,22 @@ namespace TypeKitchen.Composition
 				var proxyType = Snippet.CreateType(code, builder.Build());
 				return proxyType;
 			});
+		}
+
+		public IEnumerable<object> Dump()
+		{
+			foreach (var entity in _entities)
+			{
+				var item = new Dictionary<string, object>();
+				foreach (var component in GetComponents(entity))
+				{
+					var accessor = ReadAccessor.Create(component, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var members);
+					foreach(var member in members)
+						if (accessor.TryGetValue(component, member.Name, out var value))
+							item[member.Name] = value;
+				}
+				yield return item;
+			}
 		}
 	}
 }
