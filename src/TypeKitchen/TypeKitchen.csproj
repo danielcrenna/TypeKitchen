@@ -7,8 +7,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
     <Configurations>Debug;Release;Package</Configurations>
-    <Version>1.0.14</Version>
-    <PackageReleaseNotes>v1.0.14 - composition system fixes</PackageReleaseNotes>
+    <Version>1.0.15</Version>
+    <PackageReleaseNotes>v1.0.15 - fix two-pass reflection caching</PackageReleaseNotes>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 

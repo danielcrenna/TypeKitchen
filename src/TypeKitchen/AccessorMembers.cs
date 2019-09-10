@@ -47,7 +47,8 @@ namespace TypeKitchen
 		{
 			if (types.HasFlagFast(AccessorMemberTypes.Fields))
 			{
-				FieldInfo = type.GetFields(flags).OrderBy(f => f.Name).ToArray();
+				var fields = type.GetFields(flags).OrderBy(f => f.Name);
+				FieldInfo = FieldInfo == null ? fields.ToArray() : FieldInfo.Concat(fields).Distinct().ToArray();
 				foreach (var field in FieldInfo)
 					NameToMember[field.Name] =
 						new AccessorMember(field.Name, field.FieldType, true, true, false, scope,
@@ -56,7 +57,8 @@ namespace TypeKitchen
 
 			if (types.HasFlagFast(AccessorMemberTypes.Properties))
 			{
-				PropertyInfo = type.GetProperties(flags).OrderBy(p => p.Name).ToArray();
+				var properties = type.GetProperties(flags).OrderBy(p => p.Name);
+				PropertyInfo = PropertyInfo == null ? properties.ToArray() : PropertyInfo.Concat(properties).Distinct().ToArray();
 				foreach (var property in PropertyInfo)
 					NameToMember[property.Name] =
 						new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite,
@@ -65,7 +67,8 @@ namespace TypeKitchen
 
 			if (types.HasFlagFast(AccessorMemberTypes.Methods))
 			{
-				MethodInfo = type.GetMethods(flags).OrderBy(m => m.Name).ToArray();
+				var methods = type.GetMethods(flags).OrderBy(m => m.Name);
+				MethodInfo = MethodInfo == null ? methods.ToArray() : MethodInfo.Concat(methods).Distinct().ToArray();
 				foreach (var method in MethodInfo)
 					NameToMember[method.Name] =
 						new AccessorMember(method.Name, method.ReturnType, false, false, true, scope,
