@@ -7,8 +7,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
     <Configurations>Debug;Release;Package</Configurations>
-    <Version>1.0.15</Version>
-    <PackageReleaseNotes>v1.0.15 - fix two-pass reflection caching</PackageReleaseNotes>
+    <Version>1.0.16</Version>
+    <PackageReleaseNotes>v1.0.16 - fix crash when there are no entities for a system that is updated</PackageReleaseNotes>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
