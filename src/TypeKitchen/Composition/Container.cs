@@ -4,9 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using TypeKitchen.Internal;
@@ -24,7 +22,6 @@ namespace TypeKitchen.Composition
 		}
 
 		private readonly List<ISystem> _systems = new List<ISystem>();
-		//private Value128[] _archetypes = new Value128[0];
 		private uint[] _entities = new uint[0];
 		private readonly Dictionary<Value128, uint[]> _archetypes = new Dictionary<Value128, uint[]>();
 		
@@ -40,8 +37,6 @@ namespace TypeKitchen.Composition
 			public ISystem System;
 			public MethodInfo Update;
 			public ParameterInfo[] Parameters;
-			//public int Start;
-			//public int Length;
 			public Value128 Key;
 		}
 		public Container AddSystem<T>() where T : ISystem, new()
@@ -95,8 +90,6 @@ namespace TypeKitchen.Composition
 				{
 					System = system,
 					Update = update,
-					//Start = start.GetValueOrDefault(),
-					//Length = length,
 					Key = archetype,
 					Parameters = update.GetParameters()
 				};
@@ -114,72 +107,82 @@ namespace TypeKitchen.Composition
 
 		public UpdateContext Update<TState>(TState state = default)
 		{
-			_context.Reset();
-			_executionPlan = _executionPlan ?? BuildExecutionPlan();
-
-			foreach (var line in _executionPlan)
+			try
 			{
-				if (line.Key == default)
-					continue;
+				_context.Reset();
+				_executionPlan = _executionPlan ?? BuildExecutionPlan();
 
-				var arguments = Pooling.Arguments.Get(line.Parameters.Length);
-				try
+				foreach (var line in _executionPlan)
 				{
-					var array = _archetypes[line.Key];
-					var span = new ReadOnlySpan<uint>(array, 0, array.Length);
+					if (line.Key == default)
+						continue;
 
-					foreach (var entity in span)
+					var arguments = Pooling.Arguments.Get(line.Parameters.Length);
+					try
 					{
-						var components = _componentsByEntity[entity];
-						for (var i = 0; i < line.Parameters.Length; i++)
-						{
-							var type = line.Parameters[i].ParameterType;
-							if (type == typeof(UpdateContext))
-							{
-								arguments[i] = _context;
-								continue;
-							}
+						if (!_archetypes.TryGetValue(line.Key, out var array))
+							continue; // no entities have this system, ignore
 
-							var stateType = typeof(TState);
-							if (type == stateType || stateType.IsAssignableFrom(type))
+						var span = new ReadOnlySpan<uint>(array, 0, array.Length);
+						foreach (var entity in span)
+						{
+							var components = _componentsByEntity[entity];
+							for (var i = 0; i < line.Parameters.Length; i++)
 							{
-								arguments[i] = state;
-								continue;
-							}
-							foreach (var c in components)
-							{
-								var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
-								if (Proxies[argumentType] != c.GetType())
+								var type = line.Parameters[i].ParameterType;
+								if (type == typeof(UpdateContext))
+								{
+									arguments[i] = _context;
 									continue;
+								}
 
-								var argument = c.QuackLike(argumentType);
-								arguments[i] = argument;
+								var stateType = typeof(TState);
+								if (type == stateType || stateType.IsAssignableFrom(type))
+								{
+									arguments[i] = state;
+									continue;
+								}
+								foreach (var c in components)
+								{
+									var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
+									if (Proxies[argumentType] != c.GetType())
+										continue;
+
+									var argument = c.QuackLike(argumentType);
+									arguments[i] = argument;
+								}
 							}
-						}
 
-						if ((bool) line.Update.Invoke(line.System, arguments))
-						{
-							if(!_context.ActiveEntities.Contains(entity))
-								_context.ActiveEntities.Add(entity);
-						}
+							if ((bool) line.Update.Invoke(line.System, arguments))
+							{
+								if (!_context.ActiveEntities.Contains(entity))
+									_context.ActiveEntities.Add(entity);
+							}
 
-						foreach (var argument in arguments)
-						{
-							if (argument is UpdateContext || argument is TState)
-								continue;
-							var argumentType = argument.GetType();
-							if (argumentType.IsByRef)
-								argumentType = argumentType.GetElementType();
-							SetComponent(entity, argumentType, argument);
+							foreach (var argument in arguments)
+							{
+								if (argument is UpdateContext || argument is TState)
+									continue;
+								var argumentType = argument.GetType();
+								if (argumentType.IsByRef)
+									argumentType = argumentType.GetElementType();
+								SetComponent(entity, argumentType, argument);
+							}
 						}
 					}
-				}
-				finally
-				{
-					Pooling.Arguments.Return(arguments);
+					finally
+					{
+						Pooling.Arguments.Return(arguments);
+					}
 				}
 			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+				throw;
+			}
 
+			_context.Tick();
 			return _context;
 		}
 
@@ -313,12 +316,16 @@ namespace TypeKitchen.Composition
 			foreach (var entity in _entities)
 			{
 				var item = new Dictionary<string, object>();
-				foreach (var component in GetComponents(entity))
+				var components = GetComponents(entity);
+				foreach (var component in components)
 				{
 					var accessor = ReadAccessor.Create(component, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var members);
 					foreach(var member in members)
-						if (accessor.TryGetValue(component, member.Name, out var value))
-							item[member.Name] = value;
+					{
+						var memberName = member.Name;
+						if (accessor.TryGetValue(component, memberName, out var value))
+							item[memberName] = value;
+					}
 				}
 				yield return item;
 			}

@@ -7,11 +7,17 @@ namespace TypeKitchen.Composition
 	{
 		public List<Entity> ActiveEntities { get; }
 		public Queue States { get; }
+		public int Ticks { get; private set; }
 
 		public UpdateContext()
 		{
 			ActiveEntities = new List<Entity>();
 			States = new Queue();
+		}
+
+		public void Tick()
+		{
+			Ticks++;
 		}
 
 		public void AddState(object state)
