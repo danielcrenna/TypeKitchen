@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace TypeKitchen.Composition
 {
@@ -26,25 +24,18 @@ namespace TypeKitchen.Composition
 				k = values.Count;
 
 			var indices = GetIndices(k);
-			try
+			while (true)
 			{
-				while (true)
-				{
-					yield return YieldCombination(values, indices, k);
+				yield return YieldCombination(values, indices, k);
 
-					var n = k - 1;
-					while (n >= 0 && indices[n] >= values.Count - k + n)
-						n--;
-					if (n < 0)
-						yield break;
+				var n = k - 1;
+				while (n >= 0 && indices[n] >= values.Count - k + n)
+					n--;
+				if (n < 0)
+					yield break;
 
-					for (var j = indices[n] + 1; n < k; n++, j++)
-						indices[n] = j;
-				}
-			}
-			finally
-			{
-				//Pool.Return(indices);
+				for (var j = indices[n] + 1; n < k; n++, j++)
+					indices[n] = j;
 			}
 		}
 
@@ -61,21 +52,6 @@ namespace TypeKitchen.Composition
 		private static int[] GetIndices(int k)
 		{
 			return InitializeIndices(k);
-
-			var prototype = Indices.GetOrAdd(k, InitializeIndices);
-			var set = Pool.Rent(k);
-			unsafe
-			{
-				var span = new ReadOnlySpan<int>(prototype);
-				fixed (void* s = &span.GetPinnableReference())
-				{
-					fixed (void* d = &span.GetPinnableReference())
-					{
-						Unsafe.CopyBlock(d, s, (uint) k);
-						return set;
-					}
-				}
-			}
 		}
 
 		private static int[] InitializeIndices(int k)
