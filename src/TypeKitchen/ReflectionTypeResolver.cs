@@ -60,20 +60,30 @@ namespace TypeKitchen
 
 		public IEnumerable<Type> FindByInterface<TInterface>()
 		{
+			return FindByInterface(typeof(TInterface));
+		}
+
+		public IEnumerable<Type> FindByInterface(Type interfaceType)
+		{
 			foreach (var type in _loadedTypes.Value)
 			{
 				var info = type.GetTypeInfo();
 				foreach (var @interface in info.ImplementedInterfaces)
-					if (typeof(TInterface) == @interface)
+					if (interfaceType == @interface)
 						yield return type;
 			}
 		}
 
 		public IEnumerable<Type> FindByParent<T>()
 		{
+			return FindByParent(typeof(T));
+		}
+
+		public IEnumerable<Type> FindByParent(Type parentType)
+		{
 			foreach (var type in _loadedTypes.Value)
 			{
-				if (type.IsSubclassOf(typeof(T)))
+				if (type.IsSubclassOf(parentType))
 					yield return type;
 			}
 		}
