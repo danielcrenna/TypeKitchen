@@ -69,6 +69,15 @@ namespace TypeKitchen
 			}
 		}
 
+		public IEnumerable<Type> FindByParent<T>()
+		{
+			foreach (var type in _loadedTypes.Value)
+			{
+				if (type.IsSubclassOf(typeof(T)))
+					yield return type;
+			}
+		}
+
 		private IEnumerable<MethodInfo> LoadMethods()
 		{
 			foreach (var type in _loadedTypes.Value)

@@ -11,6 +11,7 @@
     <Version>1.0.17</Version>
     <PackageReleaseNotes>Update packages to coincide with release of .NET Core 3.0</PackageReleaseNotes>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
