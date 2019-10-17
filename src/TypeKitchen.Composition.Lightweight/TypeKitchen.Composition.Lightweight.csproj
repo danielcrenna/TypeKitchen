@@ -6,10 +6,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>TypeKitchen.Composition</RootNamespace>
-    <LangVersion>7.3</LangVersion>
-    <Configurations>Debug;Release;Package</Configurations>
-    <Version>1.0.17</Version>
-    <PackageReleaseNotes>Update packages to coincide with release of .NET Core 3.0</PackageReleaseNotes>
+    <LangVersion>8</LangVersion>
+    <Configurations>Debug;Release;Package</Configurations>    
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>

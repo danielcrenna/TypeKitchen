@@ -5,10 +5,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>7.3</LangVersion>
-    <Configurations>Debug;Release;Package</Configurations>
-    <Version>1.0.19</Version>
-    <PackageReleaseNotes>Added additional type resolver methods.</PackageReleaseNotes>
+    <LangVersion>8</LangVersion>
+    <Configurations>Debug;Release;Package</Configurations>    
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
