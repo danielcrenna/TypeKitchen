@@ -287,24 +287,33 @@ namespace TypeKitchen.Composition
 		{
 			return Proxies.GetOrAdd(componentType, type =>
 			{
+				var builder = Snippet.GetBuilder()
+					.Add<IComponentProxy>()
+					.Add(type);
+
 				var code = Pooling.StringBuilderPool.Scoped(sb =>
 				{
 					Debug.Assert(type.FullName != null, "type.FullName != null");
 					sb.AppendLine($"public struct {type.Name}Proxy : IComponentProxy");
 					sb.AppendLine("{");
 					sb.AppendLine();
+
 					foreach (var member in members)
 					{
+						builder.Add(member.Type);
+
+						if (member.Type.IsGenericType)
+						{
+							foreach (var arg in member.Type.GenericTypeArguments)
+								builder.Add(arg);
+						}
+
 						var alias = member.Type.GetPreferredTypeName();
 						sb.AppendLine($"    public {alias} {member.Name} {{ get; set; }}");
-						sb.AppendLine();
 					}
+
 					sb.AppendLine("}");
 				});
-
-				var builder = Snippet.GetBuilder()
-					.Add<IComponentProxy>()
-					.Add(type);
 
 				var proxyType = Snippet.CreateType(code, builder.Build());
 				return proxyType;

@@ -84,9 +84,37 @@ namespace TypeKitchen
 			else if (type.IsNullableValueType())
 				typeName = $"{Nullable.GetUnderlyingType(type)?.Name}?";
 			else
-				typeName = type.Name;
+			{
+				//
+				// Generics:
+				if (type.IsGenericType)
+				{
+					typeName = Pooling.StringBuilderPool.Scoped(sb =>
+					{
+						sb.Append(type.GetNonGenericName());
+						sb.Append("<");
+						for (var i = 0; i < type.GenericTypeArguments.Length; i++)
+						{
+							if (i != 0)
+								sb.Append(",");
+							sb.Append(GetPreferredTypeName(type.GenericTypeArguments[i]));
+						}
+						sb.Append(">");
+					});
+				}
+				else
+				{
+					typeName = type.Name;
+				}
+			}
 
 			return typeName;
+		}
+
+		public static string GetNonGenericName(this Type type)
+		{
+			var index = type.Name.IndexOf('`');
+			return index == -1 ? type.Name : type.Name.Substring(0, index);
 		}
 
 		public static bool IsValueTypeOrNullableValueType(this Type type)
