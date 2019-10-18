@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
@@ -132,6 +134,13 @@ namespace TypeKitchen.Composition
 					if (line.Key == default)
 						continue;
 
+					if (line.Parameters.Length == 0)
+						continue;
+
+					var stateType = state.GetType();
+					if (line.System is ISystemWithState && stateType != line.Parameters[1].ParameterType)
+						continue;
+
 					var arguments = Pooling.Arguments.Get(line.Parameters.Length);
 					try
 					{
@@ -150,8 +159,6 @@ namespace TypeKitchen.Composition
 									arguments[i] = _context;
 									continue;
 								}
-
-								var stateType = state.GetType();
 								if (type == stateType || stateType.IsAssignableFrom(type))
 								{
 									arguments[i] = state;
