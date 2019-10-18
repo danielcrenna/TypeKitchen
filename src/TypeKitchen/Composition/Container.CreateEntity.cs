@@ -15,7 +15,7 @@ namespace TypeKitchen.Composition
 		public uint CreateEntity(params Type[] componentTypes)
 		{
 			var entity = InitializeEntity(componentTypes);
-			foreach (var componentType in componentTypes.NetworkOrder(x => x.Name))
+			foreach (var componentType in componentTypes.NetworkOrder(x => x.FullName))
 				CreateComponentProxy(entity, componentType, null);
 			return entity;
 		}
@@ -24,7 +24,7 @@ namespace TypeKitchen.Composition
 		{
 			var componentTypes = components.Select(x => x.GetType());
 			var entity = InitializeEntity(componentTypes);
-			foreach (var component in components.NetworkOrder(x => x.GetType().Name))
+			foreach (var component in components.NetworkOrder(x => x.GetType().FullName))
 				CreateComponentProxy(entity, component.GetType(), component);
 			return entity;
 		}

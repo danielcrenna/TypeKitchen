@@ -30,7 +30,7 @@ namespace TypeKitchen.Composition
 			return new Container(seed);
 		}
 
-		private IEnumerable<ExecutionPlanLine> _executionPlan;
+		private ExecutionPlanLine[] _executionPlan;
 
 		private struct ExecutionPlanLine
 		{
@@ -52,9 +52,20 @@ namespace TypeKitchen.Composition
 
 			foreach (var system in _systems)
 			{
-				var dependencies = system.GetType().GetTypeInfo().ImplementedInterfaces
-					.Where(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(IDependOn<>))
-					.SelectMany(y => y.GetGenericArguments());
+				var interfaces = system.GetType().GetTypeInfo().ImplementedInterfaces;
+
+				var dependencies = new HashSet<Type>();
+				foreach (var dependency in interfaces)
+				{
+					if (!dependency.IsGenericType)
+						continue;
+
+					if (dependency.GetGenericTypeDefinition() != typeof(IDependOn<>))
+						continue;
+
+					foreach (var argument in dependency.GetGenericArguments())
+						dependencies.Add(argument);
+				}
 
 				foreach (var dependency in dependencies)
 				{
@@ -81,20 +92,23 @@ namespace TypeKitchen.Composition
 				return index < 0 ? int.MaxValue : index;
 			}))
 			{
-				var archetype = system.Archetype(_seed);
-				var update = system.GetType().GetMethod(nameof(ExecutionPlanLine.Update));
-				if (update == null)
-					continue;
-
-				var line = new ExecutionPlanLine
+				var archetypes = system.Archetypes(_seed);
+				foreach (var (t, v) in archetypes)
 				{
-					System = system,
-					Update = update,
-					Key = archetype,
-					Parameters = update.GetParameters()
-				};
+					var update = t.GetMethod(nameof(ExecutionPlanLine.Update));
+					if (update == null)
+						continue;
 
-				yield return line;
+					var line = new ExecutionPlanLine
+					{
+						Key = v,
+						System = system,
+						Update = update,
+						Parameters = update.GetParameters()
+					};
+
+					yield return line;
+				}
 			}
 		}
 
@@ -110,9 +124,10 @@ namespace TypeKitchen.Composition
 			try
 			{
 				_context.Reset();
-				_executionPlan = _executionPlan ?? BuildExecutionPlan();
+				_executionPlan ??= BuildExecutionPlan().ToArray();
 
-				foreach (var line in _executionPlan)
+				var executionPlanLines = _executionPlan;
+				foreach (var line in executionPlanLines)
 				{
 					if (line.Key == default)
 						continue;
@@ -136,12 +151,13 @@ namespace TypeKitchen.Composition
 									continue;
 								}
 
-								var stateType = typeof(TState);
+								var stateType = state.GetType();
 								if (type == stateType || stateType.IsAssignableFrom(type))
 								{
 									arguments[i] = state;
 									continue;
 								}
+
 								foreach (var c in components)
 								{
 									var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
@@ -178,7 +194,7 @@ namespace TypeKitchen.Composition
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
+				Trace.WriteLine(e);
 				throw;
 			}
 

@@ -12,7 +12,7 @@ namespace TypeKitchen.Composition
 		public static Value128 Archetype(this IEnumerable<Type> componentTypes, Value128 seed = default)
 		{
 			Value128 archetype = default;
-			foreach (var component in componentTypes.NetworkOrder(x => x.Name))
+			foreach (var component in componentTypes.NetworkOrder(x => x.FullName))
 			{
 				var componentId = Hashing.MurmurHash3(component.FullName, seed);
 				archetype = componentId ^ archetype;

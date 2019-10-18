@@ -11,21 +11,19 @@ namespace TypeKitchen.Composition
 {
 	internal static class SystemExtensions
 	{
-		public static Value128 Archetype(this ISystem system, Value128 seed = default) =>
-			system.GetDeclaredSystemComponentTypes().Archetype(seed);
-
-		private static IEnumerable<Type> GetDeclaredSystemComponentTypes<T>(this T system) where T : ISystem
+		public static IEnumerable<(Type,Value128)> Archetypes(this ISystem system, Value128 seed = default)
 		{
-			var implemented = system.GetType().GetTypeInfo().ImplementedInterfaces;
-			var contract = implemented
-				.Single(x => typeof(ISystem).IsAssignableFrom(x) && x.IsGenericType);
+			var type = system.GetType();
+			var implemented = type.GetTypeInfo().ImplementedInterfaces;
+			foreach (var contract in implemented.Where(x => x.IsGenericType && typeof(ISystem).IsAssignableFrom(x)))
+			{
+				IEnumerable<Type> componentTypes = contract.GetGenericArguments();
+				if (typeof(ISystemWithState).IsAssignableFrom(contract))
+					componentTypes = componentTypes.Skip(1);
 
-			IEnumerable<Type> componentTypes = contract.GetGenericArguments();
-			if (typeof(ISystemWithState).IsAssignableFrom(contract))
-				componentTypes = componentTypes.Skip(1);
-			
-			foreach (var argument in componentTypes)
-				yield return argument;
+				var hash = componentTypes.Archetype(seed);
+				yield return (contract, hash);
+			}
 		}
 	}
 }
