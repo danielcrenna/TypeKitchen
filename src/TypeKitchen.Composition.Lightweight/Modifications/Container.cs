@@ -81,20 +81,23 @@ namespace TypeKitchen.Composition
 				return index < 0 ? int.MaxValue : index;
 			}))
 			{
-				var archetype = system.Archetype(_seed);
-				var update = system.GetType().GetMethod(nameof(ExecutionPlanLine.Update));
-				if (update == null)
-					continue;
-
-				var line = new ExecutionPlanLine
+				var archetypes = system.Archetypes(_seed);
+				foreach (var (t, v) in archetypes)
 				{
-					System = system,
-					Update = update,
-					Key = archetype,
-					Parameters = update.GetParameters()
-				};
+					var update = t.GetMethod(nameof(ExecutionPlanLine.Update));
+					if (update == null)
+						continue;
 
-				yield return line;
+					var line = new ExecutionPlanLine
+					{
+						Key = v,
+						System = system,
+						Update = update,
+						Parameters = update.GetParameters()
+					};
+
+					yield return line;
+				}
 			}
 		}
 
