@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.Extensions.Logging;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
@@ -116,12 +117,12 @@ namespace TypeKitchen.Composition
 
 		private readonly UpdateContext _context;
 
-		public UpdateContext Update()
+		public UpdateContext Update(ILogger logger = null)
 		{
-			return Update<object>();
+			return Update<object>(logger);
 		}
 
-		public UpdateContext Update<TState>(TState state = default)
+		public UpdateContext Update<TState>(TState state = default, ILogger logger = null)
 		{
 			try
 			{
@@ -141,6 +142,8 @@ namespace TypeKitchen.Composition
 					if (line.System is ISystemWithState && stateType != line.Parameters[1].ParameterType)
 						continue;
 
+					logger?.LogDebug($"Executing system '{line.System.GetType().GetPreferredTypeName()}' with state '{state.GetType().GetPreferredTypeName()}'");
+					
 					var arguments = Pooling.Arguments.Get(line.Parameters.Length);
 					try
 					{
@@ -150,6 +153,8 @@ namespace TypeKitchen.Composition
 						var span = new ReadOnlySpan<uint>(array, 0, array.Length);
 						foreach (var entity in span)
 						{
+							logger?.LogDebug($"Entity '{entity}' is associated with this system");
+
 							var components = _componentsByEntity[entity];
 							for (var i = 0; i < line.Parameters.Length; i++)
 							{
@@ -179,7 +184,14 @@ namespace TypeKitchen.Composition
 							if ((bool) line.Update.Invoke(line.System, arguments))
 							{
 								if (!_context.ActiveEntities.Contains(entity))
+								{
+									logger?.LogDebug($"Entity '{entity}' is active");
 									_context.ActiveEntities.Add(entity);
+								}
+								else
+								{
+									logger?.LogDebug($"Entity '{entity}' is inactive");
+								}
 							}
 
 							foreach (var argument in arguments)
@@ -306,13 +318,17 @@ namespace TypeKitchen.Composition
 
 		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
 		
-		private static Type GenerateComponentProxy(Type componentType, AccessorMembers members)
+		private Type GenerateComponentProxy(Type componentType, AccessorMembers members)
 		{
+			var builder = Snippet.GetBuilder()
+				.Add<IComponentProxy>()
+				.Add(componentType);
+
+			_configureAction?.Invoke(builder);
+
 			return Proxies.GetOrAdd(componentType, type =>
 			{
-				var builder = Snippet.GetBuilder()
-					.Add<IComponentProxy>()
-					.Add(type);
+				builder.Add(type);	
 
 				var code = Pooling.StringBuilderPool.Scoped(sb =>
 				{
@@ -339,7 +355,7 @@ namespace TypeKitchen.Composition
 				});
 
 				var proxyType = Snippet.CreateType(code, builder.Build());
-				return proxyType;
+				return proxyType; 
 			});
 		}
 

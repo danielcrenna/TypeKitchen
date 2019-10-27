@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 
@@ -39,8 +40,31 @@ namespace TypeKitchen
 			var properties = PropertyInfo ?? Enumerable.Empty<PropertyInfo>();
 			var methods = MethodInfo ?? Enumerable.Empty<MethodInfo>();
 
-			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(m => m.Name).ToArray();
-			Members = NameToMember.Values.OrderBy(m => m.Name).ToList();
+			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(TryOrderMemberInfo).ToArray();
+			Members = NameToMember.Values.OrderBy(TryOrderMember).ToList();
+		}
+
+		private static object TryOrderMemberInfo(MemberInfo m)
+		{
+			foreach (var attribute in Attribute.GetCustomAttributes(m, true))
+			{
+				if (attribute is DisplayAttribute display && display.GetOrder().HasValue)
+				{
+					return display.GetOrder().GetValueOrDefault();
+				}
+			}
+			
+			return m.Name;
+		}
+
+		private static object TryOrderMember(AccessorMember m)
+		{
+			if (m.TryGetAttribute(out DisplayAttribute display) && display.GetOrder().HasValue)
+			{
+				return display.GetOrder().GetValueOrDefault();
+			}
+
+			return m.Name;
 		}
 
 		private void SetWith(IReflect type, AccessorMemberTypes types, AccessorMemberScope scope, BindingFlags flags)

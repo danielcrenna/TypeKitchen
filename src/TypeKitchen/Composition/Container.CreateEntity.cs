@@ -12,6 +12,12 @@ namespace TypeKitchen.Composition
 	{
 		private readonly Dictionary<uint, List<IComponentProxy>> _componentsByEntity = new Dictionary<uint, List<IComponentProxy>>();
 
+		private Action<ReferenceBuilder> _configureAction;
+		public void ConfigureBuilder(Action<ReferenceBuilder> configureAction)
+		{
+			_configureAction = configureAction;
+		}
+
 		public uint CreateEntity(params Type[] componentTypes)
 		{
 			var entity = InitializeEntity(componentTypes);
@@ -190,7 +196,7 @@ namespace TypeKitchen.Composition
 		public uint CreateEntity<T1>(T1 component1) where T1 : struct
 		{
 			return CreateEntity((object) component1);
-		}
+		} 
 
 		/// <summary>
 		/// Create a new entity possessing the specified component data.

@@ -28,30 +28,21 @@ namespace TypeKitchen
 			if ((info is PropertyInfo || info is FieldInfo) &&
 			    Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
 			{
-				var metadata =
-					(MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
+				var metadata = (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
 
-				MemberInfo surrogate;
-				switch (info)
+				var surrogate = info switch
 				{
-					case PropertyInfo _:
-						surrogate = metadata.MetadataType.GetProperty(name,
-							            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-						            ?? throw new InvalidOperationException();
-						break;
-					case FieldInfo _:
-						surrogate = metadata.MetadataType.GetField(name,
-							            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-						            ?? throw new InvalidOperationException();
-						break;
-					default:
-						throw new ArgumentException();
-				}
+					PropertyInfo _ => (MemberInfo) (metadata.MetadataType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new InvalidOperationException()),
+					FieldInfo _ => (metadata.MetadataType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new InvalidOperationException()),
+					_ => throw new ArgumentException()
+				};
 
 				Attributes = Attribute.GetCustomAttributes(surrogate, true);
 			}
 			else
 				Attributes = Attribute.GetCustomAttributes(info, true);
+
+			_display = new Lazy<AccessorMemberDisplay>(() => new AccessorMemberDisplay(this));
 		}
 
 		public string Name { get; }
@@ -63,6 +54,10 @@ namespace TypeKitchen
 		public AccessorMemberType MemberType { get; }
 		public MemberInfo MemberInfo { get; }
 		public Attribute[] Attributes { get; }
+
+		private readonly Lazy<AccessorMemberDisplay> _display;
+		public AccessorMemberDisplay Display => _display.Value;
+
 
 		internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method &&
 		                                  !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") &&

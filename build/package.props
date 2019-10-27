@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.0.24</Version>
-    <PackageReleaseNotes>Fix bug in system with different states but the same components.</PackageReleaseNotes>
+    <Version>1.0.25</Version>
+    <PackageReleaseNotes>Add ability to customize the internal reference builder in composition.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
