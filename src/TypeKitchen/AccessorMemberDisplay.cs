@@ -12,6 +12,7 @@ namespace TypeKitchen
 		public DataType DataType { get; private set; }
 		public string DateFormat { get; private set; }
 		public bool IsReadOnly { get; private set; }
+		public bool IsVisible { get; private set; }
 
 		public AccessorMemberDisplay(AccessorMember member, string profile)
 		{
@@ -22,6 +23,7 @@ namespace TypeKitchen
 			ResolveDataType(member);
 			ResolveDateFormat(member);
 			ResolveReadOnly(member);
+			ResolveVisible(member);
 		}
 
 		private static AccessorMember MaybeUseMetadata(AccessorMember member, string profile)
@@ -56,6 +58,26 @@ namespace TypeKitchen
 			return member;
 		}
 
+		private void ResolveVisible(AccessorMember member)
+		{
+			if (member.TryGetAttribute(out BrowsableAttribute browsable))
+			{
+				IsVisible = browsable.Browsable;
+			}
+			else if(member.TryGetAttribute(out DesignTimeVisibleAttribute visible))
+			{
+				IsVisible = visible.Visible;
+			}
+			else if (!member.CanRead)
+			{
+				IsVisible = false;
+			}
+			else
+			{
+				IsVisible = true;
+			}
+		}
+
 		private void ResolveReadOnly(AccessorMember member)
 		{
 			if (member.TryGetAttribute(out ReadOnlyAttribute readOnly))
@@ -74,7 +96,7 @@ namespace TypeKitchen
 			{
 				DateFormat = member.TryGetAttribute(out DisplayFormatAttribute displayFormat)
 					? displayFormat.DataFormatString
-					: "yyyy/MM/dd"; // matches default for HTML5 date input type
+					: "mm/dd/yyyy";
 			}
 		}
 

@@ -30,7 +30,13 @@ namespace TypeKitchen
 			return members.TryGetValue(memberName, out var member) &&
 			       member.Display(profile).IsReadOnly;
 		}
-		
+
+		public static bool IsVisible(this AccessorMembers members, string memberName, string profile = "Default")
+		{
+			return members.TryGetValue(memberName, out var member) &&
+			       member.Display(profile).IsVisible;
+		}
+
 		public static bool IsDataType(this AccessorMembers members, string memberName, DataType dataType, string profile = "Default")
 		{
 			return members.TryGetValue(memberName, out var member) &&
