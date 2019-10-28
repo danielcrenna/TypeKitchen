@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
@@ -16,12 +17,15 @@ namespace TypeKitchen
 		private static readonly ConcurrentDictionary<AccessorMembersKey, AccessorMembers> Cache =
 			new ConcurrentDictionary<AccessorMembersKey, AccessorMembers>();
 
+		public string DisplayName { get; }
+		
 		private AccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
 			DeclaringType = type;
+			DisplayName = GetDisplayName();
 			Types = types;
 			Scope = scope;
-
+			
 			NameToMember = new Dictionary<string, AccessorMember>();
 
 			var flags = BindingFlags.Instance | BindingFlags.Static;
@@ -46,14 +50,11 @@ namespace TypeKitchen
 
 		private static object TryOrderMemberInfo(MemberInfo m)
 		{
-			foreach (var attribute in Attribute.GetCustomAttributes(m, true))
+			if (m.TryGetAttribute(true, out DisplayAttribute display) && display.GetOrder().HasValue)
 			{
-				if (attribute is DisplayAttribute display && display.GetOrder().HasValue)
-				{
-					return display.GetOrder().GetValueOrDefault();
-				}
+				return display.GetOrder().GetValueOrDefault();
 			}
-			
+
 			return m.Name;
 		}
 
@@ -67,7 +68,7 @@ namespace TypeKitchen
 			return m.Name;
 		}
 
-		private void SetWith(IReflect type, AccessorMemberTypes types, AccessorMemberScope scope, BindingFlags flags)
+		private void SetWith(Type type, AccessorMemberTypes types, AccessorMemberScope scope, BindingFlags flags)
 		{
 			if (types.HasFlagFast(AccessorMemberTypes.Fields))
 			{
@@ -75,7 +76,7 @@ namespace TypeKitchen
 				FieldInfo = FieldInfo == null ? fields.ToArray() : FieldInfo.Concat(fields).Distinct().ToArray();
 				foreach (var field in FieldInfo)
 					NameToMember[field.Name] =
-						new AccessorMember(field.Name, field.FieldType, true, true, false, scope,
+						new AccessorMember(type, field.Name, field.FieldType, true, true, false, scope,
 							AccessorMemberType.Field, field);
 			}
 
@@ -85,7 +86,7 @@ namespace TypeKitchen
 				PropertyInfo = PropertyInfo == null ? properties.ToArray() : PropertyInfo.Concat(properties).Distinct().ToArray();
 				foreach (var property in PropertyInfo)
 					NameToMember[property.Name] =
-						new AccessorMember(property.Name, property.PropertyType, property.CanRead, property.CanWrite,
+						new AccessorMember(type, property.Name, property.PropertyType, property.CanRead, property.CanWrite,
 							false, scope, AccessorMemberType.Property, property);
 			}
 
@@ -95,7 +96,7 @@ namespace TypeKitchen
 				MethodInfo = MethodInfo == null ? methods.ToArray() : MethodInfo.Concat(methods).Distinct().ToArray();
 				foreach (var method in MethodInfo)
 					NameToMember[method.Name] =
-						new AccessorMember(method.Name, method.ReturnType, false, false, true, scope,
+						new AccessorMember(type, method.Name, method.ReturnType, false, false, true, scope,
 							AccessorMemberType.Method,
 							method);
 			}
@@ -153,6 +154,32 @@ namespace TypeKitchen
 		public bool TryGetValue(string name, out AccessorMember member)
 		{
 			return NameToMember.TryGetValue(name, out member);
+		}
+
+		private string GetDisplayName()
+		{
+			var metadata = MetadataType();
+
+			foreach (var attribute in metadata.GetCustomAttributes())
+			{
+				switch (attribute)
+				{
+					case DisplayAttribute display:
+						return display.Name;
+					case DisplayNameAttribute displayName:
+						return displayName.DisplayName;
+				}
+			}
+
+			return DeclaringType.Name;
+		}
+
+		private Type MetadataType()
+		{
+			var metadata = DeclaringType.TryGetAttribute(false, out MetadataTypeAttribute metadataAttribute)
+				? metadataAttribute.MetadataType
+				: DeclaringType;
+			return metadata;
 		}
 	}
 }

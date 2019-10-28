@@ -8,8 +8,16 @@ namespace TypeKitchen
 	[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 	public class MetadataTypeAttribute : Attribute
 	{
-		public MetadataTypeAttribute(Type metadataType) => MetadataType = metadataType;
+		public MetadataTypeAttribute(string profile, Type metadataType)
+		{
+			Profile = profile;
+			MetadataType = metadataType;
+		}
 
-		public Type MetadataType { get; set; }
+		public string Profile { get; }
+
+		public MetadataTypeAttribute(Type metadataType) : this("Default", metadataType) { }
+
+		public Type MetadataType { get; }
 	}
 }

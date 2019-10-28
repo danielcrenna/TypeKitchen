@@ -18,11 +18,23 @@ namespace TypeKitchen
 				: member.Display.Prompt;
 		}
 
+		public static string DateFormat(this AccessorMembers members, string memberName)
+		{
+			return !members.TryGetValue(memberName, out var member)
+				? string.Empty
+				: member.Display.DateFormat;
+		}
+
+		public static bool IsReadOnly(this AccessorMembers members, string memberName)
+		{
+			return members.TryGetValue(memberName, out var member) &&
+			       member.Display.IsReadOnly;
+		}
+		
 		public static bool IsDataType(this AccessorMembers members, string memberName, DataType dataType)
 		{
 			return members.TryGetValue(memberName, out var member) &&
-			       member.TryGetAttribute(out DataTypeAttribute dataTypeAttribute) &&
-			       dataTypeAttribute.DataType == dataType;
+			       member.Display.DataType == dataType;
 		}
 	}
 }

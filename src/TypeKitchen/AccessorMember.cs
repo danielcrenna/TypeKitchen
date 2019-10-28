@@ -12,10 +12,11 @@ namespace TypeKitchen
 	[DebuggerDisplay("{" + nameof(MemberInfo) + "}")]
 	public sealed class AccessorMember
 	{
-		public AccessorMember(string name, Type type, bool canRead, bool canWrite, bool canCall,
+		public AccessorMember(Type declaringType, string name, Type type, bool canRead, bool canWrite, bool canCall,
 			AccessorMemberScope scope,
-			AccessorMemberType memberType, MemberInfo info)
+			AccessorMemberType memberType, MemberInfo memberInfo)
 		{
+			DeclaringType = declaringType;
 			Name = name;
 			Type = type;
 			CanRead = canRead;
@@ -23,14 +24,13 @@ namespace TypeKitchen
 			CanCall = canCall;
 			Scope = scope;
 			MemberType = memberType;
-			MemberInfo = info;
-
-			if ((info is PropertyInfo || info is FieldInfo) &&
-			    Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
+			MemberInfo = memberInfo;
+			
+			if ((memberInfo is PropertyInfo || memberInfo is FieldInfo) && Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
 			{
 				var metadata = (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
 
-				var surrogate = info switch
+				var surrogate = memberInfo switch
 				{
 					PropertyInfo _ => (MemberInfo) (metadata.MetadataType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new InvalidOperationException()),
 					FieldInfo _ => (metadata.MetadataType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new InvalidOperationException()),
@@ -40,12 +40,13 @@ namespace TypeKitchen
 				Attributes = Attribute.GetCustomAttributes(surrogate, true);
 			}
 			else
-				Attributes = Attribute.GetCustomAttributes(info, true);
+				Attributes = Attribute.GetCustomAttributes(memberInfo, true);
 
 			_display = new Lazy<AccessorMemberDisplay>(() => new AccessorMemberDisplay(this));
 		}
 
 		public string Name { get; }
+		public Type DeclaringType { get; }
 		public Type Type { get; }
 		public bool CanRead { get; }
 		public bool CanWrite { get; }

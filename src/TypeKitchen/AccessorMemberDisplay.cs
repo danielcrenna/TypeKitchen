@@ -1,20 +1,75 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace TypeKitchen
 {
-	public class AccessorMemberDisplay
+	public sealed class AccessorMemberDisplay
 	{
-		public string Name { get; set; }
-		public string Prompt { get; set; }
-		public string CustomDataType { get; set; }
-		public DataType DataType { get; set; }
+		public string Name { get; private set; }
+		public string Prompt { get; private set; }
+		public string CustomDataType { get; private set; }
+		public DataType DataType { get; private set; }
+		public string DateFormat { get; private set; }
+		public bool IsReadOnly { get; private set; }
 
 		public AccessorMemberDisplay(AccessorMember member)
 		{
+			member = MaybeUseMetadataType(member);
+
 			ResolveName(member);
 			ResolvePrompt(member);
 			ResolveDataType(member);
+			ResolveDateFormat(member);
+			ResolveReadOnly(member);
+		}
+
+		private static AccessorMember MaybeUseMetadataType(AccessorMember member)
+		{
+			if (member.DeclaringType == null || !member.DeclaringType.TryGetAttribute(false, out MetadataTypeAttribute metadata))
+				return member;
+
+			var types = AccessorMemberTypes.None;
+			types |= member.MemberType switch
+			{
+				AccessorMemberType.Field => AccessorMemberTypes.Fields,
+				AccessorMemberType.Property => AccessorMemberTypes.Properties,
+				AccessorMemberType.Method => AccessorMemberTypes.Methods,
+				_ => throw new ArgumentOutOfRangeException()
+			};
+
+			var members = AccessorMembers.Create(metadata.MetadataType, types, member.Scope);
+			foreach (var m in members)
+			{
+				if (m.Name != member.Name)
+					continue;
+				member = m;
+				break;
+			}
+
+			return member;
+		}
+
+		private void ResolveReadOnly(AccessorMember member)
+		{
+			if (member.TryGetAttribute(out ReadOnlyAttribute readOnly))
+			{
+				IsReadOnly = readOnly.IsReadOnly;
+			}
+			else if (!member.CanWrite)
+			{
+				IsReadOnly = true;
+			}
+		}
+
+		private void ResolveDateFormat(AccessorMember member)
+		{
+			if(DataType == DataType.Date || DataType == DataType.DateTime)
+			{
+				DateFormat = member.TryGetAttribute(out DisplayFormatAttribute displayFormat)
+					? displayFormat.DataFormatString
+					: "yyyy/MM/dd"; // matches default for HTML5 date input type
+			}
 		}
 
 		private void ResolvePrompt(AccessorMember member)
