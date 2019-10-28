@@ -16,6 +16,17 @@ namespace TypeKitchen.Tests.Composition
             container.AddSystem<ClockSystem>();
 
 			var entity = container.CreateEntity(new Velocity { Value = 10f }, new Position2D());
+			var snapshot = container.Snapshot();
+
+			AssertSimulation(container, entity);
+
+			container.Restore(snapshot);
+
+			AssertSimulation(container, entity);
+		}
+
+		private static void AssertSimulation(Container container, uint entity)
+		{
 			container.Update(TimeSpan.FromSeconds(0.1));
 
 			var c = container.GetComponents(entity).ToArray();

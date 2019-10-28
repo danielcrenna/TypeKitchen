@@ -64,26 +64,23 @@ namespace TypeKitchen
 			var script = CSharpScript.Create(body, options ?? DefaultOptions, typeof(ContextFree), Loader);
 			var compilation = script.GetCompilation();
 
-			using (var pe = new MemoryStream())
-			using (var pdb = new MemoryStream())
+			using var pe = new MemoryStream();
+			using var pdb = new MemoryStream();
+
+			var result = compilation.Emit(pe, pdb);
+			if (!result.Success)
 			{
-				var result = compilation.Emit(pe, pdb);
-				if (!result.Success)
-				{
-					foreach (var diagnostic in result.Diagnostics)
-						Trace.TraceError($"Error or warning during snippet compilation: {diagnostic.GetMessage()}");
-					return null;
-				}
-
-				pe.Seek(0, SeekOrigin.Begin);
-				var assembly = AssemblyLoadContext.Default.LoadFromStream(pe, pdb);
-				var types = assembly.GetTypes();
-				return types;
+				foreach (var diagnostic in result.Diagnostics)
+					Trace.TraceError($"Error or warning during snippet compilation: {diagnostic.GetMessage()}");
+				return null;
 			}
+
+			pe.Seek(0, SeekOrigin.Begin);
+			var assembly = AssemblyLoadContext.Default.LoadFromStream(pe, pdb);
+			var types = assembly.GetTypes();
+			return types;
 		}
 
-		private static class ContextFree
-		{
-		}
+		private static class ContextFree { }
 	}
 }

@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Reflection.Metadata.Ecma335;
 
 namespace TypeKitchen
 {
@@ -24,7 +23,7 @@ namespace TypeKitchen
 
 		public static bool ValidateMember(object instance, string memberName, out List<ValidationResult> validationResults)
 		{
-			return ValidateObject("Default", instance, out validationResults);
+			return ValidateMember("Default", instance, memberName, out validationResults);
 		}
 
 		public static bool ValidateMember(string profile, object instance, string memberName, out List<ValidationResult> validationResults)

@@ -114,6 +114,8 @@ namespace TypeKitchen
 		private Dictionary<string, AccessorMember> NameToMember { get; }
 
 		public AccessorMember this[string name] => NameToMember[name];
+		public AccessorMember this[int index] => Members[index];
+
 		public int Count => NameToMember.Count;
 		public IEnumerable<string> Names => NameToMember.Keys;
 

@@ -42,6 +42,14 @@ namespace TypeKitchen
 			return activator();
 		}
 
+		public static object CreateInstance(object instance)
+		{
+			if (instance is Type type)
+				return CreateInstance(type);
+
+			return CreateInstance(instance.GetType());
+		}
+
 		public static object CreateInstance(Type type, params object[] args)
 		{
 			var activator = GetOrBuildActivator(type);

@@ -359,6 +359,36 @@ namespace TypeKitchen.Composition
 			});
 		}
 
+		public void Restore(IEnumerable<object> snapshot)
+		{
+			var items = snapshot.Cast<Dictionary<string, object>>().ToList();
+
+			for (var i = 0; i < items.Count; i++)
+			{
+				var item = items[i];
+				var entity = _entities[i];
+
+				var components = GetComponents(entity);
+				foreach (var component in components)
+				{
+					var accessor = WriteAccessor.Create(component,
+						AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public,
+						out var members);
+
+					foreach (var member in members)
+					{
+						if (item.TryGetValue(member.Name, out var value))
+							accessor.TrySetValue(component, member.Name, value);
+					}
+				}
+			}
+		}
+
+		public List<object> Snapshot()
+		{
+			return Dump().ToList();
+		}
+
 		public IEnumerable<object> Dump()
 		{
 			foreach (var entity in _entities)
@@ -367,14 +397,20 @@ namespace TypeKitchen.Composition
 				var components = GetComponents(entity);
 				foreach (var component in components)
 				{
-					var accessor = ReadAccessor.Create(component, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var members);
-					foreach(var member in members)
+					var readComponent = ReadAccessor.Create(component,
+						AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public,
+						out var members);
+					foreach (var member in members)
 					{
 						var memberName = member.Name;
-						if (accessor.TryGetValue(component, memberName, out var value))
-							item[memberName] = value;
+						if (!readComponent.TryGetValue(component, memberName, out var value))
+							continue;
+
+						var copy = ValueCopy.Copy(value);
+						item[memberName] = copy;
 					}
 				}
+
 				yield return item;
 			}
 		}
