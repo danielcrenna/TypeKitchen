@@ -12,9 +12,7 @@ namespace TypeKitchen
 	[DebuggerDisplay("{" + nameof(MemberInfo) + "}")]
 	public sealed class AccessorMember
 	{
-		public AccessorMember(Type declaringType, string name, Type type, bool canRead, bool canWrite, bool canCall,
-			AccessorMemberScope scope,
-			AccessorMemberType memberType, MemberInfo memberInfo)
+		internal AccessorMember(Type declaringType, string name, Type type, bool canRead, bool canWrite, bool canCall, AccessorMemberScope scope, AccessorMemberType memberType, MemberInfo memberInfo)
 		{
 			DeclaringType = declaringType;
 			Name = name;
@@ -42,7 +40,7 @@ namespace TypeKitchen
 			else
 				Attributes = Attribute.GetCustomAttributes(memberInfo, true);
 
-			_display = new Lazy<AccessorMemberDisplay>(() => new AccessorMemberDisplay(this));
+			_displayMap = new Dictionary<string, Lazy<AccessorMemberDisplay>>();
 		}
 
 		public string Name { get; }
@@ -56,9 +54,22 @@ namespace TypeKitchen
 		public MemberInfo MemberInfo { get; }
 		public Attribute[] Attributes { get; }
 
-		private readonly Lazy<AccessorMemberDisplay> _display;
-		public AccessorMemberDisplay Display => _display.Value;
+		private readonly Dictionary<string, Lazy<AccessorMemberDisplay>> _displayMap;
 
+		private Lazy<AccessorMemberDisplay> AddDisplayProfile(string profile)
+		{
+			var lazy = new Lazy<AccessorMemberDisplay>(() => new AccessorMemberDisplay(this, profile));
+			_displayMap.Add(profile, lazy);
+			return lazy;
+		}
+
+		public AccessorMemberDisplay Display(string profile)
+		{
+			if(!_displayMap.TryGetValue(profile, out var lazy))
+				lazy = AddDisplayProfile(profile);
+
+			return lazy.Value;
+		}
 
 		internal bool IsInstanceMethod => CanCall && MemberInfo is MethodInfo method &&
 		                                  !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") &&

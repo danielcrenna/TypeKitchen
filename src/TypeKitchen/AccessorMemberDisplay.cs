@@ -13,9 +13,9 @@ namespace TypeKitchen
 		public string DateFormat { get; private set; }
 		public bool IsReadOnly { get; private set; }
 
-		public AccessorMemberDisplay(AccessorMember member)
+		public AccessorMemberDisplay(AccessorMember member, string profile)
 		{
-			member = MaybeUseMetadataType(member);
+			member = MaybeUseMetadata(member, profile);
 
 			ResolveName(member);
 			ResolvePrompt(member);
@@ -24,29 +24,35 @@ namespace TypeKitchen
 			ResolveReadOnly(member);
 		}
 
-		private static AccessorMember MaybeUseMetadataType(AccessorMember member)
+		private static AccessorMember MaybeUseMetadata(AccessorMember member, string profile)
 		{
-			if (member.DeclaringType == null || !member.DeclaringType.TryGetAttribute(false, out MetadataTypeAttribute metadata))
+			if (member.DeclaringType == null || !member.HasAttribute<MetadataTypeAttribute>())
 				return member;
 
-			var types = AccessorMemberTypes.None;
-			types |= member.MemberType switch
+			foreach (var attribute in member.DeclaringType.GetAttributes<MetadataTypeAttribute>())
 			{
-				AccessorMemberType.Field => AccessorMemberTypes.Fields,
-				AccessorMemberType.Property => AccessorMemberTypes.Properties,
-				AccessorMemberType.Method => AccessorMemberTypes.Methods,
-				_ => throw new ArgumentOutOfRangeException()
-			};
-
-			var members = AccessorMembers.Create(metadata.MetadataType, types, member.Scope);
-			foreach (var m in members)
-			{
-				if (m.Name != member.Name)
+				if (attribute.Profile != profile)
 					continue;
-				member = m;
-				break;
-			}
 
+				var types = AccessorMemberTypes.None;
+				types |= member.MemberType switch
+				{
+					AccessorMemberType.Field => AccessorMemberTypes.Fields,
+					AccessorMemberType.Property => AccessorMemberTypes.Properties,
+					AccessorMemberType.Method => AccessorMemberTypes.Methods,
+					_ => throw new ArgumentOutOfRangeException()
+				};
+
+				var members = AccessorMembers.Create(attribute.MetadataType, types, member.Scope);
+				foreach (var m in members)
+				{
+					if (m.Name != member.Name)
+						continue;
+					member = m;
+					break;
+				}
+			}
+			
 			return member;
 		}
 
