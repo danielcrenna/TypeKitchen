@@ -386,7 +386,9 @@ namespace TypeKitchen.Composition
 
 		public List<object> Snapshot()
 		{
-			return Dump().ToList();
+			var projection = Dump();
+			var snapshot = projection.ToList();
+			return snapshot;
 		}
 
 		public IEnumerable<object> Dump()
@@ -406,7 +408,7 @@ namespace TypeKitchen.Composition
 						if (!readComponent.TryGetValue(component, memberName, out var value))
 							continue;
 
-						var copy = ValueCopy.Copy(value);
+						var copy = Cloning.ShallowCopy(value);
 						item[memberName] = copy;
 					}
 				}
