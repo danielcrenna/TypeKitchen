@@ -92,11 +92,11 @@ namespace TypeKitchen
 
 				if (AccessorCache.TryGetValue(key, out var accessor))
 				{
-					members = CreateWriteAccessorMembers(type, scope);
+					members = CreateWriteAccessorMembers(type, types, scope);
 					return accessor;
 				}
 
-				accessor = CreateWriteAccessor(type, out members, scope);
+				accessor = CreateWriteAccessor(type, types, scope, out members);
 				AccessorCache[key] = accessor;
 				return accessor;
 			}
@@ -108,9 +108,10 @@ namespace TypeKitchen
 			return key;
 		}
 
-		private static ITypeWriteAccessor CreateWriteAccessor(Type type, out AccessorMembers members, AccessorMemberScope scope = AccessorMemberScope.All)
+		private static ITypeWriteAccessor CreateWriteAccessor(Type type, AccessorMemberTypes types,
+			AccessorMemberScope scope, out AccessorMembers members)
 		{
-			members = CreateWriteAccessorMembers(type, scope);
+			members = CreateWriteAccessorMembers(type, types, scope);
 
 			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);
 
@@ -269,10 +270,9 @@ namespace TypeKitchen
 			return (ITypeWriteAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
 		}
 
-		private static AccessorMembers CreateWriteAccessorMembers(Type type,
-			AccessorMemberScope scope = AccessorMemberScope.All)
+		private static AccessorMembers CreateWriteAccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
-			return AccessorMembers.Create(type, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, scope);
+			return AccessorMembers.Create(type, types, scope);
 		}
 	}
 }

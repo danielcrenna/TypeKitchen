@@ -1,6 +1,9 @@
-﻿using System.Linq;
-using TypeKitchen.Composition;
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System.Linq;
 using Xunit;
+using TypeKitchen.Composition;
 
 namespace TypeKitchen.Tests.Composition
 {

@@ -1,5 +1,5 @@
-// Copyright © Conatus Creative, Inc. All rights reserved.
-// Licensed under the Apache 2.0 License. See LICENSE.md in the project root for license terms.
+// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using TypeKitchen.StateMachine;
 
