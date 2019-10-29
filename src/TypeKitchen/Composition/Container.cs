@@ -235,25 +235,36 @@ namespace TypeKitchen.Composition
 				if (c.GetType() != Proxies[type])
 					continue;
 
-				const AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties;
-				const AccessorMemberScope scope = AccessorMemberScope.Public;
+				var vm = GetDataForComponentMembers(type);
+				var vr = GetDataForComponentReader(type);
 
-				var cm = AccessorMembers.Create(c, types, scope);
-				var vr = ReadAccessor.Create(value, types, scope, out var vm);
-				var cw = WriteAccessor.Create(c);
+				var cm = GetComponentMembers(c);
+				var cw = GetComponentWriter(c);
 				
-				foreach (var member in vm)
+				foreach (var kvp in vm)
 				{
-					var componentHasMember = cm.TryGetValue(member.Name, out var m);
-					var componentCanWrite = m.CanWrite;
-					var memberTypesMatch = m.Type == member.Type;
-					var valueHasValue = vr.TryGetValue(value, member.Name, out var v);
+					var member = kvp.Value;
 
-					if (componentHasMember && componentCanWrite && memberTypesMatch && valueHasValue)
-						cw.TrySetValue(c, member.Name, v);
+					var componentHasMember = cm.TryGetValue(member.Name, out var m);
+					if (!componentHasMember)
+						continue;
+
+					if (!m.CanWrite)
+						continue;
+
+					var memberTypesMatch = m.Type == member.Type;
+					if (!memberTypesMatch)
+						continue;
+
+					var valueHasValue = vr.TryGetValue(value, member.Name, out var v);
+					if (!valueHasValue)
+						continue;
+
+					cw.TrySetValue(c, member.Name, v);
 				}
 			}
 		}
+		
 
 		public IEnumerable<IComponentProxy> GetComponents(Entity entity)
 		{
@@ -306,7 +317,7 @@ namespace TypeKitchen.Composition
 			if (!_componentsByEntity.TryGetValue(entity, out var list))
 				_componentsByEntity.Add(entity, list = new List<IComponentProxy>());
 
-			var members = AccessorMembers.Create(componentType, AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public);
+			var members = GetDataForComponentMembers(componentType);
 			var type = GenerateComponentProxy(componentType, members);
 			var instance = (IComponentProxy) Activator.CreateInstance(type);
 
@@ -318,7 +329,7 @@ namespace TypeKitchen.Composition
 
 		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
 		
-		private Type GenerateComponentProxy(Type componentType, AccessorMembers members)
+		private Type GenerateComponentProxy(Type componentType, Dictionary<string, AccessorMember> members)
 		{
 			var builder = Snippet.GetBuilder()
 				.Add<IComponentProxy>()
@@ -337,8 +348,13 @@ namespace TypeKitchen.Composition
 					sb.AppendLine("{");
 					sb.AppendLine();
 
-					foreach (var member in members)
+					foreach (var kvp in members)
 					{
+						var member = kvp.Value;
+
+						if (member.Name.EndsWith("k__BackingField"))
+							continue;
+
 						builder.Add(member.Type);
 
 						if (member.Type.IsGenericType)
@@ -371,14 +387,14 @@ namespace TypeKitchen.Composition
 				var components = GetComponents(entity);
 				foreach (var component in components)
 				{
-					var accessor = WriteAccessor.Create(component,
-						AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public,
-						out var members);
+					var members = GetComponentMembers(component);
+					var accessor = GetComponentWriter(component);
 
 					foreach (var member in members)
 					{
-						if (item.TryGetValue(member.Name, out var value))
-							accessor.TrySetValue(component, member.Name, value);
+						var memberName = member.Value.Name;
+						if (item.TryGetValue(memberName, out var value))
+							accessor.TrySetValue(component, memberName, value);
 					}
 				}
 			}
@@ -399,13 +415,13 @@ namespace TypeKitchen.Composition
 				var components = GetComponents(entity);
 				foreach (var component in components)
 				{
-					var readComponent = ReadAccessor.Create(component,
-						AccessorMemberTypes.Fields | AccessorMemberTypes.Properties, AccessorMemberScope.Public,
-						out var members);
+					var members = GetComponentMembers(component);
+					var reader = GetComponentReader(component);
+
 					foreach (var member in members)
 					{
-						var memberName = member.Name;
-						if (!readComponent.TryGetValue(component, memberName, out var value))
+						var memberName = member.Value.Name;
+						if (!reader.TryGetValue(component, memberName, out var value))
 							continue;
 
 						var copy = Cloning.ShallowCopy(value);
@@ -415,6 +431,46 @@ namespace TypeKitchen.Composition
 
 				yield return item;
 			}
+		}
+
+		private static ITypeReadAccessor GetDataForComponentReader(Type componentType)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var accessor = ReadAccessor.Create(componentType, types, scope);
+			return accessor;
+		}
+
+		private static ITypeReadAccessor GetComponentReader(IComponentProxy component)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var accessor = ReadAccessor.Create(component, types, scope);
+			return accessor;
+		}
+
+		private static ITypeWriteAccessor GetComponentWriter(IComponentProxy component)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var accessor = WriteAccessor.Create(component, types, scope);
+			return accessor;
+		}
+
+		private static Dictionary<string, AccessorMember> GetComponentMembers(IComponentProxy component)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var members = AccessorMembers.Create(component, types, scope);
+			return members.OrderBy(x => x.Name).ToDictionary(k => k.Name, v => v);
+		}
+
+		private static Dictionary<string, AccessorMember> GetDataForComponentMembers(Type componentType)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var members = AccessorMembers.Create(componentType, types, scope);
+			return members.OrderBy(x => x.Name).ToDictionary(k => k.Name, v => v);
 		}
 	}
 }

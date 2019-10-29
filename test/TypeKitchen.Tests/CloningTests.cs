@@ -22,27 +22,6 @@ namespace TypeKitchen.Tests
 		}
 	}
 
-	public class ReferenceTypes : IEnumerable<object[]>
-	{
-		private static object[] Single(object instance) => new[] { instance };
-
-		public IEnumerator<object[]> GetEnumerator()
-		{
-//			yield return Single("rosebud");
-			yield return Single(new Nested
-			{
-				Map = new Dictionary<string, NestedType>
-				{
-					{
-						"Key", new NestedType { TimeStamp = DateTimeOffset.UtcNow }
-					}
-				}
-			});
-		}
-
-		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-	}
-
 	public class Nested
 	{
 		public Dictionary<string, NestedType> Map { get; set; }
@@ -79,6 +58,27 @@ namespace TypeKitchen.Tests
 			yield return Single(default(TimeSpan?));
 			yield return Single(default(DateTime?));
 			yield return Single(default(DateTimeOffset?));
+		}
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
+	public class ReferenceTypes : IEnumerable<object[]>
+	{
+		private static object[] Single(object instance) => new[] { instance };
+
+		public IEnumerator<object[]> GetEnumerator()
+		{
+			yield return Single("rosebud");
+			yield return Single(new Nested
+			{
+				Map = new Dictionary<string, NestedType>
+				{
+					{
+						"Key", new NestedType { TimeStamp = DateTimeOffset.UtcNow }
+					}
+				}
+			});
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

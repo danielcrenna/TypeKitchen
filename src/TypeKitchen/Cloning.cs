@@ -39,17 +39,19 @@ namespace TypeKitchen
 			var copy = Instancing.CreateInstance(instance);
 			var data = Wire.Simple(instance);
 
-			var members = AccessorMembers.Create(instance, AccessorMemberTypes.Properties, AccessorMemberScope.Public);
-			var write = WriteAccessor.Create(instance, AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var writeMembers);
-
+			var type = instance.GetType();
+			var members = Wire.GetMembers(type);
+			var write = Wire.GetPropertyWriter(type);
+			
 			using var buffer = new MemoryStream(data);
 			using var br = new BinaryReader(buffer);
-			foreach (var member in members.NetworkOrder(x => x.Name))
+			foreach (var member in members)
 			{
+                if (!member.CanWrite)
+	                continue;
+
                 // FIXME: should not reach into Wire
 				var value = Wire.ReadValue(member.Type, br);
-				if (!writeMembers.TryGetValue(member.Name, out var writeMember) || writeMember.Type != member.Type )
-					continue;
 				write.TrySetValue(copy, member.Name, value);
 			}
 

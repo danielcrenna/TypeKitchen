@@ -86,7 +86,7 @@ namespace TypeKitchen
 				PropertyInfo = PropertyInfo == null ? properties.ToArray() : PropertyInfo.Concat(properties).Distinct().ToArray();
 				foreach (var property in PropertyInfo)
 					NameToMember[property.Name] =
-						new AccessorMember(type, property.Name, property.PropertyType, property.CanRead, property.CanWrite,
+						new AccessorMember(type, property.Name, property.PropertyType, CanAccessorRead(property, scope), CanAccessorWrite(property, scope),
 							false, scope, AccessorMemberType.Property, property);
 			}
 
@@ -100,6 +100,28 @@ namespace TypeKitchen
 							AccessorMemberType.Method,
 							method);
 			}
+		}
+
+		private static bool CanAccessorRead(PropertyInfo property, AccessorMemberScope scope)
+		{
+			return scope switch
+			{
+				AccessorMemberScope.Public => (property.CanRead && property.GetGetMethod(true).IsPublic),
+				AccessorMemberScope.Private => property.CanRead,
+				AccessorMemberScope.None => false,
+				_ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null)
+			};
+		}
+
+		private static bool CanAccessorWrite(PropertyInfo property, AccessorMemberScope scope)
+		{
+			return scope switch
+			{
+				AccessorMemberScope.Public => (property.CanWrite && property.GetSetMethod(true).IsPublic),
+				AccessorMemberScope.Private => property.CanWrite,
+				AccessorMemberScope.None => false,
+				_ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null)
+			};
 		}
 
 		public Type DeclaringType { get; }
