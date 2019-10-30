@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
@@ -232,14 +232,15 @@ namespace TypeKitchen.Composition
 			{
 				var c = _componentsByEntity[entity][i];
 
-				if (c.GetType() != Proxies[type])
+				var componentType = Proxies[type];
+				if (c.GetType() != componentType)
 					continue;
 
 				var vm = GetDataForComponentMembers(type);
 				var vr = GetDataForComponentReader(type);
 
-				var cm = GetComponentMembers(c);
-				var cw = GetComponentWriter(c);
+				var cm = GetComponentMembers(componentType);
+				var cw = GetComponentWriter(componentType);
 				
 				foreach (var kvp in vm)
 				{
@@ -270,6 +271,16 @@ namespace TypeKitchen.Composition
 		{
 			foreach (var component in _componentsByEntity[entity])
 				yield return component;
+		}
+
+		public void DeleteComponent(Entity entity, IComponentProxy c)
+		{
+			for (int i = _componentsByEntity[entity].Count - 1; i >= 0; i--)
+			{
+				var component = _componentsByEntity[entity][i];
+				if(component == c)
+					_componentsByEntity[entity].RemoveAt(i);
+			}
 		}
 
 		public T GetComponent<T>(Entity entity) where T : struct
@@ -375,48 +386,64 @@ namespace TypeKitchen.Composition
 			});
 		}
 
-		public void Restore(IEnumerable<object> snapshot)
+		public void Restore(Dictionary<uint, Dictionary<Type, Dictionary<string, object>>> snapshot)
 		{
-			var items = snapshot.Cast<Dictionary<string, object>>().ToList();
-
-			for (var i = 0; i < items.Count; i++)
+			foreach (var row in snapshot)
 			{
-				var item = items[i];
-				var entity = _entities[i];
+				var entity = row.Key;
+				var columns = row.Value;
 
-				var components = GetComponents(entity);
-				foreach (var component in components)
+				var components = _componentsByEntity[entity];
+				for (var c = components.Count - 1; c >= 0; c--)
 				{
-					var members = GetComponentMembers(component);
-					var accessor = GetComponentWriter(component);
+					var component = components[c];
+					var componentType = component.GetType();
 
+					var members = GetComponentMembers(componentType);
+					var accessor = GetComponentWriter(componentType);
+
+					if (!columns.TryGetValue(componentType, out var data))
+						continue;
+
+					// create new component instance
+					component = Instancing.CreateInstance(componentType) as IComponentProxy;
+						
 					foreach (var member in members)
 					{
+						if (!member.Value.CanWrite)
+							continue; // skip computed properties
+
 						var memberName = member.Value.Name;
-						if (item.TryGetValue(memberName, out var value))
+						if (data.TryGetValue(memberName, out var value))
 							accessor.TrySetValue(component, memberName, value);
 					}
 				}
 			}
 		}
 
-		public List<object> Snapshot()
+		public Dictionary<uint, Dictionary<Type, Dictionary<string, object>>> Snapshot()
 		{
 			var projection = Dump();
 			var snapshot = projection.ToList();
-			return snapshot;
+			return snapshot.ToDictionary(k => k.Key, v => v.Value);
 		}
 
-		public IEnumerable<object> Dump()
+		public IEnumerable<KeyValuePair<uint, Dictionary<Type, Dictionary<string, object>>>> Dump()
 		{
 			foreach (var entity in _entities)
 			{
-				var item = new Dictionary<string, object>();
 				var components = GetComponents(entity);
+				var rows = new Dictionary<Type, Dictionary<string, object>>();
+
 				foreach (var component in components)
 				{
-					var members = GetComponentMembers(component);
-					var reader = GetComponentReader(component);
+					var componentType = component.GetType();
+
+					var columns = new Dictionary<string, object>();
+					rows.Add(componentType, columns);
+
+					var members = GetComponentMembers(componentType);
+					var reader = GetComponentReader(componentType);
 
 					foreach (var member in members)
 					{
@@ -424,53 +451,55 @@ namespace TypeKitchen.Composition
 						if (!reader.TryGetValue(component, memberName, out var value))
 							continue;
 
-						var copy = Cloning.ShallowCopy(value);
-						item[memberName] = copy;
+						// whatever.
+						// var copy = Cloning.ShallowCopy(value);
+						var copy = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value), member.Value.Type);
+						columns[memberName] = copy;
 					}
 				}
 
-				yield return item;
+				yield return new KeyValuePair<uint, Dictionary<Type, Dictionary<string, object>>>(entity, rows);
 			}
 		}
 
-		private static ITypeReadAccessor GetDataForComponentReader(Type componentType)
+		private static ITypeReadAccessor GetComponentReader(Type componentType)
 		{
-			const AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties;
-			const AccessorMemberScope scope = AccessorMemberScope.All;
+			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.Public;
 			var accessor = ReadAccessor.Create(componentType, types, scope);
 			return accessor;
 		}
 
-		private static ITypeReadAccessor GetComponentReader(IComponentProxy component)
+		private static ITypeWriteAccessor GetComponentWriter(Type componentType)
 		{
 			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
-			const AccessorMemberScope scope = AccessorMemberScope.All;
-			var accessor = ReadAccessor.Create(component, types, scope);
+			const AccessorMemberScope scope = AccessorMemberScope.Public;
+			var accessor = WriteAccessor.Create(componentType, types, scope);
 			return accessor;
 		}
 
-		private static ITypeWriteAccessor GetComponentWriter(IComponentProxy component)
+		private static Dictionary<string, AccessorMember> GetComponentMembers(Type componentType)
 		{
 			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
-			const AccessorMemberScope scope = AccessorMemberScope.All;
-			var accessor = WriteAccessor.Create(component, types, scope);
-			return accessor;
-		}
-
-		private static Dictionary<string, AccessorMember> GetComponentMembers(IComponentProxy component)
-		{
-			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
-			const AccessorMemberScope scope = AccessorMemberScope.All;
-			var members = AccessorMembers.Create(component, types, scope);
-			return members.OrderBy(x => x.Name).ToDictionary(k => k.Name, v => v);
-		}
-
-		private static Dictionary<string, AccessorMember> GetDataForComponentMembers(Type componentType)
-		{
-			const AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties;
-			const AccessorMemberScope scope = AccessorMemberScope.All;
+			const AccessorMemberScope scope = AccessorMemberScope.Public;
 			var members = AccessorMembers.Create(componentType, types, scope);
-			return members.OrderBy(x => x.Name).ToDictionary(k => k.Name, v => v);
+			return members.NetworkOrder(x => x.Name).Reverse().ToDictionary(k => k.Name, v => v);
+		}
+
+		private static ITypeReadAccessor GetDataForComponentReader(Type dataType)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var accessor = ReadAccessor.Create(dataType, types, scope);
+			return accessor;
+		}
+
+		private static Dictionary<string, AccessorMember> GetDataForComponentMembers(Type dataType)
+		{
+			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
+			const AccessorMemberScope scope = AccessorMemberScope.All;
+			var members = AccessorMembers.Create(dataType, types, scope);
+			return members.NetworkOrder(x => x.Name).Reverse().ToDictionary(k => k.Name, v => v);
 		}
 	}
 }

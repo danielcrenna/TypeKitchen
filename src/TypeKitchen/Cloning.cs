@@ -35,34 +35,13 @@ namespace TypeKitchen
 
 		private static object ShallowCopyObject(object instance)
 		{
-			var copy = Instancing.CreateInstance(instance);
 			var data = Wire.Simple(instance);
-
 			var type = instance.GetType();
-			var members = Wire.GetMembers(type);
-			var write = Wire.GetPropertyWriter(type);
 			
 			using var buffer = new MemoryStream(data);
 			using var br = new BinaryReader(buffer);
-			foreach (var member in members)
-			{
-                if (!member.CanWrite)
-	                continue;
-
-                // FIXME: should not reach into Wire
-				var value = Wire.ReadValue(member.Type, br);
-
-				try
-				{
-					write.TrySetValue(copy, member.Name, value);
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine(e);
-					throw;
-				}
-			}
-
+			var copy = br.ReadObject(type);
+			
 			return copy;
 		}
 
@@ -75,8 +54,7 @@ namespace TypeKitchen
 			var instance = (IList) Instancing.CreateInstance(listType);
 			foreach (var item in enumerable)
 			{
-				var copy = ShallowCopy(item);
-				instance.Add(copy);
+				instance.Add(ShallowCopy(item));
 			}
 
 			return instance;
@@ -94,8 +72,7 @@ namespace TypeKitchen
 					continue;
 
 				var value = pair.GetProperty("Value")?.GetValue(item);
-				var copy = ShallowCopy(value);
-				instance.Add(key, copy);
+				instance.Add(key, ShallowCopy(value));
 			}
 
 			return instance;

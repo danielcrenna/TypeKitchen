@@ -4,10 +4,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 using TypeKitchen.Internal;
+using IEnumerable = System.Collections.IEnumerable;
 
 namespace TypeKitchen
 {
@@ -19,6 +22,7 @@ namespace TypeKitchen
 				return null;
 
 			var type = instance.GetType();
+
 			if (type.IsValueType || type == typeof(string))
 				return ShallowCopyValueTypeData(instance, type);
 			else
@@ -27,21 +31,11 @@ namespace TypeKitchen
 
 		private static byte[] ShallowCopyObjectData(object instance)
 		{
-			var type = instance.GetType();
-			var read = GetPropertyReader(type);
-			var members = GetMembers(type);
-
 			using (var buffer = new MemoryStream())
 			{
 				using (var bw = new BinaryWriter(buffer))
 				{
-					foreach (var member in members)
-					{
-						var value = read[instance, member.Name];
-						if(member.CanWrite)
-							WriteValue(value, member.Type, bw);
-					}
-
+					WriteObject(bw, instance);
 					buffer.Position = 0;
 					return buffer.ToArray();
 				}
@@ -54,7 +48,7 @@ namespace TypeKitchen
 			{
 				using (var bw = new BinaryWriter(buffer))
 				{
-					WriteValue(instance, type, bw);
+					WriteValue(bw, type, instance);
 					buffer.Position = 0;
 					return buffer.ToArray();
 				}
@@ -65,40 +59,93 @@ namespace TypeKitchen
 
 		private static void WriteObject(this BinaryWriter bw, object value)
 		{
+			if (bw.WriteIsNull(value))
+				return;
+
 			var type = value.GetType();
 			var members = GetMembers(type);
-			var reader = GetPropertyReader(type);
-
+			
 			bw.Write(members.Count);
 			foreach (var member in members)
 			{
-				if (!member.CanWrite || !reader.TryGetValue(value, member.Name, out var item) || item == null)
+				if (!member.CanWrite)
 				{
-					bw.WriteNotContains();
+					bw.WriteIsNull(null);
 					continue;
 				}
-				
-				bw.WriteContains();
-				WriteValue(item, item.GetType(), bw);
+
+				try
+				{
+					var reader = GetPropertyReader(type);
+					if (!reader.TryGetValue(value, member.Name, out var item))
+					{
+						bw.WriteIsNull(null);
+						continue;
+					}
+
+					if (bw.WriteIsNull(item))
+						continue;
+
+					var itemType = item.GetType();
+
+					if (itemType.FullName == null)
+						throw new NullReferenceException();
+
+					// account for polymorphism
+					bw.Write(itemType.FullName);
+
+					if (itemType == member.Type ||                      // no conflicts
+					    itemType.IsValueType ||                          // no complications
+					    itemType.IsInterface ||                          // needs concrete resolution
+					    typeof(IEnumerable).IsAssignableFrom(itemType)    // needs enumeration traversal
+					)
+					{
+						bw.WriteValue(itemType, item);
+					}
+					else
+					{
+						bw.WriteObject(item);
+					}
+				}
+				catch (Exception e)
+				{
+					var json = JsonConvert.SerializeObject(value);
+					Trace.WriteLine(json);
+					Console.WriteLine(e);
+					throw;
+				}
 			}
 		}
 
-		private static object ReadObject(this Type type, BinaryReader br)
+		private static readonly ITypeResolver TypeResolver = new ReflectionTypeResolver();
+
+		internal static object ReadObject(this BinaryReader br, Type type)
 		{
+			if (br.ReadIsNull())
+				return null;
+
 			var members = GetMembers(type);
 			var writer = GetPropertyWriter(type);
 
 			var count = br.ReadInt32();
-
 			var instance = Instancing.CreateInstance(type);
 			
 			for (var i = 0; i < count; i++)
 			{
-				if (!br.ReadContains())
-					continue; // assumes everything else writable
+				if (br.ReadIsNull())
+					continue;
 
 				var member = members[i];
-				var item = ReadValue(member.Type, br);
+
+				if (!member.CanWrite)
+					throw new InvalidOperationException("WriteObject wrote an invalid buffer");
+
+				var typeName = br.ReadString();;
+				var itemType = Type.GetType(typeName) ?? TypeResolver.FindByFullName(typeName);
+				if(itemType == null)
+					throw new TypeLoadException();
+
+				var item = ReadValue(itemType, br);
 				writer.TrySetValue(instance, member.Name, item);
 			}
 
@@ -114,8 +161,8 @@ namespace TypeKitchen
 			bw.Write(dictionary.Count);
 			foreach (var item in dictionary)
 			{
-				WriteValue(item.Key, item.Key.GetType(), bw);
-				WriteValue(item.Value, item.Value.GetType(), bw);
+				WriteValue(bw, item.Key.GetType(), item.Key);
+				WriteValue(bw, item.Value.GetType(), item.Value);
 			}
 		}
 
@@ -137,14 +184,14 @@ namespace TypeKitchen
 
 		#region Writes
 
-		private static void WriteValue(object value, Type type, BinaryWriter bw)
+		private static void WriteValue(this BinaryWriter bw, Type type, object value)
 		{
 			writeValue:
 
 			switch (value)
 			{
 				case string v:
-					if (!bw.WriteNull(value))
+					if (!bw.WriteIsNull(value))
 						bw.Write(v);
 					break;
 				case byte v:
@@ -154,7 +201,7 @@ namespace TypeKitchen
 					bw.Write(v);
 					break;
 				case bool v:
-					BuiltIns.WriteBoolean(bw, v);
+					bw.WriteBoolean(v);
 					break;
 				case short v:
 					bw.Write(v);
@@ -187,15 +234,15 @@ namespace TypeKitchen
 					bw.Write(v);
 					break;
 				case char[] v:
-					if (!bw.WriteNull(value))
+					if (!bw.WriteIsNull(value))
 						WriteCharArray(bw, v);
 					break;
 				case byte[] v:
-					if (!bw.WriteNull(value))
+					if (!bw.WriteIsNull(value))
 						WriteByteArray(bw, v);
 					break;
 				case null:
-					bw.WriteNull(null);
+					bw.WriteIsNull(null);
 					break;
 				default:
 
@@ -219,28 +266,28 @@ namespace TypeKitchen
 
 					if (type == typeof(TimeSpan?))
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 							bw.WriteTimeSpan((TimeSpan) value);
 						break;
 					}
 
 					if (type == typeof(DateTime?))
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 							WriteDateTime(bw, value);
 						break;
 					}
 
 					if (type == typeof(DateTimeOffset?))
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 							bw.WriteDateTimeOffset((DateTimeOffset) value);
 						break;
 					}
 
 					if (typeof(IDictionary<,>).IsAssignableFromGeneric(type))
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 						{
 							var method = typeof(Wire).GetMethod(nameof(WriteTypedDictionary), BindingFlags.NonPublic | BindingFlags.Static);
 							if (method == null)
@@ -253,7 +300,7 @@ namespace TypeKitchen
 
 					if (typeof(ICollection<>).IsAssignableFromGeneric(type))
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 						{
 							var method = typeof(Wire).GetMethod(nameof(WriteTypedCollection), BindingFlags.NonPublic | BindingFlags.Static);
 							if (method == null)
@@ -266,7 +313,7 @@ namespace TypeKitchen
 
 					if (typeof(ICollection).IsAssignableFrom(type))
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 							WriteCollection(bw, (ICollection) value);
 						break;
 					}
@@ -279,16 +326,14 @@ namespace TypeKitchen
 
 					if (Nullable.GetUnderlyingType(type) != null)
 					{
-						if (!bw.WriteNull(value))
+						if (!bw.WriteIsNull(value))
 						{
 							type = Nullable.GetUnderlyingType(type);
 							goto writeValue;
 						}
 					}
 
-					if (!bw.WriteNull(value))
-						WriteObject(bw, value);
-
+					WriteObject(bw, value);
 					break;
 			}
 		}
@@ -308,11 +353,11 @@ namespace TypeKitchen
 		private static void WriteDateTime(this BinaryWriter bw, object value)
 		{
 			var date = (DateTime) value;
-			WriteValue(date.Kind, typeof(DateTimeKind), bw);
-			WriteValue(date.Ticks, typeof(DateTime), bw);
+			WriteValue(bw, typeof(DateTimeKind), date.Kind);
+			WriteValue(bw, typeof(DateTime), date.Ticks);
 		}
 
-		private static bool WriteNull(this BinaryWriter bw, object instance)
+		private static bool WriteIsNull(this BinaryWriter bw, object instance)
 		{
 			if (instance == null)
 				bw.Write((byte) 0);
@@ -321,36 +366,26 @@ namespace TypeKitchen
 
 			return instance == null;
 		}
-
-		private static void WriteContains(this BinaryWriter bw)
-		{
-			bw.Write((byte) 1);
-		}
-        
-		private static void WriteNotContains(this BinaryWriter bw)
-		{
-			bw.Write((byte) 0);
-		}
 		
 		private static void WriteEnum(this BinaryWriter bw, object value)
 		{
 			var enumType = Enum.GetUnderlyingType(value.GetType());
 			var enumValue = Convert.ChangeType(value, enumType);
-			WriteValue(enumValue, enumType, bw);
+			WriteValue(bw, enumType, enumValue);
 		}
 		
 		private static void WriteTypedCollection<T>(BinaryWriter bw, ICollection<T> list)
 		{
 			bw.Write(list.Count);
 			foreach (var item in list)
-				WriteValue(item, item.GetType(), bw);
+				WriteValue(bw, item.GetType(), item);
 		}
 
 		private static void WriteCollection(this BinaryWriter bw, ICollection list)
 		{
 			bw.Write(list.Count);
 			foreach (var item in list)
-				WriteValue(item, item.GetType(), bw);
+				WriteValue(bw, item.GetType(), item);
 		}
 		
 		#endregion
@@ -364,7 +399,7 @@ namespace TypeKitchen
 				readValue:
 
 				if (type == typeof(string))
-					return br.ReadNull() ? default : br.ReadString();
+					return br.ReadIsNull() ? default : br.ReadString();
 				if (type == typeof(bool))
 					return BuiltIns.ReadBoolean(br);
 				if (type == typeof(int))
@@ -393,36 +428,36 @@ namespace TypeKitchen
 					return br.ReadChar();
 
 				if (type == typeof(byte?))
-					return br.ReadNull() ? default : br.ReadByte();
+					return br.ReadIsNull() ? default : br.ReadByte();
 				if (type == typeof(sbyte?))
-					return br.ReadNull() ? default : br.ReadSByte();
+					return br.ReadIsNull() ? default : br.ReadSByte();
 				if (type == typeof(bool?))
-					return br.ReadNull() ? default : br.ReadBoolean();
+					return br.ReadIsNull() ? default : br.ReadBoolean();
 				if (type == typeof(short?))
-					return br.ReadNull() ? default : br.ReadInt16();
+					return br.ReadIsNull() ? default : br.ReadInt16();
 				if (type == typeof(ushort?))
-					return br.ReadNull() ? default : br.ReadUInt16();
+					return br.ReadIsNull() ? default : br.ReadUInt16();
 				if (type == typeof(int?))
-					return br.ReadNull() ? default : br.ReadInt32();
+					return br.ReadIsNull() ? default : br.ReadInt32();
 				if (type == typeof(uint?))
-					return br.ReadNull() ? default : br.ReadUInt32();
+					return br.ReadIsNull() ? default : br.ReadUInt32();
 				if (type == typeof(long?))
-					return br.ReadNull() ? default : br.ReadInt64();
+					return br.ReadIsNull() ? default : br.ReadInt64();
 				if (type == typeof(ulong?))
-					return br.ReadNull() ? default : br.ReadUInt64();
+					return br.ReadIsNull() ? default : br.ReadUInt64();
 				if (type == typeof(float?))
-					return br.ReadNull() ? default : br.ReadSingle();
+					return br.ReadIsNull() ? default : br.ReadSingle();
 				if (type == typeof(double?))
-					return br.ReadNull() ? default : br.ReadDouble();
+					return br.ReadIsNull() ? default : br.ReadDouble();
 				if (type == typeof(decimal?))
-					return br.ReadNull() ? default : br.ReadDecimal();
+					return br.ReadIsNull() ? default : br.ReadDecimal();
 				if (type == typeof(char?))
-					return br.ReadNull() ? default : br.ReadChar();
+					return br.ReadIsNull() ? default : br.ReadChar();
 
 				if (type == typeof(char[]))
-					return br.ReadNull() ? null : ReadCharArray(br);
+					return br.ReadIsNull() ? null : ReadCharArray(br);
 				if (type == typeof(byte[]))
-					return br.ReadNull() ? null : ReadByteArray(br);
+					return br.ReadIsNull() ? null : ReadByteArray(br);
 
 				if (type == typeof(TimeSpan))
 					return br.ReadTimeSpan();
@@ -432,15 +467,15 @@ namespace TypeKitchen
 					return br.ReadDateTime();
 
 				if (type == typeof(TimeSpan?))
-					return br.ReadNull() ? default : br.ReadTimeSpan();
+					return br.ReadIsNull() ? default : br.ReadTimeSpan();
 				if (type == typeof(DateTimeOffset?))
-					return br.ReadNull() ? null : br.ReadDateTimeOffset();
+					return br.ReadIsNull() ? null : br.ReadDateTimeOffset();
 				if (type == typeof(DateTime?))
-					return br.ReadNull() ? null : ReadDateTime(br);
+					return br.ReadIsNull() ? null : ReadDateTime(br);
 
 				if (typeof(IDictionary<,>).IsAssignableFromGeneric(type))
 				{
-					if (br.ReadNull())
+					if (br.ReadIsNull())
 						return null;
 
 					var method = typeof(Wire).GetMethod(nameof(ReadTypedDictionary), BindingFlags.NonPublic | BindingFlags.Static);
@@ -452,10 +487,10 @@ namespace TypeKitchen
 				}
 
 				if (typeof(IList<>).IsAssignableFromGeneric(type))
-					return br.ReadNull() ? null : br.ReadTypedList(type);
+					return br.ReadIsNull() ? null : br.ReadTypedList(type);
 				
 				if (typeof(IList).IsAssignableFrom(type))
-					return br.ReadNull() ? null : br.ReadList(type);
+					return br.ReadIsNull() ? null : br.ReadList(type);
 
 				if (type.IsEnum)
 				{
@@ -465,7 +500,7 @@ namespace TypeKitchen
 
 				if (Nullable.GetUnderlyingType(type) != null)
 				{
-					if (!br.ReadNull())
+					if (!br.ReadIsNull())
 					{
 						type = Nullable.GetUnderlyingType(type);
 						goto readValue;
@@ -474,8 +509,7 @@ namespace TypeKitchen
 					return null;
 				}
 
-                if(!br.ReadNull())
-					return ReadObject(type, br);
+				return br.ReadObject(type);
 			}
 		}
 
@@ -496,11 +530,6 @@ namespace TypeKitchen
 			var kind = (DateTimeKind) ReadValue(GetEnumType(typeof(DateTimeKind)), br);
 			var ticks = br.ReadInt64();
 			return new DateTime(ticks, kind);
-		}
-
-		private static bool ReadContains(this BinaryReader br)
-		{
-			return br.ReadByte() == 1;
 		}
 
 		private static object ReadList(this BinaryReader br, Type type)
@@ -535,9 +564,7 @@ namespace TypeKitchen
 			return list;
 		}
 
-		
-
-		private static bool ReadNull(this BinaryReader br)
+		private static bool ReadIsNull(this BinaryReader br)
 		{
 			return br.ReadByte() == 0;
 		}
@@ -561,10 +588,9 @@ namespace TypeKitchen
 			return ReadAccessor.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.All);
 		}
 
-		internal static List<AccessorMember> GetMembers(Type type)
+		internal static AccessorMembers GetMembers(Type type)
 		{
-			// FIXME: accessors should come pre-sorted by stable order
-			return AccessorMembers.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.All).NetworkOrder(x => x.Name).ToList();
+			return AccessorMembers.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.All);
 		}
 	}
 }
