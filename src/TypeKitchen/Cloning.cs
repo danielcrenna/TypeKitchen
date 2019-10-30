@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using TypeKitchen.Internal;
 
 namespace TypeKitchen
 {
@@ -52,7 +51,16 @@ namespace TypeKitchen
 
                 // FIXME: should not reach into Wire
 				var value = Wire.ReadValue(member.Type, br);
-				write.TrySetValue(copy, member.Name, value);
+
+				try
+				{
+					write.TrySetValue(copy, member.Name, value);
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e);
+					throw;
+				}
 			}
 
 			return copy;

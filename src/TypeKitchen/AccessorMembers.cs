@@ -107,7 +107,8 @@ namespace TypeKitchen
 			return scope switch
 			{
 				AccessorMemberScope.Public => (property.CanRead && property.GetGetMethod(true).IsPublic),
-				AccessorMemberScope.Private => property.CanRead,
+				AccessorMemberScope.All => true,
+				AccessorMemberScope.Private => true,
 				AccessorMemberScope.None => false,
 				_ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null)
 			};
@@ -118,12 +119,13 @@ namespace TypeKitchen
 			return scope switch
 			{
 				AccessorMemberScope.Public => (property.CanWrite && property.GetSetMethod(true).IsPublic),
-				AccessorMemberScope.Private => property.CanWrite,
+				AccessorMemberScope.All => true,
+				AccessorMemberScope.Private => true,
 				AccessorMemberScope.None => false,
 				_ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null)
 			};
 		}
-
+		
 		public Type DeclaringType { get; }
 		public AccessorMemberTypes Types { get; }
 		public AccessorMemberScope Scope { get; }

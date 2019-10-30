@@ -8,11 +8,11 @@ namespace TypeKitchen
 	[Flags]
 	public enum AccessorMemberTypes : byte
 	{
-		Fields = 1 << 0,
-		Properties = 1 << 1,
-		Methods = 1 << 2,
+		Fields = 1 << 1,
+		Properties = 1 << 2,
+		Methods = 1 << 3,
 
-		None = 0xFF,
+		None = 0x00,
 		All = byte.MaxValue
 	}
 }

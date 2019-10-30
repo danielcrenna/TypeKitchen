@@ -287,14 +287,13 @@ namespace TypeKitchen
 			tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
 
 			//
-			// Perf: Add static delegates on the type, that store access to the backing fields behind the readonly properties.
+			// Perf: Add static delegates on the type, that store access to the backing fields behind readonly properties.
 			//
 			var staticFieldsByMethod = new Dictionary<MethodBuilder, Func<object, object>>();
 			var staticFieldsByMember = new Dictionary<AccessorMember, FieldBuilder>();
 			foreach (var member in members)
 			{
-				var backingField = type.GetField($"<{member.Name}>i__Field",
-					BindingFlags.NonPublic | BindingFlags.Instance);
+				var backingField = type.GetField($"<{member.Name}>i__Field", BindingFlags.NonPublic | BindingFlags.Instance);
 				if (backingField == null)
 					throw new NullReferenceException();
 
@@ -356,22 +355,22 @@ namespace TypeKitchen
 				{
 					var fb = staticFieldsByMember[member];
 
-					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_3(); //     value
-					il.Ldsfld(fb); //     _GetFoo
-					il.Ldarg_1(); //     target
-					il.Call(fb.FieldType.GetMethod("Invoke")); //     result = _GetFoo.Invoke(target)
-					il.Stind_Ref(); //     value = result
-					il.Ldc_I4_1(); //     1
-					il.Ret(); //     return 1 (true)
+					il.MarkLabel(branches[member]);             // found:
+					il.Ldarg_3();                               //     value
+					il.Ldsfld(fb);                              //     _GetFoo
+					il.Ldarg_1();                               //     target
+					il.Call(fb.FieldType.GetMethod("Invoke"));  //     result = _GetFoo.Invoke(target)
+					il.Stind_Ref();                             //     value = result
+					il.Ldc_I4_1();                              //     1
+					il.Ret();                                   //     return 1 (true)
 				}
 
 				il.MarkLabel(fail);
-				il.Ldarg_3(); //     value
-				il.Ldnull(); //     null
-				il.Stind_Ref(); //     value = null
-				il.Ldc_I4_0(); //     0
-				il.Ret(); //     return 0 (false)
+				il.Ldarg_3();                                   //     value
+				il.Ldnull();                                    //     null
+				il.Stind_Ref();                                 //     value = null
+				il.Ldc_I4_0();                                  //     0
+				il.Ret();                                       //     return 0 (false)
 
 				tb.DefineMethodOverride(tryGetValue,
 					typeof(ITypeReadAccessor).GetMethod(nameof(ITypeReadAccessor.TryGetValue)));
@@ -401,11 +400,11 @@ namespace TypeKitchen
 				{
 					var fb = staticFieldsByMember[member];
 
-					il.MarkLabel(branches[member]); // found:
-					il.Ldsfld(fb); // _GetFoo
-					il.Ldarg_1(); // target
-					il.Call(fb.FieldType.GetMethod("Invoke")); //     result = _GetFoo.Invoke(target)
-					il.Ret(); // return result;
+					il.MarkLabel(branches[member]);             // found:
+					il.Ldsfld(fb);                              // _GetFoo
+					il.Ldarg_1();                               // target
+					il.Call(fb.FieldType.GetMethod("Invoke"));  //     result = _GetFoo.Invoke(target)
+					il.Ret();                                   // return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));

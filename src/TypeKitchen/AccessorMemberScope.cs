@@ -8,10 +8,10 @@ namespace TypeKitchen
 	[Flags]
 	public enum AccessorMemberScope : byte
 	{
-		Public = 1 << 0,
-		Private = 1 << 1,
+		Public = 1 << 1,
+		Private = 1 << 2,
 
-		None = 0xFF,
+		None = 0x00,
 		All = byte.MaxValue
 	}
 }

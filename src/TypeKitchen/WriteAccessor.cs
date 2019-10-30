@@ -108,6 +108,7 @@ namespace TypeKitchen
 			return key;
 		}
 
+		
 		private static ITypeWriteAccessor CreateWriteAccessor(Type type, AccessorMemberTypes types,
 			AccessorMemberScope scope, out AccessorMembers members)
 		{
@@ -115,11 +116,89 @@ namespace TypeKitchen
 
 			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);
 
-			var tb = DynamicAssembly.Module.DefineType(
-				name,
-				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
-				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+			var tb = DynamicAssembly.Module.DefineType(name, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));
+
+			//
+			// Generate proxies for all backing field setters we will need for this type
+			//
+			var setFieldDelegateMethods = new Dictionary<MethodBuilder, Delegate>();
+			var getFieldDelegateMethods = new List<MethodBuilder>();
+			var invokeFieldDelegateMethods = new List<MethodBuilder>();
+			var callSwaps = new Dictionary<AccessorMember, MethodInfo>();
+
+			foreach (var member in members)
+			{
+				if (!member.CanWrite)
+					continue;
+				if (!(member.MemberInfo is PropertyInfo property))
+					continue;
+				if (property.GetSetMethod(false) != null)
+					continue;
+                
+				var backingField = member.BackingField;
+				if (backingField == null)
+					continue;
+
+				var setFieldMethod = new DynamicMethod($"set_{member.Name}", typeof(void),
+					new[] {backingField.DeclaringType, backingField.FieldType}, backingField.DeclaringType, true);
+
+				var setFieldIl = setFieldMethod.GetILGeneratorInternal();
+				setFieldIl.Ldarg_0();
+				setFieldIl.Ldarg_1();
+				setFieldIl.Stfld(backingField);
+				setFieldIl.Ret();
+
+				var setFieldDelegateType = typeof(Action<,>).MakeGenericType(backingField.DeclaringType, backingField.FieldType);
+				var setFieldDelegate = setFieldMethod.CreateDelegate(setFieldDelegateType);
+
+				// At this point we have a valid delegate that will set the private backing field...
+
+				var setFieldDelegateField = tb.DefineField($"_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+					setFieldDelegateType,
+					FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.InitOnly);
+
+				var setFieldDelegateMethod = tb.DefineMethod($"_set_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+					MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard,
+					typeof(void),
+					new[] { setFieldDelegateType });
+
+				var setFieldDelegateIl = setFieldDelegateMethod.GetILGeneratorInternal();
+				setFieldDelegateIl.Ldarg_0();
+				setFieldDelegateIl.Stsfld(setFieldDelegateField);
+				setFieldDelegateIl.Ret();
+
+				setFieldDelegateMethods.Add(setFieldDelegateMethod, setFieldDelegate);
+
+				// At this point we've defined a static field to store our delegate setter and a method to set that field...
+
+				var getFieldDelegateMethod = tb.DefineMethod($"_get_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+					MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard,
+					setFieldDelegateType, null);
+
+				var getFieldDelegateIl = getFieldDelegateMethod.GetILGeneratorInternal();
+				getFieldDelegateIl.Ldsfld(setFieldDelegateField);
+				getFieldDelegateIl.Ret();
+
+				getFieldDelegateMethods.Add(getFieldDelegateMethod);
+
+				// At this point we can get and set the static field delegates, and now we need to cache a method to invoke them...
+                
+				var invokeFieldDelegateMethod = tb.DefineMethod($"_invoke_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+					MethodAttributes.Static | MethodAttributes.Private, CallingConventions.Standard,
+					typeof(void),
+					new[] { backingField.DeclaringType, backingField.FieldType });
+
+				var invokeFieldDelegateIl = invokeFieldDelegateMethod.GetILGenerator();
+				invokeFieldDelegateIl.Emit(OpCodes.Ldsfld, setFieldDelegateField);
+				invokeFieldDelegateIl.Emit(OpCodes.Ldarg_0);
+				invokeFieldDelegateIl.Emit(OpCodes.Ldarg_1);
+				invokeFieldDelegateIl.Emit(OpCodes.Callvirt, setFieldDelegateType.GetMethod("Invoke"));
+				invokeFieldDelegateIl.Emit(OpCodes.Ret);
+
+				invokeFieldDelegateMethods.Add(invokeFieldDelegateMethod);
+                callSwaps.Add(member, invokeFieldDelegateMethod);
+			}
 
 			//
 			// Type Type =>:
@@ -157,6 +236,7 @@ namespace TypeKitchen
 				{
 					if (!member.CanWrite)
 						continue;
+
 					branches.Add(member, il.DefineLabel());
 				}
 
@@ -175,18 +255,23 @@ namespace TypeKitchen
 						continue;
 
 					il.MarkLabel(branches[member]); // found:
-					il.Ldarg_1();					// target
-					il.CastOrUnbox(type);			// ({Type}) target
 
-					il.Ldarg_3();                   // value
+					il.Ldarg_1();                               // target
+					il.CastOrUnbox(type);                       // ({Type}) target
+					il.Ldarg_3();                               // value
 
 					switch (member.MemberInfo)      // target.{member.Name} = value
 					{
 						case PropertyInfo property:
+							
 							il.CastOrUnboxAny(property.PropertyType);
-							il.CallOrCallvirt(property.GetSetMethod(true), type);
+							il.CallOrCallvirt(GetOrSwapPropertySetter(property, callSwaps, member), type);
 							break;
+
 						case FieldInfo field:
+							il.Ldarg_1();								// target
+							il.CastOrUnbox(type);						// ({Type}) target
+							il.Ldarg_3();								// value
 							il.CastOrUnboxAny(field.FieldType);
 							il.Stfld(field);
 							break;
@@ -220,6 +305,7 @@ namespace TypeKitchen
 				{
 					if (!member.CanWrite)
 						continue;
+
 					branches.Add(member, il.DefineLabel());
 				}
 
@@ -237,16 +323,17 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.MarkLabel(branches[member]);		// found:
-					il.Ldarg_1();						// target
-					il.CastOrUnbox(type);				// ({Type}) target
-					il.Ldarg_3();						// value
+					il.MarkLabel(branches[member]);     // found:
+
+					il.Ldarg_1();           // target
+					il.CastOrUnbox(type);   // ({Type}) target
+					il.Ldarg_3();           // value
 
 					switch (member.MemberInfo)			// result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							il.CastOrUnboxAny(property.PropertyType);
-							il.CallOrCallvirt(property.GetSetMethod(true), type);
+                            il.CastOrUnboxAny(property.PropertyType);
+							il.CallOrCallvirt(GetOrSwapPropertySetter(property, callSwaps, member), type);
 							break;
 						case FieldInfo field:
 							il.CastOrUnboxAny(field.FieldType);
@@ -267,7 +354,53 @@ namespace TypeKitchen
 			}
 
 			var typeInfo = tb.CreateTypeInfo();
+
+			// Now we need to set the static delegate fields on this type...
+
+			foreach (var entry in setFieldDelegateMethods)
+			{
+				var setFieldMethod = typeInfo.GetMethod(entry.Key.Name, BindingFlags.Static | BindingFlags.NonPublic);
+				if (setFieldMethod == null)
+					continue;
+
+				setFieldMethod.Invoke(null, new object[] { entry.Value });
+			}
+
+			// Test that we can access the static fields correctly...
+
+			foreach (var entry in getFieldDelegateMethods)
+			{
+				var getFieldMethod = typeInfo.GetMethod(entry.Name, BindingFlags.Static | BindingFlags.NonPublic);
+				if (getFieldMethod == null)
+					continue;
+
+				var field = getFieldMethod.Invoke(null, null);
+			}
+
+			// Finally, test that we can invoke the delegate and set a backing field
+
+			foreach (var entry in invokeFieldDelegateMethods)
+			{
+				if (entry.Name != "_invoke_setFieldDelegate_System_String_<Id>k__BackingField")
+					continue;
+
+				var invokeFieldMethod = typeInfo.GetMethod(entry.Name, BindingFlags.Static | BindingFlags.NonPublic);
+				if (invokeFieldMethod == null)
+					throw new NullReferenceException();
+
+				var test = Activator.CreateInstance(type);
+				invokeFieldMethod.Invoke(null, new[] { test, "Foo" });
+			}
+
 			return (ITypeWriteAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
+		}
+
+		private static MethodInfo GetOrSwapPropertySetter(PropertyInfo property, Dictionary<AccessorMember, MethodInfo> callSwaps, AccessorMember member)
+		{
+			var setMethod = property.GetSetMethod(false);
+			if (setMethod == null)
+				setMethod = callSwaps[member];
+			return setMethod;
 		}
 
 		private static AccessorMembers CreateWriteAccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)

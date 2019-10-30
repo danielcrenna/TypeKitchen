@@ -18,7 +18,7 @@ namespace TypeKitchen
 			Name = name;
 			Type = type;
 			CanRead = canRead;
-			CanWrite = canWrite;
+			_canWrite = canWrite;
 			CanCall = canCall;
 			Scope = scope;
 			MemberType = memberType;
@@ -43,11 +43,16 @@ namespace TypeKitchen
 			_displayMap = new Dictionary<string, Lazy<AccessorMemberDisplay>>();
 		}
 
+		public bool IsComputedProperty => MemberInfo is PropertyInfo p && p.GetSetMethod(true) == null && BackingField == null;
+		public FieldInfo BackingField => DeclaringType.GetField($"<{Name}>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance);
+
 		public string Name { get; }
 		public Type DeclaringType { get; }
 		public Type Type { get; }
+
 		public bool CanRead { get; }
-		public bool CanWrite { get; }
+		public bool CanWrite => _canWrite && !IsComputedProperty;
+
 		public bool CanCall { get; }
 		public AccessorMemberScope Scope { get; }
 		public AccessorMemberType MemberType { get; }
@@ -55,6 +60,7 @@ namespace TypeKitchen
 		public Attribute[] Attributes { get; }
 
 		private readonly Dictionary<string, Lazy<AccessorMemberDisplay>> _displayMap;
+		private readonly bool _canWrite;
 
 		private Lazy<AccessorMemberDisplay> AddDisplayProfile(string profile)
 		{
