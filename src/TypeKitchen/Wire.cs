@@ -60,7 +60,81 @@ namespace TypeKitchen
 				}
 			}
 		}
-		
+
+		#region Object
+
+		private static void WriteObject(this BinaryWriter bw, object value)
+		{
+			var type = value.GetType();
+			var members = GetMembers(type);
+			var reader = GetPropertyReader(type);
+
+			bw.Write(members.Count);
+			foreach (var member in members)
+			{
+				if (!member.CanWrite || !reader.TryGetValue(value, member.Name, out var item) || item == null)
+				{
+					bw.WriteNotContains();
+					continue;
+				}
+				
+				bw.WriteContains();
+				WriteValue(item, item.GetType(), bw);
+			}
+		}
+
+		private static object ReadObject(this Type type, BinaryReader br)
+		{
+			var members = GetMembers(type);
+			var writer = GetPropertyWriter(type);
+
+			var count = br.ReadInt32();
+
+			var instance = Instancing.CreateInstance(type);
+			
+			for (var i = 0; i < count; i++)
+			{
+				if (!br.ReadContains())
+					continue; // assumes everything else writable
+
+				var member = members[i];
+				var item = ReadValue(member.Type, br);
+				writer.TrySetValue(instance, member.Name, item);
+			}
+
+			return instance;
+		}
+
+		#endregion
+
+		#region Dictionary<T, K>
+
+		private static void WriteTypedDictionary<TKey, TValue>(this BinaryWriter bw, IDictionary<TKey, TValue> dictionary)
+		{
+			bw.Write(dictionary.Count);
+			foreach (var item in dictionary)
+			{
+				WriteValue(item.Key, item.Key.GetType(), bw);
+				WriteValue(item.Value, item.Value.GetType(), bw);
+			}
+		}
+
+		private static object ReadTypedDictionary<TKey, TValue>(this BinaryReader br)
+		{
+			var length = br.ReadInt32();
+			var instance = Instancing.CreateInstance<Dictionary<TKey, TValue>>();
+			for (var i = 0; i < length; i++)
+			{
+				var key = (TKey) ReadValue(typeof(TKey), br);
+				var value = (TValue) ReadValue(typeof(TValue), br);
+				instance.Add(key, value);
+			}
+
+			return instance;
+		}
+
+		#endregion
+
 		#region Writes
 
 		private static void WriteValue(object value, Type type, BinaryWriter bw)
@@ -253,30 +327,18 @@ namespace TypeKitchen
 			bw.Write((byte) 1);
 		}
         
-		private static void WriteNotContains(BinaryWriter bw)
+		private static void WriteNotContains(this BinaryWriter bw)
 		{
 			bw.Write((byte) 0);
 		}
-
 		
-
 		private static void WriteEnum(this BinaryWriter bw, object value)
 		{
 			var enumType = Enum.GetUnderlyingType(value.GetType());
 			var enumValue = Convert.ChangeType(value, enumType);
 			WriteValue(enumValue, enumType, bw);
 		}
-
-		private static void WriteTypedDictionary<TKey, TValue>(this BinaryWriter bw, IDictionary<TKey, TValue> dictionary)
-		{
-			bw.Write(dictionary.Count);
-			foreach (var item in dictionary)
-			{
-				WriteValue(item.Key, item.Key.GetType(), bw);
-				WriteValue(item.Value, item.Value.GetType(), bw);
-			}
-		}
-
+		
 		private static void WriteTypedCollection<T>(BinaryWriter bw, ICollection<T> list)
 		{
 			bw.Write(list.Count);
@@ -290,23 +352,7 @@ namespace TypeKitchen
 			foreach (var item in list)
 				WriteValue(item, item.GetType(), bw);
 		}
-
-		private static void WriteObject(this BinaryWriter bw, object value)
-		{
-			var read = ReadAccessor.Create(value, AccessorMemberTypes.Properties, AccessorMemberScope.Public, out var members);
-			bw.Write(members.Count);
-			foreach (var member in members.NetworkOrder(x => x.Name))
-			{
-				if (!read.TryGetValue(value, member.Name, out var item) || item == null)
-					WriteNotContains(bw);
-				else
-				{
-					bw.WriteContains();
-					WriteValue(item, item.GetType(), bw);
-				}
-			}
-		}
-        
+		
 		#endregion
 
 		#region Reads
@@ -393,9 +439,21 @@ namespace TypeKitchen
 					return br.ReadNull() ? null : ReadDateTime(br);
 
 				if (typeof(IDictionary<,>).IsAssignableFromGeneric(type))
-					return br.ReadNull() ? null : br.ReadTypedDictionary(type);
+				{
+					if (br.ReadNull())
+						return null;
+
+					var method = typeof(Wire).GetMethod(nameof(ReadTypedDictionary), BindingFlags.NonPublic | BindingFlags.Static);
+					if (method == null)
+						throw new NullReferenceException();
+
+					var genericMethod = method.MakeGenericMethod(type.GenericTypeArguments);
+					return genericMethod.Invoke(null, new object [] { br });
+				}
+
 				if (typeof(IList<>).IsAssignableFromGeneric(type))
 					return br.ReadNull() ? null : br.ReadTypedList(type);
+				
 				if (typeof(IList).IsAssignableFrom(type))
 					return br.ReadNull() ? null : br.ReadList(type);
 
@@ -438,49 +496,6 @@ namespace TypeKitchen
 			var kind = (DateTimeKind) ReadValue(GetEnumType(typeof(DateTimeKind)), br);
 			var ticks = br.ReadInt64();
 			return new DateTime(ticks, kind);
-		}
-
-		private static object ReadTypedDictionary(this BinaryReader br, Type type)
-		{
-			if (type.IsInterface)
-			{
-				type = typeof(Dictionary<,>).MakeGenericType(type.GenericTypeArguments);
-			}
-
-			var length = br.ReadInt32();
-			var instance = (IDictionary) Instancing.CreateInstance(type);
-			for (var i = 0; i < length; i++)
-			{
-				var key = ReadValue(type.GenericTypeArguments[0], br);
-				var value = ReadValue(type.GenericTypeArguments[1], br);
-				instance.Add(key, value);
-			}
-
-			return instance;
-		}
-
-		private static object ReadObject(this Type type, BinaryReader br)
-		{
-			var count = br.ReadInt32();
-			var instance = Instancing.CreateInstance(type);
-
-			var members = GetMembers(type);
-			var writer = GetPropertyWriter(type);
-
-			for (var i = 0; i < count; i++)
-			{
-				if (!br.ReadContains())
-					continue;
-				
-				var member = members[i];
-				if (!member.CanWrite)
-					continue;
-
-				var item = ReadValue(member.Type, br);
-				writer.TrySetValue(instance, member.Name, item);
-			}
-
-			return instance;
 		}
 
 		private static bool ReadContains(this BinaryReader br)

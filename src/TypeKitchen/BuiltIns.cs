@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace TypeKitchen
 {
-    // FIXME: converge with serialization
+    // FIXME: converge with serialization extension methods
 
 	internal static class BuiltIns
 	{
