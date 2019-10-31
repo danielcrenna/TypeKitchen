@@ -104,7 +104,7 @@ namespace TypeKitchen
 			{
 				DateFormat = member.TryGetAttribute(out DisplayFormatAttribute displayFormat)
 					? displayFormat.DataFormatString
-					: "mm/dd/yyyy";
+					: "MM/dd/yyyy";
 			}
 		}
 
