@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace TypeKitchen
 {
@@ -28,10 +29,17 @@ namespace TypeKitchen
 
 		private static AccessorMember MaybeUseMetadata(AccessorMember member, string profile)
 		{
-			if (member.DeclaringType == null || !member.HasAttribute<MetadataTypeAttribute>())
-				return member;
+			if (member.DeclaringType != null)
+				member = MaybeSwapMetadataMember(member.DeclaringType, member, profile);
 
-			foreach (var attribute in member.DeclaringType.GetAttributes<MetadataTypeAttribute>())
+			member = MaybeSwapMetadataMember(member.MemberInfo, member, profile);
+
+			return member;
+		}
+
+		private static AccessorMember MaybeSwapMetadataMember(ICustomAttributeProvider authority, AccessorMember member, string profile)
+		{
+			foreach (var attribute in authority.GetAttributes<MetadataTypeAttribute>())
 			{
 				if (attribute.Profile != profile)
 					continue;
@@ -54,7 +62,7 @@ namespace TypeKitchen
 					break;
 				}
 			}
-			
+
 			return member;
 		}
 

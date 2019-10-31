@@ -5,7 +5,7 @@ using System;
 
 namespace TypeKitchen
 {
-	[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
 	public class MetadataTypeAttribute : Attribute
 	{
 		public MetadataTypeAttribute(string profile, Type metadataType)

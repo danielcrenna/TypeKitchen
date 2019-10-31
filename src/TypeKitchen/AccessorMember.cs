@@ -23,24 +23,34 @@ namespace TypeKitchen
 			Scope = scope;
 			MemberType = memberType;
 			MemberInfo = memberInfo;
-			
-			if ((memberInfo is PropertyInfo || memberInfo is FieldInfo) && Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
+
+			if (Attribute.IsDefined(type, typeof(MetadataTypeAttribute), false))
 			{
-				var metadata = (MetadataTypeAttribute) Attribute.GetCustomAttribute(type, typeof(MetadataTypeAttribute));
-
-				var surrogate = memberInfo switch
-				{
-					PropertyInfo _ => (MemberInfo) (metadata.MetadataType.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new InvalidOperationException()),
-					FieldInfo _ => (metadata.MetadataType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new InvalidOperationException()),
-					_ => throw new ArgumentException()
-				};
-
-				Attributes = Attribute.GetCustomAttributes(surrogate, true);
+				SetAttributesFromSurrogate(type, memberInfo);
+			}
+			if ((memberInfo is PropertyInfo || memberInfo is FieldInfo) && Attribute.IsDefined(memberInfo, typeof(MetadataTypeAttribute), false))
+			{
+				SetAttributesFromSurrogate(memberInfo, memberInfo);
 			}
 			else
+			{
 				Attributes = Attribute.GetCustomAttributes(memberInfo, true);
+			}
 
 			_displayMap = new Dictionary<string, Lazy<AccessorMemberDisplay>>();
+		}
+
+		private void SetAttributesFromSurrogate(MemberInfo authority, MemberInfo memberInfo)
+		{
+			const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+			var metadata = (MetadataTypeAttribute) Attribute.GetCustomAttribute(authority, typeof(MetadataTypeAttribute));
+			var surrogate = memberInfo switch
+			{
+				PropertyInfo _ => (MemberInfo) (metadata.MetadataType.GetProperty(memberInfo.Name, flags) ?? throw new InvalidOperationException()), 
+				FieldInfo _ => (metadata.MetadataType.GetField(memberInfo.Name, flags) ?? throw new InvalidOperationException()),
+				_ => throw new ArgumentException()
+			};
+			Attributes = Attribute.GetCustomAttributes(surrogate, true);
 		}
 
 		public bool IsComputedProperty => MemberInfo is PropertyInfo p && p.GetSetMethod(true) == null && BackingField == null;
@@ -57,7 +67,7 @@ namespace TypeKitchen
 		public AccessorMemberScope Scope { get; }
 		public AccessorMemberType MemberType { get; }
 		public MemberInfo MemberInfo { get; }
-		public Attribute[] Attributes { get; }
+		public Attribute[] Attributes { get; private set; }
 
 		private readonly Dictionary<string, Lazy<AccessorMemberDisplay>> _displayMap;
 		private readonly bool _canWrite;
