@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using TypeKitchen.Internal;
@@ -52,9 +53,20 @@ namespace TypeKitchen.Composition
 
 			foreach (var system in _systems)
 			{
-				var dependencies = system.GetType().GetTypeInfo().ImplementedInterfaces
-					.Where(y => y.IsGenericType && y.GetGenericTypeDefinition() == typeof(IDependOn<>))
-					.SelectMany(y => y.GetGenericArguments());
+				var interfaces = system.GetType().GetTypeInfo().ImplementedInterfaces;
+
+				var dependencies = new HashSet<Type>();
+				foreach (var dependency in interfaces)
+				{
+					if (!dependency.IsGenericType)
+						continue;
+
+					if (dependency.GetGenericTypeDefinition() != typeof(IDependOn<>))
+						continue;
+
+					foreach (var argument in dependency.GetGenericArguments())
+						dependencies.Add(argument);
+				}
 
 				foreach (var dependency in dependencies)
 				{
@@ -110,80 +122,79 @@ namespace TypeKitchen.Composition
 
 		public UpdateContext Update<TState>(TState state = default)
 		{
-			try
+			_context.Reset();
+			_executionPlan ??= BuildExecutionPlan().ToArray();
+
+			var executionPlanLines = _executionPlan;
+			foreach (var line in executionPlanLines)
 			{
-				_context.Reset();
-				_executionPlan = _executionPlan ?? BuildExecutionPlan();
+				if (line.Key == default)
+					continue;
 
-				foreach (var line in _executionPlan)
+				if (line.Parameters.Length == 0)
+					continue;
+
+				var stateType = state.GetType();
+				if (line.System is ISystemWithState && stateType != line.Parameters[1].ParameterType)
+					continue;
+
+				var arguments = Pooling.Arguments.Get(line.Parameters.Length);
+				try
 				{
-					if (line.Key == default)
-						continue;
+					if (!_archetypes.TryGetValue(line.Key, out var array))
+						continue; // no entities have this system, ignore
 
-					var arguments = Pooling.Arguments.Get(line.Parameters.Length);
-					try
+					var span = new ReadOnlySpan<uint>(array, 0, array.Length);
+					foreach (var entity in span)
 					{
-						if (!_archetypes.TryGetValue(line.Key, out var array))
-							continue; // no entities have this system, ignore
-
-						var span = new ReadOnlySpan<uint>(array, 0, array.Length);
-						foreach (var entity in span)
+						var components = _componentsByEntity[entity];
+						for (var i = 0; i < line.Parameters.Length; i++)
 						{
-							var components = _componentsByEntity[entity];
-
-							for (var i = 0; i < line.Parameters.Length; i++)
+							var type = line.Parameters[i].ParameterType;
+							if (type == typeof(UpdateContext))
 							{
-								var type = line.Parameters[i].ParameterType;
-
-								if (type == typeof(UpdateContext))
-								{
-									arguments[i] = _context;
-									continue;
-								}
-
-								var stateType = typeof(TState);
-								if (type == stateType || stateType.IsAssignableFrom(type))
-								{
-									arguments[i] = state;
-									continue;
-								}
-
-								for (var j = 0; j < components.Count; j++)
-								{
-									var c = components[j];
-									var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
-									if (c.GetType() == argumentType)
-										arguments[j] = c;
-								}
+								arguments[i] = _context;
+								continue;
 							}
 
-							if ((bool) line.Update.Invoke(line.System, arguments))
+							if (type == stateType || stateType.IsAssignableFrom(type))
 							{
-								if (!_context.ActiveEntities.Contains(entity))
-									_context.ActiveEntities.Add(entity);
+								arguments[i] = state;
+								continue;
 							}
 
-							foreach (var argument in arguments)
+							for (var j = 0; j < components.Count; j++)
 							{
-								if (argument is UpdateContext || argument is TState)
-									continue;
-								var argumentType = argument.GetType();
-								if (argumentType.IsByRef)
-									argumentType = argumentType.GetElementType();
-								SetComponent(entity, argumentType, argument);
+								var c = components[j];
+								var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
+								if (c.GetType() == argumentType)
+									arguments[i] = c;
 							}
 						}
-					}
-					finally
-					{
-						Pooling.Arguments.Return(arguments);
+
+						if ((bool) line.Update.Invoke(line.System, arguments))
+						{
+							if (!_context.ActiveEntities.Contains(entity))
+							{
+								_context.ActiveEntities.Add(entity);
+							}
+						}
+
+						foreach (var argument in arguments)
+						{
+							if (argument is UpdateContext || argument is TState)
+								continue;
+							var argumentType = argument.GetType();
+							if (argumentType.IsByRef)
+								argumentType = argumentType.GetElementType();
+							SetComponent(entity, argumentType, argument);
+						}
 					}
 				}
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-				throw;
+				finally
+				{
+					Pooling.Arguments.Return(arguments);
+				}
 			}
 
 			_context.Tick();
