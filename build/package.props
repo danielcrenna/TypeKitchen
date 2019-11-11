@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.0.27.2</Version>
-    <PackageReleaseNotes>Fixed false positives with internal setters</PackageReleaseNotes>
+    <Version>1.0.27.3</Version>
+    <PackageReleaseNotes>Fixed package dependency reference</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
