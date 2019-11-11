@@ -130,11 +130,11 @@ namespace TypeKitchen
 			foreach (var member in members)
 			{
 				if (!member.CanWrite)
-					continue;
+					continue; // can't write / is a computed property
 				if (!(member.MemberInfo is PropertyInfo property))
-					continue;
-				if (property.GetSetMethod(false) != null)
-					continue;
+					continue; // not a property
+				if (property.GetSetMethod(true) != null)
+					continue; // has public setter
                 
 				var backingField = member.BackingField;
 				if (backingField == null)
@@ -394,7 +394,7 @@ namespace TypeKitchen
 
 		private static MethodInfo GetOrSwapPropertySetter(PropertyInfo property, Dictionary<AccessorMember, MethodInfo> callSwaps, AccessorMember member)
 		{
-			var setMethod = property.GetSetMethod(false);
+			var setMethod = property.GetSetMethod(true);
 			if (setMethod == null)
 				setMethod = callSwaps[member];
 			return setMethod;
