@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.0.26</Version>
-    <PackageReleaseNotes>Added shallow copy cloning.</PackageReleaseNotes>
+    <Version>1.0.27.1</Version>
+    <PackageReleaseNotes>Fixed regression in WriteAccessor.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

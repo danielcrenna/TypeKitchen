@@ -1,9 +1,11 @@
-﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+﻿
+// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Primitives;
@@ -12,6 +14,50 @@ namespace TypeKitchen
 {
 	public static class TypeExtensions
 	{
+		private static readonly HashSet<Type> IntegerTypes = new HashSet<Type>
+		{
+			typeof(sbyte),
+			typeof(sbyte?),
+			typeof(byte),
+			typeof(byte?),
+			typeof(ushort),
+			typeof(ushort?),
+			typeof(short),
+			typeof(short?),
+			typeof(uint),
+			typeof(uint?),
+			typeof(int),
+			typeof(int?),
+			typeof(ulong),
+			typeof(ulong?),
+			typeof(long),
+			typeof(long?)
+		};
+
+		private static readonly HashSet<Type> RealNumberTypes = new HashSet<Type>
+		{
+			typeof(float),
+			typeof(double),
+			typeof(decimal),
+			typeof(Complex),
+			typeof(BigInteger)
+		};
+
+		public static bool IsInteger(this Type type)
+		{
+			return IntegerTypes.Contains(type);
+		}
+
+		public static bool IsNumeric(this Type type)
+		{
+			return RealNumberTypes.Contains(type) || type.IsInteger();
+		}
+
+		public static bool IsTruthy(this Type type)
+		{
+			return type == typeof(bool) || type == typeof(bool?);
+		}
+
 		public static bool IsAnonymous(this Type type)
 		{
 			return type.Namespace == null && Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute));
@@ -242,6 +288,13 @@ namespace TypeKitchen
 			where T : Attribute
 		{
 			return provider.GetCustomAttributes(typeof(T), inherit).OfType<T>();
+		}
+
+		public static IList<T> AsList<T>(this IEnumerable<T> enumerable)
+		{
+			if (enumerable is IList<T> list)
+				return list;
+			return enumerable.ToList();
 		}
 	}
 }

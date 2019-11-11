@@ -269,9 +269,6 @@ namespace TypeKitchen
 							break;
 
 						case FieldInfo field:
-							il.Ldarg_1();								// target
-							il.CastOrUnbox(type);						// ({Type}) target
-							il.Ldarg_3();								// value
 							il.CastOrUnboxAny(field.FieldType);
 							il.Stfld(field);
 							break;
