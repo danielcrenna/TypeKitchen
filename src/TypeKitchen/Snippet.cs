@@ -18,6 +18,7 @@ using Microsoft.CSharp.RuntimeBinder;
 
 namespace TypeKitchen
 {
+#if !LIGHT
 	public static class Snippet
 	{
 		private static readonly ScriptOptions DefaultOptions;
@@ -83,4 +84,5 @@ namespace TypeKitchen
 
 		private static class ContextFree { }
 	}
+#endif
 }

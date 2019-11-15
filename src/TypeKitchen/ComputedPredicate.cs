@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Scripting;
 
 namespace TypeKitchen
 {
+#if !LIGHT
 	public static class ComputedPredicate
 	{
 		private static readonly ScriptOptions Options;
@@ -40,4 +41,5 @@ namespace TypeKitchen
 			return (bool) binding.Invoke(null, null);
 		}
 	}
+#endif
 }

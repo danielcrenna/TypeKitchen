@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,6 +9,10 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using TypeKitchen.Internal;
+
+#if !LIGHT
+using System.Collections.Concurrent;
+#endif
 
 namespace TypeKitchen.Composition
 {
@@ -41,6 +44,7 @@ namespace TypeKitchen.Composition
 			public ParameterInfo[] Parameters;
 			public Value128 Key;
 		}
+
 		public Container AddSystem<T>() where T : ISystem, new()
 		{
 			var system = new T();
@@ -48,13 +52,17 @@ namespace TypeKitchen.Composition
 			return this;
 		}
 
+		private static readonly Dictionary<Type, IEnumerable<Type>> InterfaceMap
+			= new Dictionary<Type, IEnumerable<Type>>();
+
 		private IEnumerable<ExecutionPlanLine> BuildExecutionPlan()
 		{
 			var dependencyMap = new Dictionary<Type, List<ISystem>>();
 
 			foreach (var system in _systems)
 			{
-				var interfaces = system.GetType().GetTypeInfo().ImplementedInterfaces;
+				if(!InterfaceMap.TryGetValue(system.GetType(), out var interfaces))
+					InterfaceMap.Add(system.GetType(), interfaces = system.GetType().GetTypeInfo().ImplementedInterfaces.AsList());
 
 				var dependencies = new HashSet<Type>();
 				foreach (var dependency in interfaces)
@@ -169,18 +177,32 @@ namespace TypeKitchen.Composition
 									continue;
 								}
 
-								foreach (var c in components)
+#if !LIGHT
+								for (var j = 0; j < components.Count; j++)
 								{
+									var c = components[j];
 									var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
 									if (Proxies[argumentType] != c.GetType())
 										continue;
-
 									var argument = c.QuackLike(argumentType);
 									arguments[i] = argument;
 								}
+#else
+								for (var j = 0; j < components.Count; j++)
+								{
+									var c = components[j];
+									var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
+									if (c.GetType() == argumentType)
+										arguments[i] = c;
+								}
+#endif
 							}
 
-							if ((bool) line.Update.Invoke(line.System, arguments))
+							//var update = CallAccessor.Create(line.Update);
+							//if ((bool) update.Call(line.System, arguments))
+
+							var update = line.Update;
+							if ((bool) update.Invoke(line.System, arguments))
 							{
 								if (!_context.ActiveEntities.Contains(entity))
 								{
@@ -225,6 +247,8 @@ namespace TypeKitchen.Composition
 			SetComponent(entity, typeof(T), value);
 		}
 
+#if !LIGHT
+		
 		private void SetComponent(uint entity, Type type, object value)
 		{
 			for (var i = 0; i < _componentsByEntity[entity].Count; i++)
@@ -264,7 +288,6 @@ namespace TypeKitchen.Composition
 				}
 			}
 		}
-		
 
 		public IEnumerable<IComponentProxy> GetComponents(Entity entity)
 		{
@@ -295,6 +318,64 @@ namespace TypeKitchen.Composition
 
 			return default;
 		}
+#else
+		
+		private void SetComponent(uint entity, Type type, object value)
+		{
+			for (var i = 0; i < _componentsByEntity[entity].Count; i++)
+			{
+				var c = _componentsByEntity[entity][i];
+				if (c.GetType() != type)
+					continue;
+
+				var vm = GetDataForComponentMembers(type);
+				var vr = GetDataForComponentReader(type);
+
+				var cm = GetComponentMembers(type);
+				var cw = GetComponentWriter(type);
+
+				foreach (var kvp in vm)
+				{
+					var member = kvp.Value;
+
+					var componentHasMember = cm.TryGetValue(member.Name, out var m);
+					if (!componentHasMember)
+						continue;
+
+					if (!m.CanWrite)
+						continue;
+
+					var memberTypesMatch = m.Type == member.Type;
+					if (!memberTypesMatch)
+						continue;
+
+					var valueHasValue = vr.TryGetValue(value, member.Name, out var v);
+					if (!valueHasValue)
+						continue;
+
+					cw.TrySetValue(c, member.Name, v);
+				}
+			}
+		}
+
+		public IEnumerable<ValueType> GetComponents(Entity entity)
+		{
+			return _componentsByEntity[entity];
+		}
+
+		public T GetComponent<T>(Entity entity) where T : struct
+		{
+			foreach (var c in GetComponents(entity))
+			{
+				if (!_componentsByEntity.TryGetValue(entity, out var list))
+					continue;
+				foreach (var component in list.Where(component => component?.GetType() == c.GetType()))
+					return (T) component;
+			}
+
+			return default;
+		}
+#endif
 
 		private uint InitializeEntity(IEnumerable<Type> componentTypes)
 		{
@@ -322,6 +403,7 @@ namespace TypeKitchen.Composition
 			return entity;
 		}
 
+#if !LIGHT
 		private void CreateComponentProxy(uint entity, Type componentType, object initializer)
 		{
 			if (!_componentsByEntity.TryGetValue(entity, out var list))
@@ -338,7 +420,7 @@ namespace TypeKitchen.Composition
 		}
 
 		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
-		
+
 		private Type GenerateComponentProxy(Type componentType, Dictionary<string, AccessorMember> members)
 		{
 			var builder = Snippet.GetBuilder()
@@ -384,6 +466,7 @@ namespace TypeKitchen.Composition
 				return proxyType; 
 			});
 		}
+#endif
 
 		public void Restore(Dictionary<uint, Dictionary<Type, Dictionary<string, object>>> snapshot)
 		{
@@ -405,8 +488,12 @@ namespace TypeKitchen.Composition
 						continue;
 
 					// create new component instance
+#if !LIGHT
 					component = Instancing.CreateInstance(componentType) as IComponentProxy;
-						
+#else
+					component = (ValueType) Instancing.CreateInstance(componentType);
+#endif
+
 					foreach (var member in members)
 					{
 						if (!member.Value.CanWrite)

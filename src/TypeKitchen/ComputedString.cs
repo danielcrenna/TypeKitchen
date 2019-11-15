@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Scripting;
 
 namespace TypeKitchen
 {
+#if !LIGHT
 	public static class ComputedString
 	{
 		private static readonly ScriptOptions Options;
@@ -39,4 +40,5 @@ namespace TypeKitchen
 			return binding.Invoke(null, null).ToString();
 		}
 	}
+#endif
 }

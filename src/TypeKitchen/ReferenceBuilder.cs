@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Scripting;
 
 namespace TypeKitchen
 {
+#if !LIGHT
 	public class ReferenceBuilder
 	{
 		private readonly HashSet<Type> _visited;
@@ -38,4 +39,5 @@ namespace TypeKitchen
 			return _options;
 		}
 	}
+#endif
 }
