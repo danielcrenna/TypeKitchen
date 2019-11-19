@@ -5,21 +5,29 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 
 namespace TypeKitchen
 {
 	public class ReflectionTypeResolver : ITypeResolver
 	{
-		private static readonly string[] SkipRuntimeAssemblies = {"Microsoft.VisualStudio.ArchitectureTools.PEReader"};
+		private readonly string[] _skipRuntimeAssemblies;
 		private readonly Lazy<IEnumerable<MethodInfo>> _loadedMethods;
 		private readonly Lazy<IEnumerable<Type>> _loadedTypes;
 
-		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies)
+		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies, IEnumerable<string> skipRuntimeAssemblies = null)
 		{
-			_loadedTypes =
-				new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, typeof(object).GetTypeInfo().Assembly));
+			_loadedTypes = new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, typeof(object).GetTypeInfo().Assembly));
 			_loadedMethods = new Lazy<IEnumerable<MethodInfo>>(LoadMethods);
+				
+			_skipRuntimeAssemblies = new []
+			{
+				"Microsoft.VisualStudio.ArchitectureTools.PEReader",
+				"Microsoft.IntelliTrace.Core"
+			};
+			if (skipRuntimeAssemblies != null)
+				_skipRuntimeAssemblies = _skipRuntimeAssemblies.Concat(skipRuntimeAssemblies).ToArray();
 		}
 
 		public ReflectionTypeResolver() : this(AppDomain.CurrentDomain.GetAssemblies()) { }
@@ -95,14 +103,14 @@ namespace TypeKitchen
 				yield return method;
 		}
 
-		private static IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, params Assembly[] skipAssemblies)
+		private IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, params Assembly[] skipAssemblies)
 		{
 			var types = new HashSet<Type>();
 
 			foreach (var assembly in assemblies)
 			{
 				if (assembly.IsDynamic || ((IList) skipAssemblies).Contains(assembly) ||
-				    ((IList) SkipRuntimeAssemblies).Contains(assembly.FullName))
+				    ((IList) _skipRuntimeAssemblies).Contains(assembly.FullName))
 					continue;
 
 				try
