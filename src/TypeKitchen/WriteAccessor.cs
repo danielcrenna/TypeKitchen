@@ -210,7 +210,7 @@ namespace TypeKitchen
 					Type.EmptyTypes);
 				var il = getType.GetILGeneratorInternal();
 				il.Ldtoken(type);
-				il.CallOrCallvirt(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public), type);
+				il.CallOrCallvirt(type, typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
 				il.Ret();
 
 				var getTypeProperty = tb.DefineProperty(nameof(ITypeWriteAccessor.Type), PropertyAttributes.None,
@@ -265,7 +265,7 @@ namespace TypeKitchen
 						case PropertyInfo property:
 							
 							il.CastOrUnboxAny(property.PropertyType);
-							il.CallOrCallvirt(GetOrSwapPropertySetter(property, callSwaps, member), type);
+							il.CallOrCallvirt(type, GetOrSwapPropertySetter(property, callSwaps, member));
 							break;
 
 						case FieldInfo field:
@@ -330,7 +330,7 @@ namespace TypeKitchen
 					{
 						case PropertyInfo property:
                             il.CastOrUnboxAny(property.PropertyType);
-							il.CallOrCallvirt(GetOrSwapPropertySetter(property, callSwaps, member), type);
+							il.CallOrCallvirt(type, GetOrSwapPropertySetter(property, callSwaps, member));
 							break;
 						case FieldInfo field:
 							il.CastOrUnboxAny(field.FieldType);

@@ -146,7 +146,7 @@ namespace TypeKitchen
 					il.Nop();
 
 					il.Ldtoken(typeof(void));
-					il.CallOrCallvirt(KnownMethods.GetTypeFromHandle, type);
+					il.CallOrCallvirt(type, KnownMethods.GetTypeFromHandle);
 					il.Stloc_1();
 					il.Ldloc_1();
 					il.Ret();
@@ -172,18 +172,88 @@ namespace TypeKitchen
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.SetParent(typeof(MethodCallAccessor));
 
+			var parameters = method.GetParameters();
+
 			var call = tb.DefineMethod(nameof(MethodCallAccessor.Call),
 				MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 				MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(object),
-				new[] {typeof(object), typeof(object[])});
-			call.GetILGeneratorInternal().EmitCall(tb, method);
+				new[] { typeof(object), typeof(object[])});
+
+			call.GetILGeneratorInternal().EmitCallMethod(method);
 			tb.DefineMethodOverride(call, KnownMethods.CallWithArgs);
 
 			var constructedType = tb.CreateTypeInfo().AsType();
 			var instance = (MethodCallAccessor) Activator.CreateInstance(constructedType);
 			instance.MethodName = method.Name;
-			instance.Parameters = method.GetParameters();
+			instance.Parameters = parameters;
 			return instance;
+		}
+
+		internal static void EmitCallMethod(this ILSugar il, MethodInfo method)
+		{
+			var type = method.DeclaringType ?? throw new NullReferenceException();
+
+			if(!method.IsStatic)
+			{
+				il.Ldarg_1(); // target
+				il.Unbox_Any(type);
+
+				var @this = il.DeclareLocal(type);
+				il.Stloc(@this);
+				if (type.IsValueType)
+					il.Ldloca(@this);
+				else
+					il.Ldloc(@this);
+			}
+
+			var parameters = method.GetParameters();
+			if (parameters.Length > 0)
+			{
+				for (var i = 0; i < parameters.Length; i++)
+				{
+					il.Ldarg_2();       // args
+					il.LoadConstant(i); // i
+					il.Ldelem_Ref();    // args[i]
+
+					var parameterType = parameters[i].ParameterType;
+					var byRef = parameterType.IsByRef;
+					if (byRef)
+						parameterType = parameterType.GetElementType();
+
+					il.Unbox_Any(parameterType);
+					var arg = il.DeclareLocal(parameterType);
+					il.Stloc(arg);
+					if (byRef)
+						il.Ldloca(arg);
+					else
+						il.Ldloc(arg);
+				}
+			}
+
+			il.CallOrCallvirt(type, method);
+
+			for (var i = 0; i < parameters.Length; i++)
+			{
+				var parameterType = parameters[i].ParameterType;
+				if (!parameterType.IsByRef)
+					continue;
+
+				il.Ldarg_2();                            // args
+				il.Ldc_I4(i);                            // i
+				il.Ldloc(i + (method.IsStatic ? 0 : 1)); // args[i]
+
+				parameterType = parameterType.GetElementType() ?? parameterType;
+				if (parameterType.IsValueType)
+					il.Box(parameterType);
+				il.Stelem_Ref();
+			}
+
+			if (method.ReturnType == typeof(void))
+				il.Ldnull();
+			else
+				il.MaybeBox(method.ReturnType);
+
+			il.Ret();
 		}
 	}
 }

@@ -33,32 +33,32 @@ namespace TypeKitchen
 
 			var dm = new DynamicMethod($"Call_{method.MetadataToken}", typeof(object),
 				new[] {typeof(object), typeof(object[])});
-			dm.GetILGeneratorInternal().EmitCall(type, method);
+			dm.GetILGeneratorInternal().EmitCallDelegate(type, method);
 			return (Func<object, object[], object>) dm.CreateDelegate(typeof(Func<object, object[], object>));
 		}
 
-		internal static void EmitCall(this ILSugar il, Type type, MethodInfo method)
+		internal static void EmitCallDelegate(this ILSugar il, Type type, MethodInfo method)
 		{
 			if (!method.IsStatic)
 			{
 				// this
-				il.DeclareLocal(type);
+				var @this = il.DeclareLocal(type);
 				il.Ldarg_0();
 				il.Unbox_Any(type);
-				il.Stloc_0();
+				il.Stloc(@this);
 				if (type.IsValueType)
-					il.Ldloca(0);
+					il.Ldloca(@this);
 				else
-					il.Ldloc(0);
+					il.Ldloc(@this);
 			}
 
 			var parameters = method.GetParameters();
-			for (byte i = 0; i < parameters.Length; i++)
+			for (var i = 0; i < parameters.Length; i++)
 			{
-				il.Ldarg_1(); // args
+				il.Ldarg_1();		// args
 				il.LoadConstant(i); // i
-				il.Ldelem_Ref(); // args[i]
-
+				il.Ldelem_Ref();	// args[i]
+				
 				var parameterType = parameters[i].ParameterType;
 				var byRef = parameterType.IsByRef;
 				if (byRef)
@@ -73,12 +73,29 @@ namespace TypeKitchen
 					il.Ldloc(arg);
 			}
 
-			il.CallOrCallvirt(method, type);
+			il.CallOrCallvirt(type, method);
+
+			for (var i = 0; i < parameters.Length; i++)
+			{
+				var parameterType = parameters[i].ParameterType;
+				if (!parameterType.IsByRef)
+					continue;
+
+				il.Ldarg_1();							 // args
+				il.Ldc_I4(i);							 // i
+				il.Ldloc(i + (method.IsStatic ? 0 : 1)); // args[i]
+
+				parameterType = parameterType.GetElementType() ?? parameterType;
+				if (parameterType.IsValueType)
+					il.Box(parameterType);
+				il.Stelem_Ref();
+			}
 
 			if (method.ReturnType == typeof(void))
 				il.Ldnull();
 			else
 				il.MaybeBox(method.ReturnType);
+
 			il.Ret();
 		}
 

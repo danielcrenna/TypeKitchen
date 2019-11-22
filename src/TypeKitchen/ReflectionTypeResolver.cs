@@ -4,9 +4,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace TypeKitchen
 {
@@ -16,21 +16,21 @@ namespace TypeKitchen
 		private readonly Lazy<IEnumerable<MethodInfo>> _loadedMethods;
 		private readonly Lazy<IEnumerable<Type>> _loadedTypes;
 
-		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies, IEnumerable<string> skipRuntimeAssemblies = null)
+		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies, ILogger logger, IEnumerable<string> skipRuntimeAssemblies = null)
 		{
-			_loadedTypes = new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, typeof(object).GetTypeInfo().Assembly));
+			_loadedTypes = new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, logger, typeof(object).GetTypeInfo().Assembly));
 			_loadedMethods = new Lazy<IEnumerable<MethodInfo>>(LoadMethods);
 				
 			_skipRuntimeAssemblies = new []
 			{
 				"Microsoft.VisualStudio.ArchitectureTools.PEReader",
-				"Microsoft.IntelliTrace.Core"
+				"Microsoft.IntelliTrace.Core, Version=16.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 			};
 			if (skipRuntimeAssemblies != null)
 				_skipRuntimeAssemblies = _skipRuntimeAssemblies.Concat(skipRuntimeAssemblies).ToArray();
 		}
 
-		public ReflectionTypeResolver() : this(AppDomain.CurrentDomain.GetAssemblies()) { }
+		public ReflectionTypeResolver() : this(AppDomain.CurrentDomain.GetAssemblies(), null) { }
 
 		public Type FindByFullName(string typeName)
 		{
@@ -103,7 +103,7 @@ namespace TypeKitchen
 				yield return method;
 		}
 
-		private IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, params Assembly[] skipAssemblies)
+		private IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, ILogger logger, params Assembly[] skipAssemblies)
 		{
 			var types = new HashSet<Type>();
 
@@ -115,11 +115,12 @@ namespace TypeKitchen
 
 				try
 				{
-					foreach (var type in assembly.GetTypes()) types.Add(type);
+					foreach (var type in assembly.GetTypes())
+						types.Add(type);
 				}
 				catch (Exception e)
 				{
-					Trace.TraceError($"{e}");
+					logger?.LogError(new EventId(500), e, "Failed to load types in assembly {AssemblyName}", assembly.GetName().Name);
 				}
 			}
 

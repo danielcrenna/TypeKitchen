@@ -278,7 +278,7 @@ namespace TypeKitchen
 
 			forward.Ldarg_0();
 			forward.Ldarg_1();
-			forward.CallOrCallvirt(method, tb);
+			forward.CallOrCallvirt(tb, method);
 			forward.Ret();
 
 			return mb;

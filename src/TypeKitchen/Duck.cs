@@ -12,13 +12,13 @@ namespace TypeKitchen
 		{
 			if (instance == null)
 				return default;
-
-			var source = instance.GetType();
+			
 			var target = typeof(T).IsByRef ? typeof(T).GetElementType() ?? typeof(T) : typeof(T);
 
 			if (target.IsInterface)
 				return Proxy<T>(target, instance, ProxyType.Mimic);
 
+			//var source = instance.GetType();
 			//if (source.IsValueType && target.IsValueType)
 			//	return Marshal<T>(ref instance);
 

@@ -10,10 +10,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using TypeKitchen.Internal;
 
-#if !LIGHT
-using System.Collections.Concurrent;
-#endif
-
 namespace TypeKitchen.Composition
 {
 	public partial class Container
@@ -177,17 +173,6 @@ namespace TypeKitchen.Composition
 									continue;
 								}
 
-#if !LIGHT
-								for (var j = 0; j < components.Count; j++)
-								{
-									var c = components[j];
-									var argumentType = type.IsByRef ? type.GetElementType() ?? type : type;
-									if (Proxies[argumentType] != c.GetType())
-										continue;
-									var argument = c.QuackLike(argumentType);
-									arguments[i] = argument;
-								}
-#else
 								for (var j = 0; j < components.Count; j++)
 								{
 									var c = components[j];
@@ -195,14 +180,12 @@ namespace TypeKitchen.Composition
 									if (c.GetType() == argumentType)
 										arguments[i] = c;
 								}
-#endif
 							}
 
-							//var update = CallAccessor.Create(line.Update);
-							//if ((bool) update.Call(line.System, arguments))
-
-							var update = line.Update;
-							if ((bool) update.Invoke(line.System, arguments))
+							var update = CallAccessor.Create(line.Update);
+							if ((bool) update.Call(line.System, arguments))
+							//var update = LateBinding.DynamicMethodBindCall(line.Update);
+							//if ((bool) update.Invoke(line.System, arguments))
 							{
 								if (!_context.ActiveEntities.Contains(entity))
 								{
@@ -222,6 +205,7 @@ namespace TypeKitchen.Composition
 								var argumentType = argument.GetType();
 								if (argumentType.IsByRef)
 									argumentType = argumentType.GetElementType();
+
 								SetComponent(entity, argumentType, argument);
 							}
 						}
@@ -246,79 +230,6 @@ namespace TypeKitchen.Composition
 		{
 			SetComponent(entity, typeof(T), value);
 		}
-
-#if !LIGHT
-		
-		private void SetComponent(uint entity, Type type, object value)
-		{
-			for (var i = 0; i < _componentsByEntity[entity].Count; i++)
-			{
-				var c = _componentsByEntity[entity][i];
-
-				var componentType = Proxies[type];
-				if (c.GetType() != componentType)
-					continue;
-
-				var vm = GetDataForComponentMembers(type);
-				var vr = GetDataForComponentReader(type);
-
-				var cm = GetComponentMembers(componentType);
-				var cw = GetComponentWriter(componentType);
-				
-				foreach (var kvp in vm)
-				{
-					var member = kvp.Value;
-
-					var componentHasMember = cm.TryGetValue(member.Name, out var m);
-					if (!componentHasMember)
-						continue;
-
-					if (!m.CanWrite)
-						continue;
-
-					var memberTypesMatch = m.Type == member.Type;
-					if (!memberTypesMatch)
-						continue;
-
-					var valueHasValue = vr.TryGetValue(value, member.Name, out var v);
-					if (!valueHasValue)
-						continue;
-
-					cw.TrySetValue(c, member.Name, v);
-				}
-			}
-		}
-
-		public IEnumerable<IComponentProxy> GetComponents(Entity entity)
-		{
-			foreach (var component in _componentsByEntity[entity])
-				yield return component;
-		}
-
-		public void DeleteComponent(Entity entity, IComponentProxy c)
-		{
-			for (int i = _componentsByEntity[entity].Count - 1; i >= 0; i--)
-			{
-				var component = _componentsByEntity[entity][i];
-				if(component == c)
-					_componentsByEntity[entity].RemoveAt(i);
-			}
-		}
-
-		public T GetComponent<T>(Entity entity) where T : struct
-		{
-			var key = typeof(T);
-			foreach (var c in GetComponents(entity))
-			{
-				var componentType = key.IsByRef ? key.GetElementType() ?? key : key;
-				if (Proxies[componentType] != c.GetType())
-					continue;
-				return (T) c.QuackLike(componentType);
-			}
-
-			return default;
-		}
-#else
 		
 		private void SetComponent(uint entity, Type type, object value)
 		{
@@ -375,7 +286,6 @@ namespace TypeKitchen.Composition
 
 			return default;
 		}
-#endif
 
 		private uint InitializeEntity(IEnumerable<Type> componentTypes)
 		{
@@ -402,72 +312,7 @@ namespace TypeKitchen.Composition
 
 			return entity;
 		}
-
-#if !LIGHT
-		private void CreateComponentProxy(uint entity, Type componentType, object initializer)
-		{
-			if (!_componentsByEntity.TryGetValue(entity, out var list))
-				_componentsByEntity.Add(entity, list = new List<IComponentProxy>());
-
-			var members = GetDataForComponentMembers(componentType);
-			var type = GenerateComponentProxy(componentType, members);
-			var instance = (IComponentProxy) Activator.CreateInstance(type);
-
-			list.Add(instance);
-
-			if (initializer != null)
-				SetComponent(entity, componentType, initializer);
-		}
-
-		private static readonly ConcurrentDictionary<Type, Type> Proxies = new ConcurrentDictionary<Type, Type>();
-
-		private Type GenerateComponentProxy(Type componentType, Dictionary<string, AccessorMember> members)
-		{
-			var builder = Snippet.GetBuilder()
-				.Add<IComponentProxy>()
-				.Add(componentType);
-
-			_configureAction?.Invoke(builder);
-
-			return Proxies.GetOrAdd(componentType, type =>
-			{
-				builder.Add(type);	
-
-				var code = Pooling.StringBuilderPool.Scoped(sb =>
-				{
-					Debug.Assert(type.FullName != null, "type.FullName != null");
-					sb.AppendLine($"public struct {type.Name}Proxy : IComponentProxy");
-					sb.AppendLine("{");
-					sb.AppendLine();
-
-					foreach (var kvp in members)
-					{
-						var member = kvp.Value;
-
-						if (member.Name.EndsWith("k__BackingField"))
-							continue;
-
-						builder.Add(member.Type);
-
-						if (member.Type.IsGenericType)
-						{
-							foreach (var arg in member.Type.GenericTypeArguments)
-								builder.Add(arg);
-						}
-
-						var alias = member.Type.GetPreferredTypeName();
-						sb.AppendLine($"    public {alias} {member.Name} {{ get; set; }}");
-					}
-
-					sb.AppendLine("}");
-				});
-
-				var proxyType = Snippet.CreateType(code, builder.Build());
-				return proxyType; 
-			});
-		}
-#endif
-
+		
 		public void Restore(Dictionary<uint, Dictionary<Type, Dictionary<string, object>>> snapshot)
 		{
 			foreach (var row in snapshot)
@@ -488,11 +333,7 @@ namespace TypeKitchen.Composition
 						continue;
 
 					// create new component instance
-#if !LIGHT
-					component = Instancing.CreateInstance(componentType) as IComponentProxy;
-#else
 					component = (ValueType) Instancing.CreateInstance(componentType);
-#endif
 
 					foreach (var member in members)
 					{

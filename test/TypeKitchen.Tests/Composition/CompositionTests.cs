@@ -19,13 +19,18 @@ namespace TypeKitchen.Tests.Composition
             container.AddSystem<ClockSystem>();
 
 			var entity = container.CreateEntity(new Velocity { Value = 10f }, new Position2D());
-			var snapshot = container.Snapshot();
+
+			var c = container.GetComponents(entity).ToArray();
+			var velocity = c[1].QuackLike<Velocity>();
+			Assert.Equal(10f, velocity.Value);
+
+			//var snapshot = container.Snapshot();
 
 			AssertSimulation(container, entity);
 
-			container.Restore(snapshot);
+			//container.Restore(snapshot);
 
-			AssertSimulation(container, entity);
+			//AssertSimulation(container, entity);
 		}
 
 		private static void AssertSimulation(Container container, uint entity)
@@ -38,7 +43,7 @@ namespace TypeKitchen.Tests.Composition
 
 			Assert.Equal(1, position.X);
 			Assert.Equal(1, position.Y);
-			Assert.Equal(10, velocity.Value);
+			Assert.Equal(10f, velocity.Value);
 		}
 
 		public sealed class ClockSystem : ISystem<float>
@@ -63,14 +68,14 @@ namespace TypeKitchen.Tests.Composition
 		[DebuggerDisplay("{" + nameof(Value) + "}")]
 		public struct Velocity
 		{
-			public float Value;
+			public float Value { get; set; }
 		}
 
 		[DebuggerDisplay("({" + nameof(X) + "}, {" + nameof(Y) + "})")]
 		public struct Position2D
 		{
-			public int X;
-			public int Y;
+			public int X { get; set; }
+			public int Y { get; set; }
 		}
 	}
 }

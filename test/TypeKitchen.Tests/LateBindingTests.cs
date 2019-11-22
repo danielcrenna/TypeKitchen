@@ -25,7 +25,8 @@ namespace TypeKitchen.Tests
 			var map = BindCall(strategy, target, scope, types);
 
 			map["Foo"](target, new object[] { });
-			map["Bar"](target, new object[] {100});
+			map["Bar"](target, new object[] { 100 });
+			map["Echo"](target, new object[] { "ABC" });
 		}
 
 		private static void CanCallStaticMethod(LateBindingStrategy strategy, AccessorMemberScope scope,
