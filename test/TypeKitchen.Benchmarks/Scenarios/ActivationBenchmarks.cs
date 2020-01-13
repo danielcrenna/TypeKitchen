@@ -6,13 +6,14 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
 	public delegate object CreateInstanceNoParams();
 
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

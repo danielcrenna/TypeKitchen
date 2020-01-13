@@ -64,12 +64,15 @@ namespace TypeKitchen
 				ConstructorParameters[ctor] = parameters = ctor.GetParameters();
 
 			if (!Activators.TryGetValue(implementationType, out var activator))
-				Activators[implementationType] =
-					activator = Activation.DynamicMethodWeakTyped(ctor);
+				Activators[implementationType] = activator = Activation.ExpressionWeakTyped(ctor);
 
 			var args = new object[parameters.Length];
 			for (var i = 0; i < parameters.Length; i++)
-				args[i] = AutoResolve(serviceProvider, parameters[i].ParameterType, throwIfCantResolve, assemblies);
+			{
+				var type = parameters[i].ParameterType;
+
+				args[i] = AutoResolve(serviceProvider, type, throwIfCantResolve, assemblies);
+			}
 
 			return activator(args);
 		}

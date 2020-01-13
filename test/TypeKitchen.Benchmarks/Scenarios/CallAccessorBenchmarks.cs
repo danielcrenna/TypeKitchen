@@ -4,12 +4,13 @@
 using System;
 using System.Reflection;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using TypeKitchen.Benchmarks.ObjectExecution;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

@@ -4,10 +4,11 @@
 using System;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace TypeKitchen.Benchmarks.Micro
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

@@ -3,13 +3,14 @@
 
 using System;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using DotLiquid;
 using FastMember;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

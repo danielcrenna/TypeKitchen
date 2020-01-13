@@ -19,7 +19,7 @@ namespace TypeKitchen.StateMachine
 			string.Join("\n", stateMethods)) =>
 			StateMethods = new ReadOnlyCollection<string>(stateMethods.Select(x => x.Name).ToList());
 
-		protected UnusedStateMethodsException(SerializationInfo info, StreamingContext context)
+		public UnusedStateMethodsException(SerializationInfo info, StreamingContext context)
 			: base(info, context) =>
 			StateMethods =
 				info.GetValue(nameof(StateMethods), typeof(ReadOnlyCollection<string>)) as ReadOnlyCollection<string>;

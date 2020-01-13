@@ -48,72 +48,84 @@ namespace TypeKitchen.Composition
 			return this;
 		}
 
+		public Container AddSystem<T>(T system) where T : ISystem
+		{
+			_systems.Add(system);
+			return this;
+		}
+
 		private static readonly Dictionary<Type, IEnumerable<Type>> InterfaceMap
 			= new Dictionary<Type, IEnumerable<Type>>();
 
+
+		private static readonly object Sync = new object();
+
 		private IEnumerable<ExecutionPlanLine> BuildExecutionPlan()
 		{
-			var dependencyMap = new Dictionary<Type, List<ISystem>>();
-
-			foreach (var system in _systems)
+			lock(Sync)
 			{
-				if(!InterfaceMap.TryGetValue(system.GetType(), out var interfaces))
-					InterfaceMap.Add(system.GetType(), interfaces = system.GetType().GetTypeInfo().ImplementedInterfaces.AsList());
+				var dependencyMap = new Dictionary<Type, List<ISystem>>();
 
-				var dependencies = new HashSet<Type>();
-				foreach (var dependency in interfaces)
+				foreach (var system in _systems)
 				{
-					if (!dependency.IsGenericType)
-						continue;
+					if (!InterfaceMap.TryGetValue(system.GetType(), out var interfaces))
+						InterfaceMap.Add(system.GetType(), interfaces = system.GetType().GetTypeInfo().ImplementedInterfaces.AsList());
 
-					if (dependency.GetGenericTypeDefinition() != typeof(IDependOn<>))
-						continue;
-
-					foreach (var argument in dependency.GetGenericArguments())
-						dependencies.Add(argument);
-				}
-
-				foreach (var dependency in dependencies)
-				{
-					if (!dependencyMap.TryGetValue(dependency, out var dependents))
-						dependencyMap.Add(dependency, dependents = new List<ISystem>());
-
-					dependents.Add(system);
-				}
-			}
-
-			var indices = Enumerable.Range(0, _systems.Count).ToList();
-
-			var order = indices.TopologicalSort(i =>
-			{
-				var s = _systems[i];
-				return !dependencyMap.TryGetValue(s.GetType(), out var dependents)
-					? Enumerable.Empty<int>()
-					: dependents.Select(x => _systems.IndexOf(x));
-			}).ToArray();
-
-			foreach (var system in _systems.OrderBy(x =>
-			{
-				var index = Array.IndexOf(order, _systems.IndexOf(x));
-				return index < 0 ? int.MaxValue : index;
-			}))
-			{
-				var archetypes = system.Archetypes(_seed);
-				foreach (var (t, v) in archetypes)
-				{
-					var update = t.GetMethod(nameof(ExecutionPlanLine.Update));
-					if (update == null)
-						continue;
-
-					var line = new ExecutionPlanLine
+					var dependencies = new HashSet<Type>();
+					foreach (var dependency in interfaces)
 					{
-						Key = v,
-						System = system,
-						Update = update,
-						Parameters = update.GetParameters()
-					};
+						if (!dependency.IsGenericType)
+							continue;
 
-					yield return line;
+						if (dependency.GetGenericTypeDefinition() != typeof(IDependOn<>))
+							continue;
+
+						foreach (var argument in dependency.GetGenericArguments())
+							dependencies.Add(argument);
+					}
+
+					foreach (var dependency in dependencies)
+					{
+						if (!dependencyMap.TryGetValue(dependency, out var dependents))
+							dependencyMap.Add(dependency, dependents = new List<ISystem>());
+
+						dependents.Add(system);
+					}
+				}
+
+				var indices = Enumerable.Range(0, _systems.Count).ToList();
+
+				var order = indices.TopologicalSort(i =>
+				{
+					var s = _systems[i];
+					return !dependencyMap.TryGetValue(s.GetType(), out var dependents)
+						? Enumerable.Empty<int>()
+						: dependents.Select(x => _systems.IndexOf(x));
+				}).ToArray();
+
+				foreach (var system in _systems.OrderBy(x =>
+				{
+					var index = Array.IndexOf(order, _systems.IndexOf(x));
+					return index < 0 ? int.MaxValue : index;
+				}))
+				{
+					var archetypes = system.Archetypes(_seed);
+					foreach (var (t, v) in archetypes)
+					{
+						var update = t.GetMethod(nameof(ExecutionPlanLine.Update));
+						if (update == null)
+							continue;
+
+						var line = new ExecutionPlanLine
+						{
+							Key = v,
+							System = system,
+							Update = update,
+							Parameters = update.GetParameters()
+						};
+
+						yield return line;
+					}
 				}
 			}
 		}
@@ -141,7 +153,7 @@ namespace TypeKitchen.Composition
 					if (line.Parameters.Length == 0)
 						continue;
 
-					var stateType = state.GetType();
+					var stateType = state?.GetType();
 					if (line.System is ISystemWithState && stateType != line.Parameters[1].ParameterType)
 						continue;
 
@@ -151,7 +163,7 @@ namespace TypeKitchen.Composition
 					try
 					{
 						if (!_archetypes.TryGetValue(line.Key, out var array))
-							continue; // no entities have this system, ignore
+							continue; // no entities have this component combination, ignore
 
 						var span = new ReadOnlySpan<uint>(array, 0, array.Length);
 						foreach (var entity in span)
@@ -162,12 +174,14 @@ namespace TypeKitchen.Composition
 							for (var i = 0; i < line.Parameters.Length; i++)
 							{
 								var type = line.Parameters[i].ParameterType;
+
 								if (type == typeof(UpdateContext))
 								{
 									arguments[i] = _context;
 									continue;
 								}
-								if (type == stateType || stateType.IsAssignableFrom(type))
+
+								if (state != null && (type == stateType || stateType.IsAssignableFrom(type)))
 								{
 									arguments[i] = state;
 									continue;
@@ -183,24 +197,33 @@ namespace TypeKitchen.Composition
 							}
 
 							var update = CallAccessor.Create(line.Update);
+
+							if (_context.InactiveEntities.Contains(entity))
+								continue;
+
 							if ((bool) update.Call(line.System, arguments))
-							//var update = LateBinding.DynamicMethodBindCall(line.Update);
-							//if ((bool) update.Invoke(line.System, arguments))
 							{
 								if (!_context.ActiveEntities.Contains(entity))
 								{
-									logger?.LogDebug($"Entity '{entity}' is active");
+									logger?.LogDebug($"Entity '{entity}' is activated");
 									_context.ActiveEntities.Add(entity);
 								}
 								else
 								{
 									logger?.LogDebug($"Entity '{entity}' is inactive");
+									_context.InactiveEntities.Add(entity);
 								}
+							}
+							else
+							{
+								logger?.LogDebug($"Entity '{entity}' is de-activated");
+								_context.ActiveEntities.Remove(entity);
+								_context.InactiveEntities.Add(entity);
 							}
 
 							foreach (var argument in arguments)
 							{
-								if (argument is UpdateContext || argument is TState)
+								if (argument is UpdateContext || (argument is TState && typeof(TState) != typeof(object)))
 									continue;
 								var argumentType = argument.GetType();
 								if (argumentType.IsByRef)
@@ -278,10 +301,8 @@ namespace TypeKitchen.Composition
 		{
 			foreach (var c in GetComponents(entity))
 			{
-				if (!_componentsByEntity.TryGetValue(entity, out var list))
-					continue;
-				foreach (var component in list.Where(component => component?.GetType() == c.GetType()))
-					return (T) component;
+				if (c is T t)
+					return t;
 			}
 
 			return default;

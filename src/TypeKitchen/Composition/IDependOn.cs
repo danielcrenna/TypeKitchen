@@ -8,5 +8,5 @@ namespace TypeKitchen.Composition
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	// ReSharper disable once UnusedTypeParameter (accessed via reflection)
-	public interface IDependOn<T> { }
+	public interface IDependOn<T> where T : ISystem { } 
 }

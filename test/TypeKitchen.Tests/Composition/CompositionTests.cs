@@ -16,45 +16,30 @@ namespace TypeKitchen.Tests.Composition
 		{
             var container = Container.Create();
             container.AddSystem<VelocitySystem>();
-            container.AddSystem<ClockSystem>();
 
 			var entity = container.CreateEntity(new Velocity { Value = 10f }, new Position2D());
 
 			var c = container.GetComponents(entity).ToArray();
 			var velocity = c[1].QuackLike<Velocity>();
+			var position = c[0].QuackLike<Position2D>();
+			Assert.Equal(0, position.X);
+			Assert.Equal(0, position.Y);
 			Assert.Equal(10f, velocity.Value);
-
-			//var snapshot = container.Snapshot();
-
-			AssertSimulation(container, entity);
-
-			//container.Restore(snapshot);
-
-			//AssertSimulation(container, entity);
-		}
-
-		private static void AssertSimulation(Container container, uint entity)
-		{
+			
 			container.Update(TimeSpan.FromSeconds(0.1));
 
-			var c = container.GetComponents(entity).ToArray();
-			var position = c[0].QuackLike<Position2D>();
-			var velocity = c[1].QuackLike<Velocity>();
+			c = container.GetComponents(entity).ToArray();
+			position = c[0].QuackLike<Position2D>();
+			velocity = c[1].QuackLike<Velocity>();
 
 			Assert.Equal(1, position.X);
 			Assert.Equal(1, position.Y);
 			Assert.Equal(10f, velocity.Value);
 		}
 
-		public sealed class ClockSystem : ISystem<float>
-		{
-			public bool Update(UpdateContext updateContext, ref float elapsed)
-			{
-				return false;
-			}
-		}
+		#region Fakes
 
-		public sealed class VelocitySystem : ISystemWithState<TimeSpan, Velocity, Position2D>, IDependOn<ClockSystem>
+		public sealed class VelocitySystem : ISystemWithState<TimeSpan, Velocity, Position2D>
 		{
 			public bool Update(UpdateContext updateContext, TimeSpan elapsedTime, ref Velocity velocity, ref Position2D position)
 			{
@@ -77,5 +62,70 @@ namespace TypeKitchen.Tests.Composition
 			public int X { get; set; }
 			public int Y { get; set; }
 		}
+
+		#endregion
+
+		[Fact]
+		public void Inactive_entities_do_not_continue_running()
+		{
+			var container = Container.Create();
+			container.AddSystem(new FilterSystem(false));
+			container.AddSystem<ComponentSystem>();
+
+			var entity = container.CreateEntity(new Component());
+			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
+
+			container.Update();
+			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
+		}
+
+		[Fact]
+		public void Active_entities_continue_running()
+		{
+			var container = Container.Create();
+			container.AddSystem(new FilterSystem(true));
+			container.AddSystem<ComponentSystem>();
+
+			var entity = container.CreateEntity(new Component());
+			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
+
+			container.Update();
+			Assert.Equal(1, container.GetComponent<Component>(entity).Value);
+		}
+
+		#region Fakes
+
+		public struct Component
+		{
+			public int Value { get; set; }
+		}
+
+		public class FilterSystem : ISystem<Component>
+		{
+			public FilterSystem(bool value)
+			{
+				Value = value;
+			}
+
+			public bool Value { get; set; }
+
+			public bool Update(UpdateContext context, ref Component component1)
+			{
+				return Value;
+			}
+		}
+
+
+		public class ComponentSystem : ISystem<Component>, IDependOn<FilterSystem>
+		{
+			public bool Update(UpdateContext context, ref Component component)
+			{
+				component.Value++;
+				return true;
+			}
+		}
+
+		#endregion
+
 	}
 }

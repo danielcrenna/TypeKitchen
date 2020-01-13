@@ -97,8 +97,7 @@ namespace TypeKitchen
 					if (Factory.TryGetValue(type, out activator))
 						return activator;
 
-					var ctor = type.GetConstructor(Type.EmptyTypes) ?? type.GetConstructors()
-						           .OrderByDescending(x => x.GetParameters().Length).FirstOrDefault();
+					var ctor = type.GetConstructor(Type.EmptyTypes) ?? type.GetWidestConstructor();
 
 					if (ctor == null)
 					{

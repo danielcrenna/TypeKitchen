@@ -2,12 +2,13 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using FastMember;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

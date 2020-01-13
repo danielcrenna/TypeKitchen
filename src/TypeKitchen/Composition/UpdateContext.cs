@@ -6,12 +6,15 @@ namespace TypeKitchen.Composition
 	public class UpdateContext
 	{
 		public List<Entity> ActiveEntities { get; }
+		public List<Entity> InactiveEntities { get; }
+
 		public Queue States { get; }
 		public int Ticks { get; private set; }
 
 		public UpdateContext()
 		{
 			ActiveEntities = new List<Entity>();
+			InactiveEntities = new List<Entity>();
 			States = new Queue();
 		}
 
@@ -28,6 +31,7 @@ namespace TypeKitchen.Composition
 		public void Reset()
 		{
 			ActiveEntities.Clear();
+			InactiveEntities.Clear();
 			States.Clear();
 		}
 	}

@@ -28,7 +28,7 @@ namespace TypeKitchen
 			var il = dm.GetILGeneratorInternal();
 
 			var parameters = ctor.GetParameters();
-			for (byte i = 0; i < parameters.Length; i++)
+			for (var i = 0; i < parameters.Length; i++)
 			{
 				il.LoadArgument(i);
 				il.LoadConstant(i);

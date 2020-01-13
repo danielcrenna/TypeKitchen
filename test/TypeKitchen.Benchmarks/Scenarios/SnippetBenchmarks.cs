@@ -5,10 +5,11 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

@@ -3,13 +3,14 @@
 
 using System.Dynamic;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using Dynamitey;
 using ImpromptuInterface;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]

@@ -3,11 +3,12 @@
 
 using Autofac;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
-	[CoreJob]
+	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
 	[DisassemblyDiagnoser(false, true)]
 	[CsvMeasurementsExporter]
