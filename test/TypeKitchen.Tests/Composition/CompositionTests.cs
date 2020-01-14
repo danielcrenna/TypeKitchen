@@ -69,13 +69,13 @@ namespace TypeKitchen.Tests.Composition
 		public void Inactive_entities_do_not_continue_running()
 		{
 			var container = Container.Create();
-			container.AddSystem(new FilterSystem(false));
+			container.AddSystem<IdentitySystem>();
 			container.AddSystem<ComponentSystem>();
 
-			var entity = container.CreateEntity(new Component());
+			var entity = container.CreateEntity(new Component(), new Identity("A"));
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 
-			container.Update();
+			container.Update(new IdentityEvent("B"));
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 		}
 
@@ -83,40 +83,78 @@ namespace TypeKitchen.Tests.Composition
 		public void Active_entities_continue_running()
 		{
 			var container = Container.Create();
-			container.AddSystem(new FilterSystem(true));
+			container.AddSystem<IdentitySystem>();
 			container.AddSystem<ComponentSystem>();
 
-			var entity = container.CreateEntity(new Component());
+			var entity = container.CreateEntity(new Component(), new Identity("A"));
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 
-			container.Update();
+			container.Update(new IdentityEvent("A"));
+			Assert.Equal(1, container.GetComponent<Component>(entity).Value);
+		}
+
+		[Fact]
+		public void Update_context_resets_between_runs()
+		{
+			var container = Container.Create();
+			container.AddSystem<IdentitySystem>();
+			container.AddSystem<ComponentSystem>();
+
+			var entity = container.CreateEntity(new Component(), new Identity("A"));
+			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
+
+			var context = container.Update(new IdentityEvent("B"));
+			Assert.Single(context.InactiveEntities);
+			Assert.Empty(context.ActiveEntities);
+			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
+
+			container.Update(new IdentityEvent("A"));
+			Assert.Empty(context.InactiveEntities);
+			Assert.Single(context.ActiveEntities);
 			Assert.Equal(1, container.GetComponent<Component>(entity).Value);
 		}
 
 		#region Fakes
+
+		public interface IIdentityEvent
+		{
+			string Id { get; }
+		}
+
+		public class IdentityEvent : IIdentityEvent
+		{
+			public string Id { get; }
+
+			public IdentityEvent(string id)
+			{
+				Id = id;
+			}
+		}
 
 		public struct Component
 		{
 			public int Value { get; set; }
 		}
 
-		public class FilterSystem : ISystem<Component>
+		public struct Identity
 		{
-			public FilterSystem(bool value)
-			{
-				Value = value;
-			}
+			public string Id { get; }
 
-			public bool Value { get; set; }
-
-			public bool Update(UpdateContext context, ref Component component1)
+			public Identity(string id)
 			{
-				return Value;
+				Id = id;
 			}
 		}
 
+		public class IdentitySystem : ISystemWithState<IIdentityEvent, Identity>
+		{
+			public bool Update(UpdateContext context, IIdentityEvent evt, ref Identity identity)
+			{
+				return evt.Id == identity.Id;
+			}
+		}
 
-		public class ComponentSystem : ISystem<Component>, IDependOn<FilterSystem>
+		public class ComponentSystem : ISystem<Component>, IDependOn<IdentitySystem>
 		{
 			public bool Update(UpdateContext context, ref Component component)
 			{

@@ -154,7 +154,7 @@ namespace TypeKitchen.Composition
 						continue;
 
 					var stateType = state?.GetType();
-					if (line.System is ISystemWithState && stateType != line.Parameters[1].ParameterType)
+					if (line.System is ISystemWithState && stateType != null && !line.Parameters[1].ParameterType.IsAssignableFrom(stateType))
 						continue;
 
 					logger?.LogDebug($"Executing system '{line.System.GetType().GetPreferredTypeName()}' with state '{state.GetType().GetPreferredTypeName()}'");
@@ -181,7 +181,7 @@ namespace TypeKitchen.Composition
 									continue;
 								}
 
-								if (state != null && (type == stateType || stateType.IsAssignableFrom(type)))
+								if (state != null && (type == stateType || type.IsAssignableFrom(stateType)))
 								{
 									arguments[i] = state;
 									continue;
@@ -207,11 +207,6 @@ namespace TypeKitchen.Composition
 								{
 									logger?.LogDebug($"Entity '{entity}' is activated");
 									_context.ActiveEntities.Add(entity);
-								}
-								else
-								{
-									logger?.LogDebug($"Entity '{entity}' is inactive");
-									_context.InactiveEntities.Add(entity);
 								}
 							}
 							else
