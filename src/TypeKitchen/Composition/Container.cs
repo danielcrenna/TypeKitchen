@@ -19,7 +19,7 @@ namespace TypeKitchen.Composition
 		private Container(Value128 seed)
 		{
 			_seed = seed;
-			_context = new UpdateContext();
+			_context = new UpdateContext(this);
 		}
 
 		private readonly List<ISystem> _systems = new List<ISystem>();
@@ -132,12 +132,34 @@ namespace TypeKitchen.Composition
 
 		private readonly UpdateContext _context;
 
-		public UpdateContext Update(ILogger logger = null)
+		public UpdateContext Update(UpdateStrategy strategy = UpdateStrategy.Iterative, InactiveHandling inactive = InactiveHandling.Include, ILogger logger = null)
 		{
-			return Update<object>(logger);
+			return Update<object>(logger, strategy, inactive);
 		}
 
-		public UpdateContext Update<TState>(TState state = default, ILogger logger = null)
+		public UpdateContext Update<TState>(TState state = default, UpdateStrategy strategy = UpdateStrategy.Iterative, InactiveHandling inactive = InactiveHandling.Include, ILogger logger = null)
+		{
+			Tick(state, inactive, logger);
+
+			switch (strategy)
+			{
+				case UpdateStrategy.Iterative:
+					break;
+				case UpdateStrategy.Recursive:
+					var states = _context.States.ToArray();
+					_context.States.Clear();
+					foreach (var s in states)
+						Tick(s, inactive, logger);
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null);
+			}
+
+			_context.Tick();
+			return _context;
+		}
+
+		private void Tick<TState>(TState state, InactiveHandling inactive, ILogger logger)
 		{
 			try
 			{
@@ -145,6 +167,7 @@ namespace TypeKitchen.Composition
 				_executionPlan ??= BuildExecutionPlan().ToArray();
 
 				var executionPlanLines = _executionPlan;
+
 				foreach (var line in executionPlanLines)
 				{
 					if (line.Key == default)
@@ -154,11 +177,13 @@ namespace TypeKitchen.Composition
 						continue;
 
 					var stateType = state?.GetType();
-					if (line.System is ISystemWithState && stateType != null && !line.Parameters[1].ParameterType.IsAssignableFrom(stateType))
+					if (line.System is ISystemWithState && stateType != null &&
+					    !line.Parameters[1].ParameterType.IsAssignableFrom(stateType))
 						continue;
 
-					logger?.LogDebug($"Executing system '{line.System.GetType().GetPreferredTypeName()}' with state '{state.GetType().GetPreferredTypeName()}'");
-					
+					logger?.LogDebug(
+						$"Executing system '{line.System.GetType().GetPreferredTypeName()}' with state '{state.GetType().GetPreferredTypeName()}'");
+
 					var arguments = Pooling.Arguments.Get(line.Parameters.Length);
 					try
 					{
@@ -168,6 +193,19 @@ namespace TypeKitchen.Composition
 						var span = new ReadOnlySpan<uint>(array, 0, array.Length);
 						foreach (var entity in span)
 						{
+							if (_context.InactiveEntities.Contains(entity))
+							{
+								switch (inactive)
+								{
+									case InactiveHandling.Include:
+										break;
+									case InactiveHandling.Ignore:
+										continue;
+									default:
+										throw new ArgumentOutOfRangeException(nameof(inactive), inactive, null);
+								}
+							}
+
 							logger?.LogDebug($"Entity '{entity}' is associated with this system");
 
 							var components = _componentsByEntity[entity];
@@ -198,9 +236,6 @@ namespace TypeKitchen.Composition
 
 							var update = CallAccessor.Create(line.Update);
 
-							if (_context.InactiveEntities.Contains(entity))
-								continue;
-
 							if ((bool) update.Call(line.System, arguments))
 							{
 								if (!_context.ActiveEntities.Contains(entity))
@@ -218,7 +253,7 @@ namespace TypeKitchen.Composition
 
 							foreach (var argument in arguments)
 							{
-								if (argument is UpdateContext || (argument is TState && typeof(TState) != typeof(object)))
+								if (argument is UpdateContext || argument is TState && typeof(TState) != typeof(object))
 									continue;
 								var argumentType = argument.GetType();
 								if (argumentType.IsByRef)
@@ -239,9 +274,6 @@ namespace TypeKitchen.Composition
 				Trace.WriteLine(e);
 				throw;
 			}
-
-			_context.Tick();
-			return _context;
 		}
 
 		public void SetComponent<T>(uint entity, T value) where T : struct

@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Buffers;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace TypeKitchen.Composition
@@ -44,10 +42,6 @@ namespace TypeKitchen.Composition
 			for (var i = 0; i < k; i++)
 				yield return values[indices[i]];
 		}
-
-		private static readonly ConcurrentDictionary<int, int[]> Indices = new ConcurrentDictionary<int, int[]>();
-
-		private static readonly ArrayPool<int> Pool = ArrayPool<int>.Create();
 
 		private static int[] GetIndices(int k)
 		{
