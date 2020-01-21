@@ -75,7 +75,7 @@ namespace TypeKitchen.Tests.Composition
 			var entity = container.CreateEntity(new Component(), new Identity("A"));
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 
-			container.Update(new IdentityEvent("B"));
+			container.Update(new IdentityEvent("B"), inactive: InactiveHandling.Ignore);
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 		}
 
@@ -103,12 +103,12 @@ namespace TypeKitchen.Tests.Composition
 			var entity = container.CreateEntity(new Component(), new Identity("A"));
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 
-			var context = container.Update(new IdentityEvent("B"));
+			var context = container.Update(new IdentityEvent("B"), inactive: InactiveHandling.Ignore);
 			Assert.Single(context.InactiveEntities);
 			Assert.Empty(context.ActiveEntities);
 			Assert.Equal(0, container.GetComponent<Component>(entity).Value);
 
-			container.Update(new IdentityEvent("A"));
+			container.Update(new IdentityEvent("A"), inactive: InactiveHandling.Ignore);
 			Assert.Empty(context.InactiveEntities);
 			Assert.Single(context.ActiveEntities);
 			Assert.Equal(1, container.GetComponent<Component>(entity).Value);
