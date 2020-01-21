@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.0.35.6</Version>
-    <PackageReleaseNotes>Provide inactive handling</PackageReleaseNotes>
+    <Version>1.0.37</Version>
+    <PackageReleaseNotes>Allow streaming all entities from UpdateContext</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

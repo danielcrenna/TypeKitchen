@@ -25,7 +25,9 @@ namespace TypeKitchen.Composition
 		private readonly List<ISystem> _systems = new List<ISystem>();
 		private uint[] _entities = new uint[0];
 		private readonly Dictionary<Value128, uint[]> _archetypes = new Dictionary<Value128, uint[]>();
-		
+
+		internal IEnumerable<uint> GetEntities() => _entities;
+
 		public static Container Create(Value128 seed = default)
 		{
 			return new Container(seed);
@@ -193,7 +195,7 @@ namespace TypeKitchen.Composition
 						var span = new ReadOnlySpan<uint>(array, 0, array.Length);
 						foreach (var entity in span)
 						{
-							if (_context.InactiveEntities.Contains(entity))
+							if (_context.InactiveEntities.Contains<Entity>(entity))
 							{
 								switch (inactive)
 								{
@@ -238,17 +240,17 @@ namespace TypeKitchen.Composition
 
 							if ((bool) update.Call(line.System, arguments))
 							{
-								if (!_context.ActiveEntities.Contains(entity))
+								if (!_context.ActiveEntities.Contains<Entity>(entity))
 								{
 									logger?.LogDebug($"Entity '{entity}' is activated");
-									_context.ActiveEntities.Add(entity);
+									_context.AddActiveEntity(entity);
 								}
 							}
 							else
 							{
 								logger?.LogDebug($"Entity '{entity}' is de-activated");
-								_context.ActiveEntities.Remove(entity);
-								_context.InactiveEntities.Add(entity);
+								_context.RemoveActiveEntity(entity);
+								_context.AddInactiveEntity(entity);
 							}
 
 							foreach (var argument in arguments)
