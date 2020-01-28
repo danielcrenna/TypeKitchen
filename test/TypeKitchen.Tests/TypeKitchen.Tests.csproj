@@ -29,6 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\TypeKitchen.Serialization\TypeKitchen.Serialization.csproj" />
+    <ProjectReference Include="..\..\src\TypeKitchen.StateMachine\TypeKitchen.StateMachine.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen\TypeKitchen.csproj" />
     <ProjectReference Include="..\ExternalTestAssembly\ExternalTestAssembly.csproj" />
   </ItemGroup>
