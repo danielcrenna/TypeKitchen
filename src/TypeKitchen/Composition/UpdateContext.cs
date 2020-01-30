@@ -59,6 +59,11 @@ namespace TypeKitchen.Composition
 		{
 			return _container.GetComponent<T>(entity);
 		}
+
+		public void SetComponent<T>(Entity entity, T value) where T : struct
+		{
+			_container.SetComponent(entity, value);
+		}
 		
 		public void Reset()
 		{
