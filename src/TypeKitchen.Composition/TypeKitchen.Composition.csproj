@@ -5,6 +5,7 @@
   
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Configurations>Debug;Release;Package</Configurations>    
     <LangVersion>8</LangVersion>
   </PropertyGroup>
 
