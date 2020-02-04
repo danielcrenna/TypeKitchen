@@ -16,9 +16,8 @@ using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Scripting.Hosting;
 using Microsoft.CSharp.RuntimeBinder;
 
-namespace TypeKitchen
+namespace TypeKitchen.Scripting
 {
-#if !LIGHT
 	public static class Snippet
 	{
 		private static readonly ScriptOptions DefaultOptions;
@@ -28,7 +27,7 @@ namespace TypeKitchen
 		{
 			Loader = new InteractiveAssemblyLoader();
 
-			var builder = new ReferenceBuilder(ScriptOptions.Default);
+			var builder = new Scripting.ReferenceBuilder(ScriptOptions.Default);
 			
 			builder.Add<Guid>()					// System
 					.Add<List<object>>()		// System.Collections.Generic
@@ -43,9 +42,9 @@ namespace TypeKitchen
 			DefaultOptions = builder.Build();
 		}
 
-		public static ReferenceBuilder GetBuilder()
+		public static Scripting.ReferenceBuilder GetBuilder()
 		{
-			return new ReferenceBuilder(DefaultOptions);
+			return new Scripting.ReferenceBuilder(DefaultOptions);
 		}
 		
 		public static MethodInfo CreateMethod(string body, ScriptOptions options = null)
@@ -84,5 +83,4 @@ namespace TypeKitchen
 
 		private static class ContextFree { }
 	}
-#endif
 }

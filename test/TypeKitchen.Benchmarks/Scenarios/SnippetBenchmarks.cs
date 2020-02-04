@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
+using TypeKitchen.Scripting;
 
 namespace TypeKitchen.Benchmarks.Scenarios
 {
@@ -52,13 +53,13 @@ namespace TypeKitchen.Benchmarks.Scenarios
 		[Benchmark(Baseline = false)]
 		public void Accessor_Snippet()
 		{
-			_accessorSnippet.Call(null, null);
+			_accessorSnippet.Call(null, args: null);
 		}
 
 		[Benchmark(Baseline = false)]
 		public void Accessor_Method()
 		{
-			_accessorSnippet.Call(null, null);
+			_accessorSnippet.Call(null, args: null);
 		}
 
 		[Benchmark(Baseline = false)]

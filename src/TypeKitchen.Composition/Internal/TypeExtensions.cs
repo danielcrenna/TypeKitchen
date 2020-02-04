@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using TypeKitchen.Internal;
 
-namespace TypeKitchen.Composition
+namespace TypeKitchen.Composition.Internal
 {
 	internal static class TypeExtensions
 	{

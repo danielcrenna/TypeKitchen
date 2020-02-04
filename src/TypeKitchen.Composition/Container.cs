@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using TypeKitchen.Composition.Internal;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition
@@ -428,9 +429,9 @@ namespace TypeKitchen.Composition
 						if (!reader.TryGetValue(component, memberName, out var value))
 							continue;
 
-						// whatever.
+						// FIXME: whatever.
 						// var copy = Cloning.ShallowCopy(value);
-						var copy = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value), member.Value.Type);
+						var copy = JsonSerializer.Deserialize(JsonSerializer.Serialize(value), member.Value.Type);
 						columns[memberName] = copy;
 					}
 				}

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.Scripting;
 
-namespace TypeKitchen
+namespace TypeKitchen.Scripting
 {
 	public class ReferenceBuilder
 	{

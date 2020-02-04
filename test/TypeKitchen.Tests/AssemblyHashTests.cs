@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using ExternalTestAssembly;
+using TypeKitchen.BuildHash;
 using Xunit;
 using Xunit.Abstractions;
 

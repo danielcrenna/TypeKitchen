@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
 
-namespace TypeKitchen
+namespace TypeKitchen.Serialization
 {
     // FIXME: converge with serialization extension methods
 
 	internal static class BuiltIns
 	{
+		#region Booleans
+
 		public static bool ReadBoolean(this BinaryReader br)
 		{
 			return br.ReadBoolean();
@@ -17,6 +19,8 @@ namespace TypeKitchen
 			bw.Write(value);
 			return value;
 		}
+
+		#endregion 
 
 		#region TimeSpan
 

@@ -6,13 +6,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json;
-using TypeKitchen.Internal;
+using System.Text.Json;
 using IEnumerable = System.Collections.IEnumerable;
 
-namespace TypeKitchen
+namespace TypeKitchen.Serialization
 {
 	public static class Wire
 	{
@@ -23,36 +21,29 @@ namespace TypeKitchen
 
 			var type = instance.GetType();
 
-			if (type.IsValueType || type == typeof(string))
-				return ShallowCopyValueTypeData(instance, type);
-			else
-				return ShallowCopyObjectData(instance);
+			return type.IsValueType || type == typeof(string)
+				? ShallowCopyValueTypeData(instance, type)
+				: ShallowCopyObjectData(instance);
 		}
 
 		private static byte[] ShallowCopyObjectData(object instance)
 		{
-			using (var buffer = new MemoryStream())
-			{
-				using (var bw = new BinaryWriter(buffer))
-				{
-					WriteObject(bw, instance);
-					buffer.Position = 0;
-					return buffer.ToArray();
-				}
-			}
+			using var ms = new MemoryStream();
+			using var bw = new BinaryWriter(ms);
+
+			WriteObject(bw, instance);
+			ms.Position = 0;
+			return ms.GetBuffer();
 		}
 		
 		private static byte[] ShallowCopyValueTypeData(object instance, Type type)
 		{
-			using (var buffer = new MemoryStream())
-			{
-				using (var bw = new BinaryWriter(buffer))
-				{
-					WriteValue(bw, type, instance);
-					buffer.Position = 0;
-					return buffer.ToArray();
-				}
-			}
+			using var buffer = new MemoryStream();
+			using var bw = new BinaryWriter(buffer);
+
+			WriteValue(bw, type, instance);
+			buffer.Position = 0;
+			return buffer.ToArray();
 		}
 
 		#region Object
@@ -109,7 +100,7 @@ namespace TypeKitchen
 				}
 				catch (Exception e)
 				{
-					var json = JsonConvert.SerializeObject(value);
+					var json = JsonSerializer.Serialize(value);
 					Trace.WriteLine(json);
 					Console.WriteLine(e);
 					throw;
@@ -140,7 +131,7 @@ namespace TypeKitchen
 				if (!member.CanWrite)
 					throw new InvalidOperationException("WriteObject wrote an invalid buffer");
 
-				var typeName = br.ReadString();;
+				var typeName = br.ReadString();
 				var itemType = Type.GetType(typeName) ?? TypeResolver.FindByFullName(typeName);
 				if(itemType == null)
 					throw new TypeLoadException();
@@ -187,6 +178,9 @@ namespace TypeKitchen
 		private static void WriteValue(this BinaryWriter bw, Type type, object value)
 		{
 			writeValue:
+
+			if (type == null)
+				throw new NullReferenceException();
 
 			switch (value)
 			{
@@ -398,6 +392,9 @@ namespace TypeKitchen
 			{
 				readValue:
 
+				if (type == null)
+					throw new NullReferenceException();
+
 				if (type == typeof(string))
 					return br.ReadIsNull() ? default : br.ReadString();
 				if (type == typeof(bool))
@@ -580,17 +577,17 @@ namespace TypeKitchen
 
 		internal static ITypeWriteAccessor GetPropertyWriter(Type type)
 		{
-			return WriteAccessor.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.All);
+			return WriteAccessor.Create(type, AccessorMemberTypes.Properties);
 		}
 
 		private static ITypeReadAccessor GetPropertyReader(Type type)
 		{
-			return ReadAccessor.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.All);
+			return ReadAccessor.Create(type, AccessorMemberTypes.Properties);
 		}
 
 		internal static AccessorMembers GetMembers(Type type)
 		{
-			return AccessorMembers.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.All);
+			return AccessorMembers.Create(type, AccessorMemberTypes.Properties);
 		}
 	}
 }

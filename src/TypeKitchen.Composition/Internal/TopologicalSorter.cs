@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace TypeKitchen.Composition
+namespace TypeKitchen.Composition.Internal
 {
 	internal static class TopologicalSorter<T> where T : IEquatable<T>
 	{

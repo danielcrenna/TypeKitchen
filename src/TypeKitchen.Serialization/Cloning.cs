@@ -6,7 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-namespace TypeKitchen
+namespace TypeKitchen.Serialization
 {
 	public static class Cloning
 	{

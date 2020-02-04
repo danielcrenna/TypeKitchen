@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace TypeKitchen.Composition
+namespace TypeKitchen.Composition.Internal
 {
 	internal static class Combinations
 	{

@@ -4,7 +4,6 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace TypeKitchen
@@ -12,12 +11,8 @@ namespace TypeKitchen
 	public static class Instancing
 	{
 		private static readonly Dictionary<Type, CreateInstance> Factory = new Dictionary<Type, CreateInstance>();
-
-		private static readonly Dictionary<CreateInstance, ParameterInfo[]> Parameters =
-			new Dictionary<CreateInstance, ParameterInfo[]>();
-
+		private static readonly Dictionary<CreateInstance, ParameterInfo[]> Parameters = new Dictionary<CreateInstance, ParameterInfo[]>();
 		private static readonly ArrayPool<object> ArgumentsPool = ArrayPool<object>.Create();
-
 		private static readonly ParameterInfo[] EmptyParameters = new ParameterInfo[0];
 
 		public static T CreateInstance<T>()
@@ -67,8 +62,10 @@ namespace TypeKitchen
 			{
 				for (var i = 0; i < parameters.Length; i++)
 				{
-					var parameter = parameters[i];
-					args[i] = serviceProvider.GetService(parameter.ParameterType);
+					var parameterType = parameters[i].ParameterType;
+					var parameter = serviceProvider.GetService(parameterType);
+					if(parameter != null)
+						args[i] = parameter;
 				}
 
 				var instance = activator(args);

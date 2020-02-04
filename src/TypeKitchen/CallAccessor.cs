@@ -166,8 +166,7 @@ namespace TypeKitchen
 		{
 			var name = type.CreateNameForMethodCallAccessor(method);
 
-			var tb = DynamicAssembly.Module.DefineType(
-				name,
+			var tb = DynamicAssembly.Module.DefineType(name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.SetParent(typeof(MethodCallAccessor));

@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace TypeKitchen.Languages
 {
     /// <summary>
-    /// A top down parser using Pratt's precedence
-    /// This is an idiomatic port of the parser at https://github.com/munificent/bantam
+    /// A top down infix using Pratt's precedence
+    /// This is an idiomatic port of the infix at https://github.com/munificent/bantam
     /// </summary>
     /// <seealso href="https://github.com/munificent/bantam" />
     /// <seealso href="http://en.wikipedia.org/wiki/Pratt_parser" />
@@ -13,6 +13,14 @@ namespace TypeKitchen.Languages
     /// <seealso href="http://effbot.org/zone/simple-top-down-parsing.htm" />
     public class Parser<T> where T : struct
     {
+	    private readonly IEnumerator<Token<T>> _tokens;
+	    private readonly T _eof;
+	    private readonly T _line;
+	    private readonly IList<Token<T>> _readTokens = new List<Token<T>>();
+
+	    private readonly IDictionary<T, IPrefixParselet<T>> _prefix = new Dictionary<T, IPrefixParselet<T>>();
+	    private readonly IDictionary<T, IInfixParselet<T>> _infix = new Dictionary<T, IInfixParselet<T>>();
+
         public Parser(IEnumerator<Token<T>> tokens, T eof, T line)
         {
 	        _tokens = tokens;
@@ -20,19 +28,26 @@ namespace TypeKitchen.Languages
 	        _line = line;
         }
 
-        public void Register(T token, IPrefixParselet<T> parselet)
+        public void Ignore(T token)
         {
-            _prefixParselets.Add(token, parselet);
+	        _prefix.Add(token, new SkipPrefixParselet<T>());
         }
 
-        public void Register(T token, IInfixParselet<T> parselet)
+        public void Register(T token, IPrefixParselet<T> prefix)
         {
-            _infixParselets.Add(token, parselet);
+            _prefix.Add(token, prefix);
         }
 
-        public List<IExpression> ParseModule() {
+        public void Register(T token, IInfixParselet<T> infix)
+        {
+            _infix.Add(token, infix);
+        }
+
+        public List<IExpression> ParseModule()
+        {
 	        var expressions = new List<IExpression>();
-	        while (!EndOfFile()) {
+	        while (!EndOfFile())
+	        {
 		        var expression = ParseStatement();
 		        expressions.Add(expression);
 		        if(!LookAhead().Type.Equals(_eof))
@@ -48,11 +63,11 @@ namespace TypeKitchen.Languages
 			return ParseExpression(0);
 		}
 
-        private IExpression ParseExpression(Precedence precedence)
+        public IExpression ParseExpression(Precedence precedence = 0)
         {
             var token = Consume();
 
-			if(!_prefixParselets.TryGetValue(token.Type, out var prefix))
+			if(!_prefix.TryGetValue(token.Type, out var prefix))
 				throw new ParseException($"Could not parse \"{token.Value}\".");
 
             var left = prefix.Parse(this, token);
@@ -60,18 +75,12 @@ namespace TypeKitchen.Languages
             while (precedence < GetPrecedence())
             {
                 token = Consume();
-                var infix = _infixParselets[token.Type];
+                var infix = _infix[token.Type];
                 left = infix.Parse(this, left, token);
             }
 
             return left;
         }
-
-        public IExpression ParseExpression()
-        {
-            return ParseExpression(0);
-        }
-
         public bool Match(T expected)
         {
             if (!LookAhead().Type.Equals(expected))
@@ -109,16 +118,9 @@ namespace TypeKitchen.Languages
         private Precedence GetPrecedence()
         {
 	        var type = LookAhead().Type;
-	        if(!_infixParselets.TryGetValue(type, out var infix))
+	        if(!_infix.TryGetValue(type, out var infix))
 				return Precedence.Unknown;
 			return infix?.Precedence ?? Precedence.Unknown;
         }
-
-        private readonly IEnumerator<Token<T>> _tokens;
-        private readonly T _eof;
-        private readonly T _line;
-        private readonly IList<Token<T>> _readTokens = new List<Token<T>>();
-        private readonly IDictionary<T, IPrefixParselet<T>> _prefixParselets = new Dictionary<T, IPrefixParselet<T>>();
-        private readonly IDictionary<T, IInfixParselet<T>> _infixParselets = new Dictionary<T, IInfixParselet<T>>();
     }
 }

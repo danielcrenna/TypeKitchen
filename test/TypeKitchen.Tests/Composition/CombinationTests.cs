@@ -4,6 +4,7 @@
 using System.Linq;
 using Xunit;
 using TypeKitchen.Composition;
+using TypeKitchen.Composition.Internal;
 
 namespace TypeKitchen.Tests.Composition
 {

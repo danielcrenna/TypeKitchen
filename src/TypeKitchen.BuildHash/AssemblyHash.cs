@@ -1,9 +1,8 @@
-﻿using System.IO;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Security.Cryptography;
 using Mono.Cecil;
 
-namespace TypeKitchen
+namespace TypeKitchen.BuildHash
 {
 	public static class AssemblyHash
 	{
@@ -13,7 +12,7 @@ namespace TypeKitchen
 			return definition.MainModule.GetBuildIndependentHash(MD5.Create());
 		}
 
-		internal static byte[] GetBuildDependent(Assembly assembly)
+		public static byte[] GetBuildDependent(Assembly assembly)
 		{
 			var definition = AssemblyDefinition.ReadAssembly(assembly.Location);
 			return definition.MainModule.GetBuildDependentHash(MD5.Create());

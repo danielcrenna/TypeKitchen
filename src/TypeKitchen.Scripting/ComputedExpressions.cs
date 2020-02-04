@@ -6,9 +6,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Primitives;
 
-namespace TypeKitchen
+namespace TypeKitchen.Scripting
 {
-#if !LIGHT
 	public static class ComputedExpressions
 	{
 		internal static string ResolveExpression(object @this, string expression, bool inline = false)
@@ -65,5 +64,4 @@ namespace TypeKitchen
 			return expression;
 		}
 	}
-#endif
 }

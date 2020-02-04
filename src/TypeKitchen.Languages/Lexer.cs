@@ -33,6 +33,11 @@ namespace TypeKitchen.Languages
 			_lexlets.Add(lexlet);
         }
 
+        public void Any(T type, params char[] tokens)
+        {
+	        _lexlets.Add(new Any<T>(type, tokens));
+        }
+
         public char? Peek()
         {
 	        return _index < _text.Length - 1 ? _text[_index + 1] : default(char?);
@@ -73,14 +78,17 @@ namespace TypeKitchen.Languages
 	        try
 	        {
 		        sb.Append(_text[_index]);
+
 		        while (true)
 		        {
 			        var c = Peek();
 			        if (!c.HasValue)
 				        return new Token<T> { Type = type, Value = sb.ToString() };
+
 			        var t = lexlet.Map(c.Value);
 			        if (!t.HasValue || !t.Value.Equals(type))
 				        return new Token<T> { Type = type, Value = sb.ToString() };
+
 			        sb.Append(c);
 			        if(_index < _text.Length)
 						_index++;

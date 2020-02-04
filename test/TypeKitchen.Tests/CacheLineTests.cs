@@ -18,7 +18,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void Can_get_cache_line_size()
 		{
-			_console.WriteLine(CacheLine.Size.ToString());
+			_console.WriteLine(CacheLine.CacheLine.Size.ToString());
 		}
 	}
 }

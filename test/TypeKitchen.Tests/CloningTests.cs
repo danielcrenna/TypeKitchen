@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using TypeKitchen.Serialization;
 using Xunit;
 
 namespace TypeKitchen.Tests
@@ -18,7 +19,7 @@ namespace TypeKitchen.Tests
 
 		private static void AssertEqualByValue(object x, object y)
 		{
-			Assert.Equal(ValueHash.ComputeHash(x), ValueHash.ComputeHash(y));
+			Assert.Equal(ValueHash.ValueHash.ComputeHash(x), ValueHash.ValueHash.ComputeHash(y));
 		}
 	}
 

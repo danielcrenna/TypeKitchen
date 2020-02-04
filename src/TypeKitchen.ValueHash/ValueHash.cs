@@ -1,7 +1,8 @@
 ﻿using System;
+using TypeKitchen.Serialization;
 using WyHash;
 
-namespace TypeKitchen
+namespace TypeKitchen.ValueHash
 {
 	public static class ValueHash
 	{
@@ -15,9 +16,7 @@ namespace TypeKitchen
 		public static ulong ComputeHash(object instance, ulong? seed = null)
 		{
 			var buffer = Wire.Simple(instance);
-			if (buffer == null)
-				return default;
-			return WyHash64.ComputeHash64(buffer, seed ?? Seed);
+			return buffer == null ? default : WyHash64.ComputeHash64(buffer, seed ?? Seed);
 		}
 	}
 }

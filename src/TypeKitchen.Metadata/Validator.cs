@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace TypeKitchen
+namespace TypeKitchen.Metadata
 {
 	public static class Validator
 	{

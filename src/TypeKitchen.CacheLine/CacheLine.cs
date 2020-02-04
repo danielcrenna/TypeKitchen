@@ -27,7 +27,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace TypeKitchen
+namespace TypeKitchen.CacheLine
 {
 	[SuppressMessage("ReSharper", "IdentifierTypo")]
 	[SuppressMessage("ReSharper", "InconsistentNaming")]
@@ -79,7 +79,7 @@ namespace TypeKitchen
 
 		#region Windows
 
-		public static Int32 GetSize_Windows()
+		public static int GetSize_Windows()
 		{
 			var info = ManagedGetLogicalProcessorInformation();
 			if (info == null)

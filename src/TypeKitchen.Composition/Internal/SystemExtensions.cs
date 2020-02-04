@@ -7,11 +7,11 @@ using System.Linq;
 using System.Reflection;
 using TypeKitchen.Internal;
 
-namespace TypeKitchen.Composition
+namespace TypeKitchen.Composition.Internal
 {
 	internal static class SystemExtensions
 	{
-		public static IEnumerable<(Type,Value128)> Archetypes(this ISystem system, Value128 seed = default)
+		public static IEnumerable<(Type, Value128)> Archetypes(this ISystem system, Value128 seed = default)
 		{
 			var type = system.GetType();
 			var implemented = type.GetTypeInfo().ImplementedInterfaces;

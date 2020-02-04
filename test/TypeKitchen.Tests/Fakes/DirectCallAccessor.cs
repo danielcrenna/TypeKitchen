@@ -44,6 +44,11 @@ namespace TypeKitchen.Tests.Fakes
 			return null;
 		}
 
+		public object Call(object target, IServiceProvider serviceProvider)
+		{
+			throw new NotImplementedException();
+		}
+
 		public Type Type => typeof(ClassWithTwoMethodsAndProperty);
 
 		public object Call(object target, string key, params object[] args)
