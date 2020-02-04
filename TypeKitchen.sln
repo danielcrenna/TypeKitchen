@@ -33,17 +33,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.Serialization",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.StateMachine", "src\TypeKitchen.StateMachine\TypeKitchen.StateMachine.csproj", "{F2E96E1F-67EC-4142-8FA6-407D8AB2BD3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeKitchen.BuildHash", "src\TypeKitchen.BuildHash\TypeKitchen.BuildHash.csproj", "{3E7FE0AE-57C5-43F9-A3EF-B0913923A8AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.BuildHash", "src\TypeKitchen.BuildHash\TypeKitchen.BuildHash.csproj", "{3E7FE0AE-57C5-43F9-A3EF-B0913923A8AF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.ValueHash", "src\TypeKitchen.ValueHash\TypeKitchen.ValueHash.csproj", "{12A774C1-651F-4A85-B490-F5F3F94EB556}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeKitchen.Composition", "src\TypeKitchen.Composition\TypeKitchen.Composition.csproj", "{A6BDAC81-71A4-4980-81E1-888EA3F364EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.Composition", "src\TypeKitchen.Composition\TypeKitchen.Composition.csproj", "{A6BDAC81-71A4-4980-81E1-888EA3F364EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeKitchen.Metadata", "src\TypeKitchen.Metadata\TypeKitchen.Metadata.csproj", "{719D041C-05BF-459B-9EEF-33F5D8AB38DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.Metadata", "src\TypeKitchen.Metadata\TypeKitchen.Metadata.csproj", "{719D041C-05BF-459B-9EEF-33F5D8AB38DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeKitchen.Scripting", "src\TypeKitchen.Scripting\TypeKitchen.Scripting.csproj", "{D13D02B7-9E6F-4C23-B2C3-9DD4028AB27F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.Scripting", "src\TypeKitchen.Scripting\TypeKitchen.Scripting.csproj", "{D13D02B7-9E6F-4C23-B2C3-9DD4028AB27F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeKitchen.CacheLine", "src\TypeKitchen.CacheLine\TypeKitchen.CacheLine.csproj", "{27FA65A5-1EB3-4BA0-A406-1C3C064861DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeKitchen.CacheLine", "src\TypeKitchen.CacheLine\TypeKitchen.CacheLine.csproj", "{27FA65A5-1EB3-4BA0-A406-1C3C064861DB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pub", "pub", "{5A844C15-C870-4D8F-A08C-DC19687A327C}"
 EndProject
@@ -226,7 +226,7 @@ Global
 		{15EEEC49-2FD1-4D87-8E02-2DFB626A72B3} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
 		{F2E96E1F-67EC-4142-8FA6-407D8AB2BD3B} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
 		{3E7FE0AE-57C5-43F9-A3EF-B0913923A8AF} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
-		{12A774C1-651F-4A85-B490-F5F3F94EB556} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
+		{12A774C1-651F-4A85-B490-F5F3F94EB556} = {5A844C15-C870-4D8F-A08C-DC19687A327C}
 		{A6BDAC81-71A4-4980-81E1-888EA3F364EE} = {5A844C15-C870-4D8F-A08C-DC19687A327C}
 		{719D041C-05BF-459B-9EEF-33F5D8AB38DA} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
 		{D13D02B7-9E6F-4C23-B2C3-9DD4028AB27F} = {0FB7B40F-8C72-4D90-AD20-1CDBC429AB29}
