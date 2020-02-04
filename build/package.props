@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.0.38</Version>
-    <PackageReleaseNotes>Allow setting entities from UpdateContext</PackageReleaseNotes>
+    <Version>1.1.0</Version>
+    <PackageReleaseNotes>Split libraries into separate purposes</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
