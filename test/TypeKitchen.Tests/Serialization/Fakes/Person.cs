@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace TypeKitchen.Tests.Serialization
+namespace TypeKitchen.Tests.Serialization.Fakes
 {
 	namespace V1
 	{

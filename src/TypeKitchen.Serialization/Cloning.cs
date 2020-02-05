@@ -4,13 +4,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 
 namespace TypeKitchen.Serialization
 {
 	public static class Cloning
 	{
-		public static object ShallowCopy(object instance)
+		public static object ShallowCopy(object instance, ITypeResolver typeResolver)
 		{
 			var type = instance?.GetType();
 			if (type == null)
@@ -24,28 +23,21 @@ namespace TypeKitchen.Serialization
 				switch (instance)
 				{
 					case IList _:
-						return ShallowCopyList(type, enumerable);
+						return ShallowCopyList(type, enumerable, typeResolver);
 					case IDictionary _:
-						return ShallowCopyDictionary(type, enumerable);
+						return ShallowCopyDictionary(type, enumerable, typeResolver);
 				}
 			}
 			
-			return ShallowCopyObject(instance);
+			return ShallowCopyObject(instance, typeResolver);
 		}
 
-		private static object ShallowCopyObject(object instance)
-		{
-			var data = Wire.Simple(instance);
-			var type = instance.GetType();
-			
-			using var buffer = new MemoryStream(data);
-			using var br = new BinaryReader(buffer);
-			var copy = br.ReadObject(type);
-			
-			return copy;
-		}
+		private static object ShallowCopyObject(object instance, ITypeResolver typeResolver) =>
+			Wire.BufferToObject(
+				Wire.ObjectToBuffer(instance, typeResolver), instance.GetType(), 
+				typeResolver);
 
-		private static object ShallowCopyList(Type type, IEnumerable enumerable)
+		private static object ShallowCopyList(Type type, IEnumerable enumerable, ITypeResolver typeResolver)
 		{
 			var listType = typeof(IList<>).IsAssignableFromGeneric(type)
 				? typeof(List<>).MakeGenericType(type.GenericTypeArguments)
@@ -54,13 +46,13 @@ namespace TypeKitchen.Serialization
 			var instance = (IList) Instancing.CreateInstance(listType);
 			foreach (var item in enumerable)
 			{
-				instance.Add(ShallowCopy(item));
+				instance.Add(ShallowCopy(item, typeResolver));
 			}
 
 			return instance;
 		}
 
-		private static object ShallowCopyDictionary(Type type, IEnumerable dictionary)
+		private static object ShallowCopyDictionary(Type type, IEnumerable dictionary, ITypeResolver typeResolver)
 		{
 			var instance = (IDictionary) Instancing.CreateInstance(type);
 			var pair = typeof(KeyValuePair<,>).MakeGenericType(type.GenericTypeArguments);
@@ -72,7 +64,7 @@ namespace TypeKitchen.Serialization
 					continue;
 
 				var value = pair.GetProperty("Value")?.GetValue(item);
-				instance.Add(key, ShallowCopy(value));
+				instance.Add(key, ShallowCopy(value, typeResolver));
 			}
 
 			return instance;

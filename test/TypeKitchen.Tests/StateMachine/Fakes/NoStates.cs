@@ -3,12 +3,9 @@
 
 using TypeKitchen.StateMachine;
 
-namespace TypeKitchen.Tests.StateMachine.States
+namespace TypeKitchen.Tests.StateMachine.Fakes
 {
-    public class MissingStateForStateMethod : StateMachine<object>
+    public class NoStates : StateMachine<object>
     {
-        private void StateA_BeginState(object userData, State previousState)
-        {
-        }
     }
 }

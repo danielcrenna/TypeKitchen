@@ -3,7 +3,7 @@
 
 using TypeKitchen.StateMachine;
 
-namespace TypeKitchen.Tests.StateMachine.States
+namespace TypeKitchen.Tests.StateMachine.Fakes
 {
     public class ThreeValidStaticStates : StateMachine<ThreeValidStatesData>
     {

@@ -3,11 +3,12 @@
 
 using TypeKitchen.StateMachine;
 
-namespace TypeKitchen.Tests.StateMachine.States
+namespace TypeKitchen.Tests.StateMachine.Fakes
 {
-    public class DerivedState : StateProvider.State
+    public class MissingStateForStateMethod : StateMachine<object>
     {
-        public virtual int Sprockets => 10;
-        public virtual int Widgets => 5;
+        private void StateA_BeginState(object userData, State previousState)
+        {
+        }
     }
 }

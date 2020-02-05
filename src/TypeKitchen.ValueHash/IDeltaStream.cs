@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace TypeKitchen.Tests.StateMachine.States
+using System.Collections.Generic;
+
+namespace TypeKitchen.ValueHash
 {
-    public class DerivedStateData : BaseStateData
-    {
-        public bool B { get; set; }
-    }
+	public interface IDeltaStream
+	{
+		IReadOnlyList<Operation> Operations { get; }
+	}
 }

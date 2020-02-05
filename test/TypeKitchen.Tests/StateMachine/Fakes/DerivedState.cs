@@ -3,9 +3,11 @@
 
 using TypeKitchen.StateMachine;
 
-namespace TypeKitchen.Tests.StateMachine.States
+namespace TypeKitchen.Tests.StateMachine.Fakes
 {
-    public class NoStates : StateMachine<object>
+    public class DerivedState : StateProvider.State
     {
+        public virtual int Sprockets => 10;
+        public virtual int Widgets => 5;
     }
 }

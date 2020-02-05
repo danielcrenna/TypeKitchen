@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 using TypeKitchen.Serialization;
-using TypeKitchen.Tests.Serialization.V2;
+using TypeKitchen.Tests.Serialization.Fakes.V2;
 using Xunit;
 
 namespace TypeKitchen.Tests.Serialization
@@ -28,7 +28,7 @@ namespace TypeKitchen.Tests.Serialization
 		[Fact]
 		public void ReadTests_NextVersion()
 		{
-			var person = new V1.Person {Name = "Kawhi"};
+			var person = new Fakes.V1.Person {Name = "Kawhi"};
 
 			var buffer = new byte[person.BufferSize];
 			var ms = new MemoryStream(buffer);
@@ -51,15 +51,15 @@ namespace TypeKitchen.Tests.Serialization
 			Assert.Equal(ms.Length, buffer.Length);
 
 			var span = buffer.AsSpan();
-			var mirror = new V1.PersonFlyweight(span);
+			var mirror = new Fakes.V1.PersonFlyweight(span);
 			Assert.Equal(person.FirstName, mirror.Name);
 		}
 
 		[Fact]
 		public void WriteTests_SameVersion_MultipleRows()
 		{
-			var person1 = new V1.Person {Name = "Kawhi"};
-			var person2 = new V1.Person {Name = "Kyle"};
+			var person1 = new Fakes.V1.Person {Name = "Kawhi"};
+			var person2 = new Fakes.V1.Person {Name = "Kyle"};
 
 			var buffer = new byte[person1.BufferSize + person2.BufferSize];
 			var ms = new MemoryStream(buffer);
@@ -69,17 +69,17 @@ namespace TypeKitchen.Tests.Serialization
 
 			var span = buffer.AsSpan();
 
-			var row1 = new V1.PersonFlyweight(span);
+			var row1 = new Fakes.V1.PersonFlyweight(span);
 			Assert.Equal(person1.Name, row1.Name);
 
-			var row2 = new V1.PersonFlyweight(span.Slice(person1.BufferSize));
+			var row2 = new Fakes.V1.PersonFlyweight(span.Slice(person1.BufferSize));
 			Assert.Equal(person2.Name, row2.Name);
 		}
 
 		[Fact]
 		public void WriteTests_DifferentVersions_MultipleRows()
 		{
-			var person1 = new V1.Person {Name = "Kawhi"};
+			var person1 = new Fakes.V1.Person {Name = "Kawhi"};
 			var person2 = new Person {FirstName = "Kyle", LastName = "Lowry"};
 
 			var buffer = new byte[person1.BufferSize + person2.BufferSize];
@@ -90,13 +90,13 @@ namespace TypeKitchen.Tests.Serialization
 
 			var span = buffer.AsSpan();
 
-			var row11 = new V1.PersonFlyweight(span);
+			var row11 = new Fakes.V1.PersonFlyweight(span);
 			Assert.Equal(person1.Name, row11.Name);
 
 			var row12 = new PersonFlyweight(span);
 			Assert.Equal(person1.Name, row12.FirstName);
 
-			var row21 = new V1.PersonFlyweight(span.Slice(person1.BufferSize));
+			var row21 = new Fakes.V1.PersonFlyweight(span.Slice(person1.BufferSize));
 			Assert.Equal(person2.FirstName, row21.Name);
 
 			var row22 = new PersonFlyweight(span.Slice(person1.BufferSize));

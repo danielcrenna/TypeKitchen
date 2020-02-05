@@ -4,7 +4,7 @@
 using System;
 using TypeKitchen.Serialization;
 
-namespace TypeKitchen.Tests.Serialization
+namespace TypeKitchen.Tests.Serialization.Fakes
 {
 	namespace V1
 	{

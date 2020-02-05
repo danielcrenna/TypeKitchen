@@ -8,47 +8,61 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+
 using IEnumerable = System.Collections.IEnumerable;
 
 namespace TypeKitchen.Serialization
 {
 	public static class Wire
 	{
-		public static byte[] Simple(object instance)
+		public static ReadOnlySpan<byte> ObjectToBuffer(object instance, ITypeResolver typeResolver)
 		{
-			if (instance == null)
-				return null;
+			if (instance == default)
+				return default;
 
 			var type = instance.GetType();
 
 			return type.IsValueType || type == typeof(string)
-				? ShallowCopyValueTypeData(instance, type)
-				: ShallowCopyObjectData(instance);
+				? ShallowCopyValueTypeData(instance, type, typeResolver)
+				: ShallowCopyObjectData(instance, typeResolver);
 		}
 
-		private static byte[] ShallowCopyObjectData(object instance)
+		public static object BufferToObject(in ReadOnlySpan<byte> buffer, Type type, ITypeResolver typeResolver, IReadObjectSink emitter = null)
+		{
+			if (buffer == default || buffer.Length == 0 || type == null)
+				return default;
+
+			var data = buffer.ToArray(); // FIXME: not necessary if targeting .NET Core
+
+			using var ms = new MemoryStream(data);
+			using var br = new BinaryReader(ms);
+
+			return br.ReadObject(type, typeResolver, emitter);
+		}
+		
+		private static ReadOnlySpan<byte> ShallowCopyObjectData(object instance, ITypeResolver typeResolver)
 		{
 			using var ms = new MemoryStream();
 			using var bw = new BinaryWriter(ms);
 
-			WriteObject(bw, instance);
+			WriteObject(bw, instance, typeResolver);
 			ms.Position = 0;
 			return ms.GetBuffer();
 		}
 		
-		private static byte[] ShallowCopyValueTypeData(object instance, Type type)
+		private static ReadOnlySpan<byte> ShallowCopyValueTypeData(object instance, Type type, ITypeResolver typeResolver)
 		{
-			using var buffer = new MemoryStream();
-			using var bw = new BinaryWriter(buffer);
+			using var ms = new MemoryStream();
+			using var bw = new BinaryWriter(ms);
 
-			WriteValue(bw, type, instance);
-			buffer.Position = 0;
-			return buffer.ToArray();
+			WriteValue(bw, type, instance, typeResolver);
+			ms.Position = 0;
+			return ms.GetBuffer();
 		}
 
 		#region Object
 
-		private static void WriteObject(this BinaryWriter bw, object value)
+		private static void WriteObject(this BinaryWriter bw, object value, ITypeResolver typeResolver)
 		{
 			if (bw.WriteIsNull(value))
 				return;
@@ -85,17 +99,17 @@ namespace TypeKitchen.Serialization
 					// account for polymorphism
 					bw.Write(itemType.FullName);
 
-					if (itemType == member.Type ||                      // no conflicts
-					    itemType.IsValueType ||                          // no complications
-					    itemType.IsInterface ||                          // needs concrete resolution
-					    typeof(IEnumerable).IsAssignableFrom(itemType)    // needs enumeration traversal
+					if (itemType == member.Type ||						// no conflicts
+					    itemType.IsValueType ||							// no complications
+					    itemType.IsInterface ||							// needs concrete resolution
+					    typeof(IEnumerable).IsAssignableFrom(itemType)	// needs enumeration traversal
 					)
 					{
-						bw.WriteValue(itemType, item);
+						bw.WriteValue(itemType, item, typeResolver);
 					}
 					else
 					{
-						bw.WriteObject(item);
+						bw.WriteObject(item, typeResolver);
 					}
 				}
 				catch (Exception e)
@@ -108,19 +122,19 @@ namespace TypeKitchen.Serialization
 			}
 		}
 
-		private static readonly ITypeResolver TypeResolver = new ReflectionTypeResolver();
-
-		internal static object ReadObject(this BinaryReader br, Type type)
+		private static object ReadObject(this BinaryReader br, Type type, ITypeResolver typeResolver, IReadObjectSink emitter = null)
 		{
 			if (br.ReadIsNull())
 				return null;
 
 			var members = GetMembers(type);
-			var writer = GetPropertyWriter(type);
 
-			var count = br.ReadInt32();
+			emitter?.StartedReadingObject(type, members);
+
+			var writer = GetPropertyWriter(type);
 			var instance = Instancing.CreateInstance(type);
 			
+			var count = br.ReadInt32();
 			for (var i = 0; i < count; i++)
 			{
 				if (br.ReadIsNull())
@@ -129,14 +143,17 @@ namespace TypeKitchen.Serialization
 				var member = members[i];
 
 				if (!member.CanWrite)
-					throw new InvalidOperationException("WriteObject wrote an invalid buffer");
+					throw new InvalidOperationException($"{nameof(WriteObject)} wrote an invalid buffer");
 
 				var typeName = br.ReadString();
-				var itemType = Type.GetType(typeName) ?? TypeResolver.FindByFullName(typeName);
+				var itemType = Type.GetType(typeName) ?? typeResolver?.FindByFullName(typeName);
 				if(itemType == null)
 					throw new TypeLoadException();
 
-				var item = ReadValue(itemType, br);
+				var item = ReadValue(itemType, br, typeResolver);
+
+				emitter?.ReadMember(type, member.Name, itemType, item);
+
 				writer.TrySetValue(instance, member.Name, item);
 			}
 
@@ -147,24 +164,25 @@ namespace TypeKitchen.Serialization
 
 		#region Dictionary<T, K>
 
-		private static void WriteTypedDictionary<TKey, TValue>(this BinaryWriter bw, IDictionary<TKey, TValue> dictionary)
+		private static void WriteTypedDictionary<TKey, TValue>(this BinaryWriter bw, IDictionary<TKey, TValue> dictionary, ITypeResolver typeResolver)
 		{
 			bw.Write(dictionary.Count);
 			foreach (var item in dictionary)
 			{
-				WriteValue(bw, item.Key.GetType(), item.Key);
-				WriteValue(bw, item.Value.GetType(), item.Value);
+				WriteValue(bw, item.Key.GetType(), item.Key, typeResolver);
+				WriteValue(bw, item.Value.GetType(), item.Value, typeResolver);
 			}
 		}
 
-		private static object ReadTypedDictionary<TKey, TValue>(this BinaryReader br)
+		private static readonly MethodInfo ReadTypedDictionaryMethod = typeof(Wire).GetMethod(nameof(ReadTypedDictionary), BindingFlags.NonPublic | BindingFlags.Static);
+		private static object ReadTypedDictionary<TKey, TValue>(this BinaryReader br, ITypeResolver typeResolver)
 		{
 			var length = br.ReadInt32();
 			var instance = Instancing.CreateInstance<Dictionary<TKey, TValue>>();
 			for (var i = 0; i < length; i++)
 			{
-				var key = (TKey) ReadValue(typeof(TKey), br);
-				var value = (TValue) ReadValue(typeof(TValue), br);
+				var key = (TKey) ReadValue(typeof(TKey), br, typeResolver);
+				var value = (TValue) ReadValue(typeof(TValue), br, typeResolver);
 				instance.Add(key, value);
 			}
 
@@ -175,7 +193,7 @@ namespace TypeKitchen.Serialization
 
 		#region Writes
 
-		private static void WriteValue(this BinaryWriter bw, Type type, object value)
+		private static void WriteValue(this BinaryWriter bw, Type type, object value, ITypeResolver typeResolver)
 		{
 			writeValue:
 
@@ -248,7 +266,7 @@ namespace TypeKitchen.Serialization
 
 					if (type == typeof(DateTime))
 					{
-						bw.WriteDateTime(value);
+						bw.WriteDateTime(value, typeResolver);
 						break;
 					}
 
@@ -268,7 +286,7 @@ namespace TypeKitchen.Serialization
 					if (type == typeof(DateTime?))
 					{
 						if (!bw.WriteIsNull(value))
-							WriteDateTime(bw, value);
+							WriteDateTime(bw, value, typeResolver);
 						break;
 					}
 
@@ -287,7 +305,7 @@ namespace TypeKitchen.Serialization
 							if (method == null)
 								throw new NullReferenceException();
 							var genericMethod = method.MakeGenericMethod(type.GenericTypeArguments);
-							genericMethod.Invoke(null, new[] { bw, value });
+							genericMethod.Invoke(null, new[] { bw, value, typeResolver });
 							break;
 						}
 					}
@@ -308,13 +326,13 @@ namespace TypeKitchen.Serialization
 					if (typeof(ICollection).IsAssignableFrom(type))
 					{
 						if (!bw.WriteIsNull(value))
-							WriteCollection(bw, (ICollection) value);
+							WriteCollection(bw, (ICollection) value, typeResolver);
 						break;
 					}
 
 					if (type.IsEnum)
 					{
-						bw.WriteEnum(value);
+						bw.WriteEnum(value, typeResolver);
 						break;
 					}
 
@@ -327,7 +345,7 @@ namespace TypeKitchen.Serialization
 						}
 					}
 
-					WriteObject(bw, value);
+					WriteObject(bw, value, typeResolver);
 					break;
 			}
 		}
@@ -344,11 +362,11 @@ namespace TypeKitchen.Serialization
 			bw.Write(value);
 		}
 		
-		private static void WriteDateTime(this BinaryWriter bw, object value)
+		private static void WriteDateTime(this BinaryWriter bw, object value, ITypeResolver typeResolver)
 		{
 			var date = (DateTime) value;
-			WriteValue(bw, typeof(DateTimeKind), date.Kind);
-			WriteValue(bw, typeof(DateTime), date.Ticks);
+			WriteValue(bw, typeof(DateTimeKind), date.Kind, typeResolver);
+			WriteValue(bw, typeof(DateTime), date.Ticks, typeResolver);
 		}
 
 		private static bool WriteIsNull(this BinaryWriter bw, object instance)
@@ -361,32 +379,32 @@ namespace TypeKitchen.Serialization
 			return instance == null;
 		}
 		
-		private static void WriteEnum(this BinaryWriter bw, object value)
+		private static void WriteEnum(this BinaryWriter bw, object value, ITypeResolver typeResolver)
 		{
 			var enumType = Enum.GetUnderlyingType(value.GetType());
 			var enumValue = Convert.ChangeType(value, enumType);
-			WriteValue(bw, enumType, enumValue);
+			WriteValue(bw, enumType, enumValue, typeResolver);
 		}
 		
-		private static void WriteTypedCollection<T>(BinaryWriter bw, ICollection<T> list)
+		private static void WriteTypedCollection<T>(BinaryWriter bw, ICollection<T> list, ITypeResolver typeResolver)
 		{
 			bw.Write(list.Count);
 			foreach (var item in list)
-				WriteValue(bw, item.GetType(), item);
+				WriteValue(bw, item.GetType(), item, typeResolver);
 		}
 
-		private static void WriteCollection(this BinaryWriter bw, ICollection list)
+		private static void WriteCollection(this BinaryWriter bw, ICollection list, ITypeResolver typeResolver)
 		{
 			bw.Write(list.Count);
 			foreach (var item in list)
-				WriteValue(bw, item.GetType(), item);
+				WriteValue(bw, item.GetType(), item, typeResolver);
 		}
 		
 		#endregion
 
 		#region Reads
 
-		internal static object ReadValue(this Type type, BinaryReader br)
+		private static object ReadValue(this Type type, BinaryReader br, ITypeResolver typeResolver)
 		{
 			while (true)
 			{
@@ -461,33 +479,33 @@ namespace TypeKitchen.Serialization
 				if (type == typeof(DateTimeOffset))
 					return br.ReadDateTimeOffset();
 				if (type == typeof(DateTime))
-					return br.ReadDateTime();
+					return br.ReadDateTime(typeResolver);
 
 				if (type == typeof(TimeSpan?))
 					return br.ReadIsNull() ? default : br.ReadTimeSpan();
 				if (type == typeof(DateTimeOffset?))
 					return br.ReadIsNull() ? null : br.ReadDateTimeOffset();
 				if (type == typeof(DateTime?))
-					return br.ReadIsNull() ? null : ReadDateTime(br);
+					return br.ReadIsNull() ? null : ReadDateTime(br, typeResolver);
 
 				if (typeof(IDictionary<,>).IsAssignableFromGeneric(type))
 				{
 					if (br.ReadIsNull())
 						return null;
 
-					var method = typeof(Wire).GetMethod(nameof(ReadTypedDictionary), BindingFlags.NonPublic | BindingFlags.Static);
+					var method = ReadTypedDictionaryMethod;
 					if (method == null)
 						throw new NullReferenceException();
 
 					var genericMethod = method.MakeGenericMethod(type.GenericTypeArguments);
-					return genericMethod.Invoke(null, new object [] { br });
+					return genericMethod.Invoke(null, new object [] { br, typeResolver });
 				}
 
 				if (typeof(IList<>).IsAssignableFromGeneric(type))
-					return br.ReadIsNull() ? null : br.ReadTypedList(type);
+					return br.ReadIsNull() ? null : br.ReadTypedList(type, typeResolver);
 				
 				if (typeof(IList).IsAssignableFrom(type))
-					return br.ReadIsNull() ? null : br.ReadList(type);
+					return br.ReadIsNull() ? null : br.ReadList(type, typeResolver);
 
 				if (type.IsEnum)
 				{
@@ -506,7 +524,7 @@ namespace TypeKitchen.Serialization
 					return null;
 				}
 
-				return br.ReadObject(type);
+				return br.ReadObject(type, typeResolver);
 			}
 		}
 
@@ -522,27 +540,27 @@ namespace TypeKitchen.Serialization
 			return br.ReadChars(length);
 		}
 
-		private static object ReadDateTime(this BinaryReader br)
+		private static object ReadDateTime(this BinaryReader br, ITypeResolver typeResolver)
 		{
-			var kind = (DateTimeKind) ReadValue(GetEnumType(typeof(DateTimeKind)), br);
+			var kind = (DateTimeKind) ReadValue(GetEnumType(typeof(DateTimeKind)), br, typeResolver);
 			var ticks = br.ReadInt64();
 			return new DateTime(ticks, kind);
 		}
 
-		private static object ReadList(this BinaryReader br, Type type)
+		private static object ReadList(this BinaryReader br, Type type, ITypeResolver typeResolver)
 		{
 			var length = br.ReadInt32();
 			var list = (IList) Instancing.CreateInstance(type);
 			var elementType = type.GetElementType();
 			for (var i = 0; i < length; i++)
 			{
-				var item = ReadValue(elementType, br);
+				var item = ReadValue(elementType, br, typeResolver);
 				list.Add(item);
 			}
 			return list;
 		}
 
-		private static object ReadTypedList(this BinaryReader br, Type type)
+		private static object ReadTypedList(this BinaryReader br, Type type, ITypeResolver typeResolver)
 		{
 			var length = br.ReadInt32();
 
@@ -555,7 +573,7 @@ namespace TypeKitchen.Serialization
 			var itemType = type.GenericTypeArguments[0];
 			for (var i = 0; i < length; i++)
 			{
-				var item = ReadValue(itemType, br);
+				var item = ReadValue(itemType, br, typeResolver);
 				list.Add(item);
 			}
 			return list;
@@ -575,19 +593,8 @@ namespace TypeKitchen.Serialization
 			return type;
 		}
 
-		internal static ITypeWriteAccessor GetPropertyWriter(Type type)
-		{
-			return WriteAccessor.Create(type, AccessorMemberTypes.Properties);
-		}
-
-		private static ITypeReadAccessor GetPropertyReader(Type type)
-		{
-			return ReadAccessor.Create(type, AccessorMemberTypes.Properties);
-		}
-
-		internal static AccessorMembers GetMembers(Type type)
-		{
-			return AccessorMembers.Create(type, AccessorMemberTypes.Properties);
-		}
+		private static ITypeReadAccessor GetPropertyReader(Type type) => ReadAccessor.Create(type, AccessorMemberTypes.Properties);
+		private static ITypeWriteAccessor GetPropertyWriter(Type type) => WriteAccessor.Create(type, AccessorMemberTypes.Properties);
+		private static AccessorMembers GetMembers(Type type) => AccessorMembers.Create(type, AccessorMemberTypes.Properties);
 	}
 }

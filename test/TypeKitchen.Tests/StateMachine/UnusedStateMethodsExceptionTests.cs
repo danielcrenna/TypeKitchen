@@ -6,7 +6,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using TypeKitchen.StateMachine;
-using TypeKitchen.Tests.StateMachine.States;
+using TypeKitchen.Tests.StateMachine.Fakes;
 using Xunit;
 
 namespace TypeKitchen.Tests.StateMachine

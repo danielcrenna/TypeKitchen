@@ -4,7 +4,7 @@
 using System;
 using TypeKitchen.StateMachine;
 
-namespace TypeKitchen.Tests.StateMachine.States
+namespace TypeKitchen.Tests.StateMachine.Fakes
 {
     public class StateInheritance : StateMachine<object>
     {
