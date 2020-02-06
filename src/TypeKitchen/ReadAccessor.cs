@@ -444,7 +444,8 @@ namespace TypeKitchen
 
 					var backingFieldValue = backingField.GetValue(debugObject);
 					var cachedDelegateValue = setter.Value(debugObject);
-					if (!backingFieldValue.Equals(cachedDelegateValue))
+
+					if(backingFieldValue != null && !backingFieldValue.Equals(cachedDelegateValue))
 						throw new ArgumentException($"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
 				}
 			}
@@ -457,7 +458,7 @@ namespace TypeKitchen
 				{
 					var byAccessor = accessor[debugObject, member.Name];
 					var byReflection = ((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(debugObject);
-					if (!byAccessor.Equals(byReflection))
+					if (byAccessor != null && !byAccessor.Equals(byReflection))
 						throw new InvalidOperationException("IL produced incorrect accessor");
 				}
 			}
