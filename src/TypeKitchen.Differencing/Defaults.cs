@@ -1,6 +1,6 @@
 ﻿using TypeKitchen.Serialization;
 
-namespace TypeKitchen.ValueHash
+namespace TypeKitchen.Differencing
 {
 	internal class Defaults
 	{

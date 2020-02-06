@@ -3,10 +3,11 @@
 
 using System.Collections.Generic;
 
-namespace TypeKitchen.ValueHash
+namespace TypeKitchen.Differencing
 {
 	public interface IDeltaStream
 	{
 		IReadOnlyList<Operation> Operations { get; }
+		void ApplyTo(object instance);
 	}
 }

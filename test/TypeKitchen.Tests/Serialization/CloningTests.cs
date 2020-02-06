@@ -1,4 +1,5 @@
-﻿using TypeKitchen.Serialization;
+﻿using TypeKitchen.Differencing;
+using TypeKitchen.Serialization;
 using TypeKitchen.Tests.Serialization.Fakes;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace TypeKitchen.Tests.Serialization
 
 		private static void AssertEqualByValue(object x, object y)
 		{
-			Assert.Equal(TypeKitchen.ValueHash.ValueHash.ComputeHash(x), TypeKitchen.ValueHash.ValueHash.ComputeHash(y));
+			Assert.Equal(ValueHash.ComputeHash(x), ValueHash.ComputeHash(y));
 		}
 	}
 }

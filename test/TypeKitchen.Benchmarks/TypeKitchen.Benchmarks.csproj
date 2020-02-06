@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\TypeKitchen.Differencing\TypeKitchen.Differencing.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen\TypeKitchen.csproj" />
     <ProjectReference Include="..\TypeKitchen.Tests\TypeKitchen.Tests.csproj" />
   </ItemGroup>

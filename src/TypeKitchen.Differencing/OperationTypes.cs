@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-
-namespace TypeKitchen.ValueHash
+namespace TypeKitchen.Differencing
 {
-	public interface IValueHashProvider
+	public static class OperationTypes
 	{
-		ulong ComputeHash64(ReadOnlySpan<byte> buffer, ulong seed);
+		public const string Add = "add";
+		public const string Replace = "replace";
+		public const string Remove = "remove";
 	}
 }

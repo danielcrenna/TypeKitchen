@@ -4,7 +4,7 @@
 using System;
 using WyHash;
 
-namespace TypeKitchen.ValueHash
+namespace TypeKitchen.Differencing
 {
 	public class WyHashValueHashProvider : IValueHashProvider
 	{

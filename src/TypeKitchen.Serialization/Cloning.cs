@@ -57,13 +57,15 @@ namespace TypeKitchen.Serialization
 			var instance = (IDictionary) Instancing.CreateInstance(type);
 			var pair = typeof(KeyValuePair<,>).MakeGenericType(type.GenericTypeArguments);
 
+			var keyProperty = pair.GetProperty("Key");
+			var valueProperty = pair.GetProperty("Value");
+
 			foreach (var item in dictionary)
 			{
-				var key = pair.GetProperty("Key")?.GetValue(item);
+				var key = keyProperty?.GetValue(item);
 				if (key == null)
 					continue;
-
-				var value = pair.GetProperty("Value")?.GetValue(item);
+				var value = valueProperty?.GetValue(item);
 				instance.Add(key, ShallowCopy(value, typeResolver));
 			}
 

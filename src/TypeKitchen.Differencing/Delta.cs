@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TypeKitchen.ValueHash
+namespace TypeKitchen.Differencing
 {
 	public class Delta
 	{

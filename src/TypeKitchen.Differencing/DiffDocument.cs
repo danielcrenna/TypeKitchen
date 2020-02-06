@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using TypeKitchen.Serialization;
 
-namespace TypeKitchen.ValueHash
+namespace TypeKitchen.Differencing
 {
 	public class DiffDocument : IReadObjectSink, IDeltaStream
 	{
@@ -24,8 +24,6 @@ namespace TypeKitchen.ValueHash
 				throw new InvalidOperationException("Can only create diff for types");
 		}
 
-		private Dictionary<string, Type> _leftMemberTypes;
-		private Dictionary<string, Type> _rightMemberTypes;
 		private Dictionary<string, object> _leftMemberValues;
 		private Dictionary<string, object> _rightMemberValues;
 
@@ -33,12 +31,10 @@ namespace TypeKitchen.ValueHash
 		{
 			if (_leftMembers.DeclaringType == parentType)
 			{
-				_leftMemberTypes ??= new Dictionary<string, Type>();
 				_leftMemberValues ??= new Dictionary<string, object>();
 
-				if (!_leftMemberTypes.ContainsKey(memberName))
+				if (!_leftMemberValues.ContainsKey(memberName))
 				{
-					_leftMemberTypes[memberName] = memberType;
 					_leftMemberValues[memberName] = memberValue;
 					return;
 				}
@@ -46,12 +42,10 @@ namespace TypeKitchen.ValueHash
 			
 			if (_rightMembers.DeclaringType == parentType)
 			{
-				_rightMemberTypes ??= new Dictionary<string, Type>();
 				_rightMemberValues ??= new Dictionary<string, object>();
 
-				if (!_rightMemberTypes.ContainsKey(memberName))
+				if (!_rightMemberValues.ContainsKey(memberName))
 				{
-					_rightMemberTypes[memberName] = memberType;
 					_rightMemberValues[memberName] = memberValue;
 				}
 			}
@@ -62,6 +56,9 @@ namespace TypeKitchen.ValueHash
 			get
 			{
 				var list = new List<Operation>();
+
+				if (_leftMemberValues == null)
+					return list;
 
 				foreach(var name in _leftMemberValues.Keys)
 				{
@@ -87,15 +84,34 @@ namespace TypeKitchen.ValueHash
 			}
 		}
 
+		public void ApplyTo(object instance)
+		{
+			foreach (var operation in Operations)
+			{
+				switch (operation.Type)
+				{
+					case OperationTypes.Add:
+					case OperationTypes.Remove:
+						throw new NotSupportedException("Cannot mutate static types in C#");
+
+					case OperationTypes.Replace:
+					{
+						foreach (var member in AccessorMembers.Create(instance, AccessorMemberTypes.Properties))
+						{
+							if (!operation.Path.Equals($"/{member.Name}", StringComparison.OrdinalIgnoreCase))
+								continue;
+
+							WriteAccessor.Create(instance, AccessorMemberTypes.Properties)
+								.TrySetValue(instance, member.Name, operation.Value);
+						}
+						break;
+					}
+				}
+			}
+		}
+
 		private static Operation AddObjectMember(string name, object value) => new Operation(OperationTypes.Add, $"/{name}", null, value);
 		private static Operation ReplaceMemberValue(string name, object value) => new Operation(OperationTypes.Replace, $"/{name}", null, value);
 		private static Operation RemoveObjectMember(string name) => new Operation(OperationTypes.Remove, $"/{name}", null, null);
-	}
-
-	public static class OperationTypes
-	{
-		public static readonly string Add = "add";
-		public static readonly string Replace = "replace";
-		public static readonly string Remove = "remove";
 	}
 }
