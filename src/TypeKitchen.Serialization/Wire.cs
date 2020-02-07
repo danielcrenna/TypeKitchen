@@ -318,7 +318,7 @@ namespace TypeKitchen.Serialization
 							if (method == null)
 								throw new NullReferenceException();
 							var genericMethod = method.MakeGenericMethod(type.GenericTypeArguments);
-							genericMethod.Invoke(null, new[] { bw, value });
+							genericMethod.Invoke(null, new[] { bw, value, typeResolver });
 							break;
 						}
 					}
