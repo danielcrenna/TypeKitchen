@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using Microsoft.Extensions.ObjectPool;
+using TypeKitchen.Creation;
 
 namespace TypeKitchen
 {
@@ -223,8 +224,7 @@ namespace TypeKitchen
 		{
 			public HashSet<string> Create()
 			{
-				return new HashSet<string>(
-					Instancing.CreateInstance<T>());
+				return new HashSet<string>(Instancing.CreateInstance<T>());
 			}
 
 			public bool Return(HashSet<string> set)

@@ -3,5 +3,9 @@
 
 namespace TypeKitchen
 {
-	public delegate object CreateInstance(params object[] args);
+	public interface IReadAccessor
+	{
+		object this[object target, string key] { get; }
+		bool TryGetValue(object target, string key, out object value);
+	}
 }

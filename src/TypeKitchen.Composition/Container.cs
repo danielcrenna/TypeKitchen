@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TypeKitchen.Composition.Internal;
+using TypeKitchen.Creation;
 using TypeKitchen.Internal;
 
 namespace TypeKitchen.Composition

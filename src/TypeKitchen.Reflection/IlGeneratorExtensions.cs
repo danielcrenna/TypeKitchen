@@ -5,7 +5,7 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace TypeKitchen.Internal
+namespace TypeKitchen.Reflection
 {
 	internal static class IlGeneratorExtensions
 	{

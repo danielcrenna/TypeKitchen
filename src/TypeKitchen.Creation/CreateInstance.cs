@@ -1,12 +1,7 @@
 ﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-
-namespace TypeKitchen
+namespace TypeKitchen.Creation
 {
-	public interface ITypeReadAccessor : IReadAccessor
-	{
-		Type Type { get; }
-	}
+	public delegate object CreateInstance(params object[] args);
 }

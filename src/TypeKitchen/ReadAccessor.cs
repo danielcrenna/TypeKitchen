@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using TypeKitchen.Internal;
+using TypeKitchen.Reflection;
 
 namespace TypeKitchen
 {
@@ -201,7 +202,7 @@ namespace TypeKitchen
 				il.Ldc_I4_0();							// 0
 				il.Ret();								// return 0 (false)
 
-				tb.DefineMethodOverride(tryGetValue, typeof(ITypeReadAccessor).GetMethod("TryGetValue"));
+				tb.DefineMethodOverride(tryGetValue, typeof(IReadAccessor).GetMethod(nameof(IReadAccessor.TryGetValue)));
 			}
 
 			//
@@ -251,7 +252,7 @@ namespace TypeKitchen
 					new[] {typeof(string)});
 				getItemProperty.SetGetMethod(getItem);
 
-				tb.DefineMethodOverride(getItem, typeof(ITypeReadAccessor).GetMethod("get_Item"));
+				tb.DefineMethodOverride(getItem, typeof(IReadAccessor).GetMethod("get_Item"));
 			}
 
 			var typeInfo = tb.CreateTypeInfo();
@@ -373,7 +374,7 @@ namespace TypeKitchen
 				il.Ret();                                       //     return 0 (false)
 
 				tb.DefineMethodOverride(tryGetValue,
-					typeof(ITypeReadAccessor).GetMethod(nameof(ITypeReadAccessor.TryGetValue)));
+					typeof(IReadAccessor).GetMethod(nameof(IReadAccessor.TryGetValue)));
 			}
 
 			//
@@ -414,7 +415,7 @@ namespace TypeKitchen
 					new[] {typeof(string)});
 				item.SetGetMethod(getItem);
 
-				tb.DefineMethodOverride(getItem, typeof(ITypeReadAccessor).GetMethod("get_Item"));
+				tb.DefineMethodOverride(getItem, typeof(IReadAccessor).GetMethod("get_Item"));
 			}
 			
 			var typeInfo = tb.CreateTypeInfo();

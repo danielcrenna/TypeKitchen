@@ -5,10 +5,8 @@ using System;
 
 namespace TypeKitchen
 {
-	public interface ITypeWriteAccessor
+	public interface ITypeWriteAccessor : IWriteAccessor
 	{
 		Type Type { get; }
-		object this[object target, string key] { set; }
-		bool TrySetValue(object target, string key, object value);
 	}
 }

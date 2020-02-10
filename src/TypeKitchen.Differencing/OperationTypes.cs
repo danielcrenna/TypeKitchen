@@ -6,7 +6,7 @@ namespace TypeKitchen.Differencing
 	public static class OperationTypes
 	{
 		public const string Add = "add";
-		public const string Replace = "replace";
 		public const string Remove = "remove";
+		public const string Replace = "replace";
 	}
 }

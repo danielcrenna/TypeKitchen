@@ -7,6 +7,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using TypeKitchen.Internal;
+using TypeKitchen.Reflection;
+using KnownMethods = TypeKitchen.Internal.KnownMethods;
 
 namespace TypeKitchen
 {

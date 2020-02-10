@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TypeKitchen.Creation;
 
 namespace TypeKitchen.Serialization
 {
@@ -45,9 +46,7 @@ namespace TypeKitchen.Serialization
 
 			var instance = (IList) Instancing.CreateInstance(listType);
 			foreach (var item in enumerable)
-			{
 				instance.Add(ShallowCopy(item, typeResolver));
-			}
 
 			return instance;
 		}

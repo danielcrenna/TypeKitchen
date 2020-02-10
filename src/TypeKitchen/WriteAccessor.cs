@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using TypeKitchen.Internal;
+using TypeKitchen.Reflection;
 
 namespace TypeKitchen
 {
@@ -107,7 +108,6 @@ namespace TypeKitchen
 			var key = new AccessorMembersKey(type, types, scope);
 			return key;
 		}
-
 		
 		private static ITypeWriteAccessor CreateWriteAccessor(Type type, AccessorMemberTypes types,
 			AccessorMemberScope scope, out AccessorMembers members)
@@ -225,7 +225,7 @@ namespace TypeKitchen
 			// bool TrySetValue(object target, string key, object value):
 			//
 			{
-				var trySetValue = tb.DefineMethod(nameof(ITypeWriteAccessor.TrySetValue),
+				var trySetValue = tb.DefineMethod(nameof(IWriteAccessor.TrySetValue),
 					MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 					MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(bool),
 					new[] {typeof(object), typeof(string), typeof(object)});
@@ -284,7 +284,7 @@ namespace TypeKitchen
 				il.Ret();							//     return 0 (false)
 
 				tb.DefineMethodOverride(trySetValue,
-					typeof(ITypeWriteAccessor).GetMethod(nameof(ITypeWriteAccessor.TrySetValue)));
+					typeof(IWriteAccessor).GetMethod(nameof(IWriteAccessor.TrySetValue)));
 			}
 
 			//
@@ -347,7 +347,7 @@ namespace TypeKitchen
 					new[] {typeof(string)});
 				item.SetSetMethod(setItem);
 
-				tb.DefineMethodOverride(setItem, typeof(ITypeWriteAccessor).GetMethod("set_Item"));
+				tb.DefineMethodOverride(setItem, typeof(IWriteAccessor).GetMethod("set_Item"));
 			}
 
 			var typeInfo = tb.CreateTypeInfo();

@@ -5,9 +5,9 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
-using TypeKitchen.Internal;
+using TypeKitchen.Reflection;
 
-namespace TypeKitchen
+namespace TypeKitchen.Creation
 {
 	public static class Activation
 	{
@@ -25,6 +25,7 @@ namespace TypeKitchen
 		{
 			var dm = new DynamicMethod($"Construct__{ctor.DeclaringType?.Assembly.GetHashCode()}_{ctor.MetadataToken}",
 				ctor.DeclaringType, new[] {typeof(object[])});
+
 			var il = dm.GetILGeneratorInternal();
 
 			var parameters = ctor.GetParameters();

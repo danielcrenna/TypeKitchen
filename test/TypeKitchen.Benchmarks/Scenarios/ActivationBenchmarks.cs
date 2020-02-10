@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
+using TypeKitchen.Creation;
 using TypeKitchen.Tests.Fakes;
 
 namespace TypeKitchen.Benchmarks.Scenarios

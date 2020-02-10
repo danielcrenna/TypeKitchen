@@ -5,7 +5,7 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace TypeKitchen.Internal
+namespace TypeKitchen.Reflection
 {
 	/// <summary>Provides typing efficiency, method chaining, and light argument hinting. Should not do anything "smart".</summary>
 	internal class ILSugar
