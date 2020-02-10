@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.1.2</Version>
-    <PackageReleaseNotes>Fix crash when wire formatting a dictionary</PackageReleaseNotes>
+    <Version>1.2.0</Version>
+    <PackageReleaseNotes>Re-organize package features.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
