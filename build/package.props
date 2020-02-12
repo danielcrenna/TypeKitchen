@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.2.0</Version>
-    <PackageReleaseNotes>Re-organize package features.</PackageReleaseNotes>
+    <Version>1.2.1</Version>
+    <PackageReleaseNotes>Allow visibility skipping when late-binding non-public methods.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

@@ -10,6 +10,7 @@ namespace TypeKitchen
 	{
 		public string MethodName { get; set; }
 		public ParameterInfo[] Parameters { get; set; }
+
 		public abstract object Call(object target, object[] args);
 
 		public object Call(object target, IServiceProvider serviceProvider)

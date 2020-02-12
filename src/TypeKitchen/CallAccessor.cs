@@ -166,6 +166,9 @@ namespace TypeKitchen
 
 		private static IMethodCallAccessor CreateMethodCallAccessor(Type type, MethodInfo method)
 		{
+			if(type.IsNotPublic)
+				return new LateBoundMethodCallAccessor(method);
+			
 			var name = type.CreateNameForMethodCallAccessor(method);
 
 			var tb = DynamicAssembly.Module.DefineType(name,

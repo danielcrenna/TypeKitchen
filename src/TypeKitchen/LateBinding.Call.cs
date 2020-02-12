@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using TypeKitchen.Internal;
 using TypeKitchen.Reflection;
 
 namespace TypeKitchen
@@ -32,8 +31,9 @@ namespace TypeKitchen
 			if (type == null)
 				throw new NotSupportedException("Dynamic binding does not currently support anonymous methods");
 
+			var restrictedSkipVisibility = type.IsNotPublic;
 			var dm = new DynamicMethod($"Call_{method.MetadataToken}", typeof(object),
-				new[] {typeof(object), typeof(object[])});
+				new[] {typeof(object), typeof(object[])}, restrictedSkipVisibility);
 			dm.GetILGeneratorInternal().EmitCallDelegate(type, method);
 			return (Func<object, object[], object>) dm.CreateDelegate(typeof(Func<object, object[], object>));
 		}
