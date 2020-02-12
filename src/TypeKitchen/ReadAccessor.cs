@@ -124,6 +124,9 @@ namespace TypeKitchen
 		{
 			members = CreateReadAccessorMembers(type, types, scope);
 
+			if (type.IsNotPublic)
+				return new LateBoundTypeReadAccessor(members);
+
 			var name = type.CreateNameForReadAccessor(members.Types, members.Scope);
 
 			TypeBuilder tb;

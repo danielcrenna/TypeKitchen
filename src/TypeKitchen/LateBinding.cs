@@ -67,8 +67,8 @@ namespace TypeKitchen
 
 		public static Func<object, object> DynamicMethodBindGet(AccessorMember member)
 		{
-			var name = member.Name;
-			var dm = new DynamicMethod($"{name}", typeof(object), new[] {typeof(object)});
+			var skipVisibility = member.Type.IsNotPublic;
+			var dm = new DynamicMethod($"{member.Name}", typeof(object), new[] {typeof(object)}, skipVisibility);
 			var il = dm.GetILGenerator();
 			switch (member.MemberInfo)
 			{
@@ -104,8 +104,8 @@ namespace TypeKitchen
 
 		public static Action<object, object> DynamicMethodBindSet(AccessorMember member)
 		{
-			var name = member.Name;
-			var dm = new DynamicMethod($"{name}", typeof(void), new[] {typeof(object), typeof(object)});
+			var skipVisibility = member.Type.IsNotPublic;
+			var dm = new DynamicMethod($"{member.Name}", typeof(void), new[] {typeof(object), typeof(object)}, skipVisibility);
 			var il = dm.GetILGenerator();
 
 			Type memberType;

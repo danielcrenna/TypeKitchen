@@ -114,6 +114,9 @@ namespace TypeKitchen
 		{
 			members = CreateWriteAccessorMembers(type, types, scope);
 
+			if (type.IsNotPublic)
+				return new LateBoundTypeWriteAccessor(members);
+
 			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);
 
 			var tb = DynamicAssembly.Module.DefineType(name, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
