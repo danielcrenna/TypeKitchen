@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.12.0" />
     <PackageReference Include="Humanizer" Version="2.7.9" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.8.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.4.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.4.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Features" Version="3.4.0" />
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="3.1.2" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
 
@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\src\TypeKitchen.BuildHash\TypeKitchen.BuildHash.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.CacheLine\TypeKitchen.CacheLine.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.Composition\TypeKitchen.Composition.csproj" />
+    <ProjectReference Include="..\..\src\TypeKitchen.Differencing\TypeKitchen.Differencing.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.Scripting\TypeKitchen.Scripting.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.Serialization\TypeKitchen.Serialization.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.StateMachine\TypeKitchen.StateMachine.csproj" />

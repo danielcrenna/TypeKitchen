@@ -17,54 +17,35 @@ namespace TypeKitchen.Benchmarks.Scenarios
 	{
 		private TypeAccessor _fastMember;
 		private ITypeReadAccessor _typeKitchen;
+		private OnePropertyOneFieldStrings _target;
 
 		[GlobalSetup]
 		public void GlobalSetup()
 		{
 			_fastMember = TypeAccessor.Create(typeof(OnePropertyOneFieldStrings));
 			_typeKitchen = ReadAccessor.Create(typeof(OnePropertyOneFieldStrings));
-		}
-
-		[Benchmark(Baseline = false)]
-		public void FastMember_TypeAccessor_Singleton()
-		{
-			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
-			var bar = _fastMember[target, "Foo"];
-			var baz = _fastMember[target, "Bar"];
-		}
-
-		[Benchmark(Baseline = false)]
-		public void TypeKitchen_ReadAccessor_Singleton()
-		{
-			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
-			var bar = _typeKitchen[target, "Foo"];
-			var baz = _typeKitchen[target, "Bar"];
-		}
-
-		[Benchmark(Baseline = false)]
-		public void FastMember_TypeAccessor_Create()
-		{
-			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
-			var accessor = TypeAccessor.Create(target.GetType());
-			var bar = accessor[target, "Foo"];
-			var baz = accessor[target, "Bar"];
-		}
-
-		[Benchmark(Baseline = false)]
-		public void TypeKitchen_ReadAccessor_Create()
-		{
-			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
-			var accessor = ReadAccessor.Create(target.GetType());
-			var bar = accessor[target, "Foo"];
-			var baz = accessor[target, "Bar"];
+			_target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
 		}
 
 		[Benchmark(Baseline = true)]
 		public void Contrived_Direct_Access()
 		{
-			var target = new OnePropertyOneFieldStrings {Foo = "Bar", Bar = "Baz"};
-			var bar = DirectReadAccessorForOnePropertyOneField.Instance[target, "Foo"];
-			var baz = DirectReadAccessorForOnePropertyOneField.Instance[target, "Bar"];
+			var bar = DirectReadAccessorForOnePropertyOneField.Instance[_target, nameof(OnePropertyOneFieldStrings.Foo)];
+			var baz = DirectReadAccessorForOnePropertyOneField.Instance[_target, nameof(OnePropertyOneFieldStrings.Bar)];
+		}
+
+		[Benchmark(Baseline = false)]
+		public void TypeKitchen_ReadAccessor_Singleton()
+		{
+			var bar = _typeKitchen[_target, nameof(OnePropertyOneFieldStrings.Foo)];
+			var baz = _typeKitchen[_target, nameof(OnePropertyOneFieldStrings.Bar)];
+		}
+
+		[Benchmark(Baseline = false)]
+		public void FastMember_TypeAccessor_Singleton()
+		{
+			var bar = _fastMember[_target, nameof(OnePropertyOneFieldStrings.Foo)];
+			var baz = _fastMember[_target, nameof(OnePropertyOneFieldStrings.Bar)];
 		}
 	}
 }
