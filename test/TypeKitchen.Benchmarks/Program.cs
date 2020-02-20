@@ -8,17 +8,9 @@ namespace TypeKitchen.Benchmarks
 {
 	internal class Program
 	{
-		private static void Main(string[] args)
+		private static void Main()
 		{
-			//BenchmarkRunner.Run<ReadAccessorAnonymousTypeBenchmarks>();
-			//BenchmarkRunner.Run<ReadAccessorBenchmarks>();
-			//BenchmarkRunner.Run<WriteAccessorBenchmarks>();
-			//BenchmarkRunner.Run<SingletonTypeResolverBenchmarks>();
-			//BenchmarkRunner.Run<DuckCastingBenchmarks>();
-			BenchmarkRunner.Run<CallAccessorBenchmarks>();
-			//BenchmarkRunner.Run<ActivationBenchmarks>();
-			//BenchmarkRunner.Run<SnippetBenchmarks>();
-			//BenchmarkRunner.Run<DictionaryAccessBenchmarks>();
+			BenchmarkRunner.Run<ReadAccessorBenchmarks>();
 		}
 	}
 }
