@@ -160,6 +160,35 @@ namespace TypeKitchen
 			}
 		}
 
+		public static class StopwatchPool
+		{
+			public static ObjectPool<Stopwatch> Pool = new LeakTrackingObjectPool<Stopwatch>(
+				new DefaultObjectPool<Stopwatch>(new StopwatchPoolPolicy()));
+
+			public static TimeSpan Scoped(Action<Stopwatch> closure)
+			{
+				var sw = Pool.Get();
+				closure(sw);
+				var elapsed = sw.Elapsed;
+				Pool.Return(sw);
+				return elapsed;
+			}
+
+			private class StopwatchPoolPolicy : IPooledObjectPolicy<Stopwatch>
+			{
+				public Stopwatch Create()
+				{
+					return Stopwatch.StartNew();
+				}
+
+				public bool Return(Stopwatch obj)
+				{
+					obj.Reset();
+					return true;
+				}
+			}
+		}
+
 		#region Policies
 
 		/// <summary>

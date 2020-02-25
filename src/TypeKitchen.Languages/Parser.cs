@@ -5,7 +5,7 @@ namespace TypeKitchen.Languages
 {
     /// <summary>
     /// A top down infix using Pratt's precedence
-    /// This is an idiomatic port of the infix at https://github.com/munificent/bantam
+    /// This is an idiomatic port of the infix parser at https://github.com/munificent/bantam
     /// </summary>
     /// <seealso href="https://github.com/munificent/bantam" />
     /// <seealso href="http://en.wikipedia.org/wiki/Pratt_parser" />
