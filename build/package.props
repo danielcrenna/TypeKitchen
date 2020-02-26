@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.2.4</Version>
-    <PackageReleaseNotes>Added StopwatchPool.</PackageReleaseNotes>
+    <Version>1.2.5</Version>
+    <PackageReleaseNotes>Relocated Validator.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

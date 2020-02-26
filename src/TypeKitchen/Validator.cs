@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using TypeKitchen.Creation;
 
-namespace TypeKitchen.Metadata
+namespace TypeKitchen
 {
 	public static class Validator
 	{
