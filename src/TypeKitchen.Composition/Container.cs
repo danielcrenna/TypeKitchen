@@ -150,10 +150,14 @@ namespace TypeKitchen.Composition
 				case UpdateStrategy.Iterative:
 					break;
 				case UpdateStrategy.Recursive:
-					var states = _context.States.ToArray();
-					_context.States.Clear();
-					foreach (var s in states)
-						Tick(s, inactive, logger);
+					while (_context.StateCount > 0)
+					{
+						var states = _context.States.ToArray();
+						_context.States.Clear();
+
+						foreach (var s in states)
+							Tick(s, inactive, logger);
+					}
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null);
