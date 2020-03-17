@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.2.8</Version>
-    <PackageReleaseNotes>Added non-garbage enumerables.</PackageReleaseNotes>
+    <Version>1.2.9</Version>
+    <PackageReleaseNotes>Fixed method collision.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

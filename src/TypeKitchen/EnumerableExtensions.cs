@@ -23,10 +23,5 @@ namespace TypeKitchen
 		{
 			return new PredicateEnumerable<T>(inner, predicate);
 		}
-
-		public static IList<T> AsList<T>(this IEnumerable<T> enumerable)
-		{
-			return enumerable as IList<T> ?? enumerable.ToList();
-		}
 	}
 }
