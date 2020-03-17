@@ -56,10 +56,10 @@ namespace TypeKitchen
 			var parameters = method.GetParameters();
 			for (var i = 0; i < parameters.Length; i++)
 			{
-				il.Ldarg_1();		// args
+				il.Ldarg_1(); // args
 				il.LoadConstant(i); // i
-				il.Ldelem_Ref();	// args[i]
-				
+				il.Ldelem_Ref(); // args[i]
+
 				var parameterType = parameters[i].ParameterType;
 				var byRef = parameterType.IsByRef;
 				if (byRef)
@@ -82,8 +82,8 @@ namespace TypeKitchen
 				if (!parameterType.IsByRef)
 					continue;
 
-				il.Ldarg_1();							 // args
-				il.Ldc_I4(i);							 // i
+				il.Ldarg_1(); // args
+				il.Ldc_I4(i); // i
 				il.Ldloc(i + (method.IsStatic ? 0 : 1)); // args[i]
 
 				parameterType = parameterType.GetElementType() ?? parameterType;

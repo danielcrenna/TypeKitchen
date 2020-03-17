@@ -70,7 +70,8 @@ namespace TypeKitchen
 			return AccessorMembers.Create(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public);
 		}
 
-		private static int KeyForType(Type type, AccessorMemberTypes types, AccessorMemberScope scope, ProxyType proxyType)
+		private static int KeyForType(Type type, AccessorMemberTypes types, AccessorMemberScope scope,
+			ProxyType proxyType)
 		{
 			var key = type.IsAnonymous()
 				? new AccessorMembersKey(type, AccessorMemberTypes.Properties, AccessorMemberScope.Public)
@@ -78,7 +79,7 @@ namespace TypeKitchen
 
 			return key.GetHashCode() ^ proxyType.GetHashCode();
 		}
-		
+
 		private static Type CreateProxy(Type type, out AccessorMembers members, ProxyType proxyType)
 		{
 			Type parent;
@@ -87,7 +88,8 @@ namespace TypeKitchen
 				case ProxyType.Pure:
 				case ProxyType.Hybrid:
 					if (type.IsSealed)
-						throw new InvalidOperationException("Cannot create a proxy for a sealed type, you should create a mimic instead.");
+						throw new InvalidOperationException(
+							"Cannot create a proxy for a sealed type, you should create a mimic instead.");
 					parent = type;
 					break;
 				case ProxyType.Mimic:
@@ -99,12 +101,13 @@ namespace TypeKitchen
 
 			var proxyName = type.CreateNameForProxy(proxyType);
 			var tb = DynamicAssembly.Module.DefineType(proxyName, TypeAttributes.Public, parent);
-			if(type.IsInterface)
+			if (type.IsInterface)
 				tb.AddInterfaceImplementation(type);
 
 			members = AccessorMembers.Create(type, AccessorMemberTypes.All, AccessorMemberScope.Public);
 
-			const MethodAttributes ma = MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
+			const MethodAttributes ma = MethodAttributes.Public | MethodAttributes.SpecialName |
+			                            MethodAttributes.HideBySig;
 
 			foreach (var member in members)
 			{
@@ -118,7 +121,7 @@ namespace TypeKitchen
 							tb.ForwardFrom(method);
 						break;
 					}
-						
+
 					case FieldInfo field:
 					{
 						switch (proxyType)
@@ -141,10 +144,12 @@ namespace TypeKitchen
 									il.Ldarg_0();
 									il.Ldfld(field);
 								}
+
 								il.Ret();
 								pb.SetGetMethod(get);
 
-								var set = tb.DefineMethod($"set_{field.Name}", ma, typeof(void), new[] {field.FieldType});
+								var set = tb.DefineMethod($"set_{field.Name}", ma, typeof(void),
+									new[] {field.FieldType});
 								il = set.GetILGeneratorInternal();
 								if (field.IsStatic)
 								{
@@ -157,6 +162,7 @@ namespace TypeKitchen
 									il.Ldarg_1();
 									il.Stfld(field);
 								}
+
 								il.Ret();
 								pb.SetSetMethod(set);
 								break;
@@ -171,7 +177,7 @@ namespace TypeKitchen
 							default:
 								throw new ArgumentOutOfRangeException();
 						}
-						
+
 						break;
 					}
 
@@ -184,17 +190,20 @@ namespace TypeKitchen
 							{
 								if (property.GetMethod.ShouldSkip(proxyType))
 									continue;
-								var pb = tb.DefineProperty(property.Name, property.Attributes, property.PropertyType, null);
+								var pb = tb.DefineProperty(property.Name, property.Attributes, property.PropertyType,
+									null);
 								if (member.CanRead)
 								{
 									var getMethod = property.GetGetMethod();
 									pb.SetGetMethod(tb.ForwardFrom(getMethod));
 								}
+
 								if (member.CanWrite)
 								{
 									var setMethod = property.GetSetMethod();
 									pb.SetSetMethod(tb.ForwardFrom(setMethod));
 								}
+
 								break;
 							}
 
@@ -203,12 +212,15 @@ namespace TypeKitchen
 								var propertyName = property.Name;
 								var propertyType = property.PropertyType;
 
-								var fb = tb.DefineField($"<{propertyName}>k__BackingField", propertyType, FieldAttributes.Private);
+								var fb = tb.DefineField($"<{propertyName}>k__BackingField", propertyType,
+									FieldAttributes.Private);
 								var pb = tb.DefineProperty(propertyName, property.Attributes, propertyType, null);
 
 								if (member.CanRead)
 								{
-									var mb = tb.DefineMethod($"get_{propertyName}", type.IsInterface ? ma | MethodAttributes.Virtual : ma, propertyType, Type.EmptyTypes);
+									var mb = tb.DefineMethod($"get_{propertyName}",
+										type.IsInterface ? ma | MethodAttributes.Virtual : ma, propertyType,
+										Type.EmptyTypes);
 									var il = mb.GetILGeneratorInternal();
 									il.Ldarg_0();
 									il.Ldfld(fb);
@@ -218,7 +230,9 @@ namespace TypeKitchen
 
 								if (member.CanWrite || type.IsInterface)
 								{
-									var mb = tb.DefineMethod($"set_{propertyName}", type.IsInterface ? ma | MethodAttributes.Virtual : ma, typeof(void), new [] { propertyType });
+									var mb = tb.DefineMethod($"set_{propertyName}",
+										type.IsInterface ? ma | MethodAttributes.Virtual : ma, typeof(void),
+										new[] {propertyType});
 									var il = mb.GetILGeneratorInternal();
 									il.Ldarg_0();
 									il.Ldarg_1();
@@ -226,13 +240,14 @@ namespace TypeKitchen
 									il.Ret();
 									pb.SetSetMethod(mb);
 								}
+
 								break;
 							}
 
 							default:
 								throw new ArgumentOutOfRangeException(nameof(proxyType), proxyType, null);
 						}
-						
+
 						break;
 					}
 				}
@@ -269,7 +284,9 @@ namespace TypeKitchen
 		{
 			var parameterTypes = method.GetParameters().Select(x => x.ParameterType).ToArray(); // FIXME self-enumerate
 
-			var mb = tb.DefineMethod(method.Name, method.Attributes | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot, method.ReturnType, parameterTypes);
+			var mb = tb.DefineMethod(method.Name,
+				method.Attributes | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+				method.ReturnType, parameterTypes);
 			mb.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
 
 			if (method.IsVirtual)
@@ -284,7 +301,5 @@ namespace TypeKitchen
 
 			return mb;
 		}
-
-		
 	}
 }

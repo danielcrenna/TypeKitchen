@@ -1,5 +1,4 @@
-﻿
-// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -62,7 +61,7 @@ namespace TypeKitchen
 		{
 			return type.Namespace == null && Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute));
 		}
-		
+
 		public static string GetPreferredTypeName(this Type type)
 		{
 			string typeName;
@@ -138,6 +137,7 @@ namespace TypeKitchen
 								sb.Append(",");
 							sb.Append(GetPreferredTypeName(type.GenericTypeArguments[i]));
 						}
+
 						sb.Append(">");
 					});
 				}

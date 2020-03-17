@@ -17,15 +17,13 @@ namespace TypeKitchen
 		private static readonly ConcurrentDictionary<AccessorMembersKey, AccessorMembers> Cache =
 			new ConcurrentDictionary<AccessorMembersKey, AccessorMembers>();
 
-		public string DisplayName { get; }
-		
 		private AccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
 			DeclaringType = type;
 			DisplayName = GetDisplayName();
 			Types = types;
 			Scope = scope;
-			
+
 			NameToMember = new Dictionary<string, AccessorMember>();
 
 			var flags = BindingFlags.Instance | BindingFlags.Static;
@@ -44,8 +42,38 @@ namespace TypeKitchen
 			var properties = PropertyInfo ?? Enumerable.Empty<PropertyInfo>();
 			var methods = MethodInfo ?? Enumerable.Empty<MethodInfo>();
 
-			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(TryOrderMemberInfo).ToArray();
+			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(TryOrderMemberInfo)
+				.ToArray();
 			Members = NameToMember.Values.OrderBy(TryOrderMember).ToList();
+		}
+
+		public string DisplayName { get; }
+
+		public Type DeclaringType { get; }
+		public AccessorMemberTypes Types { get; }
+		public AccessorMemberScope Scope { get; }
+		public PropertyInfo[] PropertyInfo { get; set; }
+		public FieldInfo[] FieldInfo { get; set; }
+		public MethodInfo[] MethodInfo { get; set; }
+		public MemberInfo[] MemberInfo { get; }
+		public List<AccessorMember> Members { get; }
+
+		private Dictionary<string, AccessorMember> NameToMember { get; }
+
+		public AccessorMember this[string name] => NameToMember[name];
+		public AccessorMember this[int index] => Members[index];
+
+		public int Count => NameToMember.Count;
+		public IEnumerable<string> Names => NameToMember.Keys;
+
+		public IEnumerator<AccessorMember> GetEnumerator()
+		{
+			return Members.GetEnumerator();
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return GetEnumerator();
 		}
 
 		private static object TryOrderMemberInfo(MemberInfo m)
@@ -83,10 +111,13 @@ namespace TypeKitchen
 			if (types.HasFlagFast(AccessorMemberTypes.Properties))
 			{
 				var properties = type.GetProperties(flags).OrderBy(p => p.Name);
-				PropertyInfo = PropertyInfo == null ? properties.ToArray() : PropertyInfo.Concat(properties).Distinct().ToArray();
+				PropertyInfo = PropertyInfo == null
+					? properties.ToArray()
+					: PropertyInfo.Concat(properties).Distinct().ToArray();
 				foreach (var property in PropertyInfo)
 					NameToMember[property.Name] =
-						new AccessorMember(type, property.Name, property.PropertyType, CanAccessorRead(property, scope), CanAccessorWrite(property, scope),
+						new AccessorMember(type, property.Name, property.PropertyType, CanAccessorRead(property, scope),
+							CanAccessorWrite(property, scope),
 							false, scope, AccessorMemberType.Property, property);
 			}
 
@@ -125,40 +156,13 @@ namespace TypeKitchen
 				_ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null)
 			};
 		}
-		
-		public Type DeclaringType { get; }
-		public AccessorMemberTypes Types { get; }
-		public AccessorMemberScope Scope { get; }
-		public PropertyInfo[] PropertyInfo { get; set; }
-		public FieldInfo[] FieldInfo { get; set; }
-		public MethodInfo[] MethodInfo { get; set; }
-		public MemberInfo[] MemberInfo { get; }
-		public List<AccessorMember> Members { get; }
-
-		private Dictionary<string, AccessorMember> NameToMember { get; }
-
-		public AccessorMember this[string name] => NameToMember[name];
-		public AccessorMember this[int index] => Members[index];
-
-		public int Count => NameToMember.Count;
-		public IEnumerable<string> Names => NameToMember.Keys;
-
-		public IEnumerator<AccessorMember> GetEnumerator()
-		{
-			return Members.GetEnumerator();
-		}
-
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
 
 		public bool ContainsKey(string key)
 		{
 			return NameToMember.ContainsKey(key);
 		}
 
-		public static AccessorMembers Create(object instance, 
+		public static AccessorMembers Create(object instance,
 			AccessorMemberTypes types = AccessorMemberTypes.All,
 			AccessorMemberScope scope = AccessorMemberScope.All)
 		{

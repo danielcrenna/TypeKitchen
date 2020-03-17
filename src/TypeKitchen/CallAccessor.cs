@@ -166,9 +166,9 @@ namespace TypeKitchen
 
 		private static IMethodCallAccessor CreateMethodCallAccessor(Type type, MethodInfo method)
 		{
-			if(type.IsNotPublic)
+			if (type.IsNotPublic)
 				return new LateBoundMethodCallAccessor(method);
-			
+
 			var name = type.CreateNameForMethodCallAccessor(method);
 
 			var tb = DynamicAssembly.Module.DefineType(name,
@@ -181,7 +181,7 @@ namespace TypeKitchen
 			var call = tb.DefineMethod(nameof(MethodCallAccessor.Call),
 				MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 				MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(object),
-				new[] { typeof(object), typeof(object[])});
+				new[] {typeof(object), typeof(object[])});
 
 			call.GetILGeneratorInternal().EmitCallMethod(method);
 			tb.DefineMethodOverride(call, KnownMethods.CallWithArgs);
@@ -197,7 +197,7 @@ namespace TypeKitchen
 		{
 			var type = method.DeclaringType ?? throw new NullReferenceException();
 
-			if(!method.IsStatic)
+			if (!method.IsStatic)
 			{
 				il.Ldarg_1(); // target
 				il.Unbox_Any(type);
@@ -215,9 +215,9 @@ namespace TypeKitchen
 			{
 				for (var i = 0; i < parameters.Length; i++)
 				{
-					il.Ldarg_2();       // args
+					il.Ldarg_2(); // args
 					il.LoadConstant(i); // i
-					il.Ldelem_Ref();    // args[i]
+					il.Ldelem_Ref(); // args[i]
 
 					var parameterType = parameters[i].ParameterType;
 					var byRef = parameterType.IsByRef;
@@ -242,8 +242,8 @@ namespace TypeKitchen
 				if (!parameterType.IsByRef)
 					continue;
 
-				il.Ldarg_2();                            // args
-				il.Ldc_I4(i);                            // i
+				il.Ldarg_2(); // args
+				il.Ldc_I4(i); // i
 				il.Ldloc(i + (method.IsStatic ? 0 : 1)); // args[i]
 
 				parameterType = parameterType.GetElementType() ?? parameterType;

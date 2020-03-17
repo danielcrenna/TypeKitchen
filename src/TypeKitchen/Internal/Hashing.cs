@@ -17,7 +17,7 @@ namespace TypeKitchen.Internal
 
 			var h1 = seed.v1;
 			var h2 = seed.v2;
-			
+
 			//----------
 			// body
 			for (var i = 0; i < blocks; i++)

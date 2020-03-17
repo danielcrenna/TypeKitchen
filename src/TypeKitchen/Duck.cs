@@ -12,7 +12,7 @@ namespace TypeKitchen
 		{
 			if (instance == null)
 				return default;
-			
+
 			var target = typeof(T).IsByRef ? typeof(T).GetElementType() ?? typeof(T) : typeof(T);
 
 			if (target.IsInterface)
@@ -95,7 +95,8 @@ namespace TypeKitchen
 				// FIXME: Investigate converting T to a formatted class: 
 				// See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/0372911d-c200-47f0-91ac-a35428751e6b/what-is-a-formatted-class?forum=clr
 				var handle = GCHandle.Alloc(instance, GCHandleType.Pinned);
-				var allocated = (T) System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+				var allocated =
+					(T) System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
 				handle.Free();
 				return allocated;
 			}
@@ -113,7 +114,8 @@ namespace TypeKitchen
 				// FIXME: Investigate converting T to a formatted class: 
 				// See: https://social.msdn.microsoft.com/Forums/vstudio/en-US/0372911d-c200-47f0-91ac-a35428751e6b/what-is-a-formatted-class?forum=clr
 				var handle = GCHandle.Alloc(instance, GCHandleType.Pinned);
-				var allocated = System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), type);
+				var allocated =
+					System.Runtime.InteropServices.Marshal.PtrToStructure(handle.AddrOfPinnedObject(), type);
 				handle.Free();
 				return allocated;
 			}

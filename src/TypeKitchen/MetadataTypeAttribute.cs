@@ -14,9 +14,9 @@ namespace TypeKitchen
 			MetadataType = metadataType;
 		}
 
-		public string Profile { get; }
-
 		public MetadataTypeAttribute(Type metadataType) : this("Default", metadataType) { }
+
+		public string Profile { get; }
 
 		public Type MetadataType { get; }
 	}

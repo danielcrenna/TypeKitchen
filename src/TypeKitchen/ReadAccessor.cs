@@ -178,11 +178,11 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
-					il.MarkLabel(branches[member]);		// found:
-					il.Ldarg_3();						// value
-					il.Ldarg_1();						// target
-					il.CastOrUnbox(type);				// ({Type}) target
-					switch (member.MemberInfo)			// result = target.{member.Name}
+					il.MarkLabel(branches[member]); // found:
+					il.Ldarg_3(); // value
+					il.Ldarg_1(); // target
+					il.CastOrUnbox(type); // ({Type}) target
+					switch (member.MemberInfo) // result = target.{member.Name}
 					{
 						case PropertyInfo property:
 							il.Callvirt(property.GetGetMethod(true));
@@ -192,20 +192,21 @@ namespace TypeKitchen
 							break;
 					}
 
-					il.MaybeBox(member.Type);			// (object) result
-					il.Stind_Ref();						// value = result
-					il.Ldc_I4_1();						// 1
-					il.Ret();							// return 1 (true)
+					il.MaybeBox(member.Type); // (object) result
+					il.Stind_Ref(); // value = result
+					il.Ldc_I4_1(); // 1
+					il.Ret(); // return 1 (true)
 				}
 
 				il.MarkLabel(fail);
-				il.Ldarg_3();							// value
-				il.Ldnull();							// null
-				il.Stind_Ref();							// value = null
-				il.Ldc_I4_0();							// 0
-				il.Ret();								// return 0 (false)
+				il.Ldarg_3(); // value
+				il.Ldnull(); // null
+				il.Stind_Ref(); // value = null
+				il.Ldc_I4_0(); // 0
+				il.Ret(); // return 0 (false)
 
-				tb.DefineMethodOverride(tryGetValue, typeof(IReadAccessor).GetMethod(nameof(IReadAccessor.TryGetValue)));
+				tb.DefineMethodOverride(tryGetValue,
+					typeof(IReadAccessor).GetMethod(nameof(IReadAccessor.TryGetValue)));
 			}
 
 			//
@@ -224,17 +225,17 @@ namespace TypeKitchen
 
 				foreach (var member in members)
 				{
-					il.Ldarg_2();											// key
-					il.GotoIfStringEquals(member.Name, branches[member]);	// if (key == "{member.Name}") goto found;
+					il.Ldarg_2(); // key
+					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
 				{
 					il.MarkLabel(branches[member]);
-					il.Ldarg_1();					// target
-					il.CastOrUnbox(type);			// ({Type}) target
+					il.Ldarg_1(); // target
+					il.CastOrUnbox(type); // ({Type}) target
 
-					switch (member.MemberInfo)		// result = target.Foo
+					switch (member.MemberInfo) // result = target.Foo
 					{
 						case PropertyInfo property:
 							il.Callvirt(property.GetGetMethod(true));
@@ -244,8 +245,8 @@ namespace TypeKitchen
 							break;
 					}
 
-					il.MaybeBox(member.Type);       // (object) result
-					il.Ret();						// return result;
+					il.MaybeBox(member.Type); // (object) result
+					il.Ret(); // return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
@@ -261,7 +262,7 @@ namespace TypeKitchen
 			var typeInfo = tb.CreateTypeInfo();
 			return (ITypeReadAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
 		}
-		
+
 		private static AccessorMembers CreateReadAccessorMembers(Type type,
 			AccessorMemberTypes types = AccessorMemberTypes.Fields | AccessorMemberTypes.Properties,
 			AccessorMemberScope scope = AccessorMemberScope.All)
@@ -297,7 +298,8 @@ namespace TypeKitchen
 			var staticFieldsByMember = new Dictionary<AccessorMember, FieldBuilder>();
 			foreach (var member in members)
 			{
-				var backingField = type.GetField($"<{member.Name}>i__Field", BindingFlags.NonPublic | BindingFlags.Instance);
+				var backingField = type.GetField($"<{member.Name}>i__Field",
+					BindingFlags.NonPublic | BindingFlags.Instance);
 				if (backingField == null)
 					throw new NullReferenceException();
 
@@ -359,22 +361,22 @@ namespace TypeKitchen
 				{
 					var fb = staticFieldsByMember[member];
 
-					il.MarkLabel(branches[member]);             // found:
-					il.Ldarg_3();                               //     value
-					il.Ldsfld(fb);                              //     _GetFoo
-					il.Ldarg_1();                               //     target
-					il.Call(fb.FieldType.GetMethod("Invoke"));  //     result = _GetFoo.Invoke(target)
-					il.Stind_Ref();                             //     value = result
-					il.Ldc_I4_1();                              //     1
-					il.Ret();                                   //     return 1 (true)
+					il.MarkLabel(branches[member]); // found:
+					il.Ldarg_3(); //     value
+					il.Ldsfld(fb); //     _GetFoo
+					il.Ldarg_1(); //     target
+					il.Call(fb.FieldType.GetMethod("Invoke")); //     result = _GetFoo.Invoke(target)
+					il.Stind_Ref(); //     value = result
+					il.Ldc_I4_1(); //     1
+					il.Ret(); //     return 1 (true)
 				}
 
 				il.MarkLabel(fail);
-				il.Ldarg_3();                                   //     value
-				il.Ldnull();                                    //     null
-				il.Stind_Ref();                                 //     value = null
-				il.Ldc_I4_0();                                  //     0
-				il.Ret();                                       //     return 0 (false)
+				il.Ldarg_3(); //     value
+				il.Ldnull(); //     null
+				il.Stind_Ref(); //     value = null
+				il.Ldc_I4_0(); //     0
+				il.Ret(); //     return 0 (false)
 
 				tb.DefineMethodOverride(tryGetValue,
 					typeof(IReadAccessor).GetMethod(nameof(IReadAccessor.TryGetValue)));
@@ -404,11 +406,11 @@ namespace TypeKitchen
 				{
 					var fb = staticFieldsByMember[member];
 
-					il.MarkLabel(branches[member]);             // found:
-					il.Ldsfld(fb);                              // _GetFoo
-					il.Ldarg_1();                               // target
-					il.Call(fb.FieldType.GetMethod("Invoke"));  //     result = _GetFoo.Invoke(target)
-					il.Ret();                                   // return result;
+					il.MarkLabel(branches[member]); // found:
+					il.Ldsfld(fb); // _GetFoo
+					il.Ldarg_1(); // target
+					il.Call(fb.FieldType.GetMethod("Invoke")); //     result = _GetFoo.Invoke(target)
+					il.Ret(); // return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes));
@@ -420,7 +422,7 @@ namespace TypeKitchen
 
 				tb.DefineMethodOverride(getItem, typeof(IReadAccessor).GetMethod("get_Item"));
 			}
-			
+
 			var typeInfo = tb.CreateTypeInfo();
 
 			//
@@ -437,9 +439,11 @@ namespace TypeKitchen
 				{
 					var memberName = setter.Key.Name.Replace("_SetGet", string.Empty);
 
-					var staticFieldFunc = (Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
+					var staticFieldFunc =
+						(Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
 					if (staticFieldFunc != setter.Value)
-						throw new ArgumentException($"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
+						throw new ArgumentException(
+							$"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
 
 					var backingField = type.GetField($"<{memberName}>i__Field",
 						BindingFlags.NonPublic | BindingFlags.Instance);
@@ -449,8 +453,9 @@ namespace TypeKitchen
 					var backingFieldValue = backingField.GetValue(debugObject);
 					var cachedDelegateValue = setter.Value(debugObject);
 
-					if(backingFieldValue != null && !backingFieldValue.Equals(cachedDelegateValue))
-						throw new ArgumentException($"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
+					if (backingFieldValue != null && !backingFieldValue.Equals(cachedDelegateValue))
+						throw new ArgumentException(
+							$"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
 				}
 			}
 
@@ -461,7 +466,9 @@ namespace TypeKitchen
 				foreach (var member in members)
 				{
 					var byAccessor = accessor[debugObject, member.Name];
-					var byReflection = ((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(debugObject);
+					var byReflection =
+						((Func<object, object>) typeInfo.GetField($"_Get{member.Name}").GetValue(debugObject))(
+							debugObject);
 					if (byAccessor != null && !byAccessor.Equals(byReflection))
 						throw new InvalidOperationException("IL produced incorrect accessor");
 				}

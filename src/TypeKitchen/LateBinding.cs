@@ -15,7 +15,7 @@ namespace TypeKitchen
 {
 	public static partial class LateBinding
 	{
-		#region CallSite 
+		#region CallSite
 
 		public static Dictionary<string, Func<object, object>> CallSiteBindGet(AccessorMembers members)
 		{
@@ -105,7 +105,8 @@ namespace TypeKitchen
 		public static Action<object, object> DynamicMethodBindSet(AccessorMember member)
 		{
 			var skipVisibility = member.Type.IsNotPublic;
-			var dm = new DynamicMethod($"{member.Name}", typeof(void), new[] {typeof(object), typeof(object)}, skipVisibility);
+			var dm = new DynamicMethod($"{member.Name}", typeof(void), new[] {typeof(object), typeof(object)},
+				skipVisibility);
 			var il = dm.GetILGenerator();
 
 			Type memberType;

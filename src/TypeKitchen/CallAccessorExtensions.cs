@@ -1,4 +1,7 @@
-﻿namespace TypeKitchen
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+namespace TypeKitchen
 {
 	public static class CallAccessorExtensions
 	{
@@ -44,7 +47,8 @@
 			}
 		}
 
-		public static object Call(this IMethodCallAccessor accessor, object target, object arg1, object arg2, object arg3)
+		public static object Call(this IMethodCallAccessor accessor, object target, object arg1, object arg2,
+			object arg3)
 		{
 			var args = Pooling.Arguments.Get(3);
 			args[0] = arg1;

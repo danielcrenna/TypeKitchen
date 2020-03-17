@@ -108,7 +108,7 @@ namespace TypeKitchen
 			var key = new AccessorMembersKey(type, types, scope);
 			return key;
 		}
-		
+
 		private static ITypeWriteAccessor CreateWriteAccessor(Type type, AccessorMemberTypes types,
 			AccessorMemberScope scope, out AccessorMembers members)
 		{
@@ -119,7 +119,9 @@ namespace TypeKitchen
 
 			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);
 
-			var tb = DynamicAssembly.Module.DefineType(name, TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+			var tb = DynamicAssembly.Module.DefineType(name,
+				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
+				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
 			tb.AddInterfaceImplementation(typeof(ITypeWriteAccessor));
 
 			//
@@ -138,7 +140,7 @@ namespace TypeKitchen
 					continue; // not a property
 				if (property.GetSetMethod(true) != null)
 					continue; // has public setter
-                
+
 				var backingField = member.BackingField;
 				if (backingField == null)
 					continue;
@@ -152,19 +154,22 @@ namespace TypeKitchen
 				setFieldIl.Stfld(backingField);
 				setFieldIl.Ret();
 
-				var setFieldDelegateType = typeof(Action<,>).MakeGenericType(backingField.DeclaringType, backingField.FieldType);
+				var setFieldDelegateType =
+					typeof(Action<,>).MakeGenericType(backingField.DeclaringType, backingField.FieldType);
 				var setFieldDelegate = setFieldMethod.CreateDelegate(setFieldDelegateType);
 
 				// At this point we have a valid delegate that will set the private backing field...
 
-				var setFieldDelegateField = tb.DefineField($"_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+				var setFieldDelegateField = tb.DefineField(
+					$"_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
 					setFieldDelegateType,
 					FieldAttributes.Private | FieldAttributes.Static | FieldAttributes.InitOnly);
 
-				var setFieldDelegateMethod = tb.DefineMethod($"_set_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+				var setFieldDelegateMethod = tb.DefineMethod(
+					$"_set_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
 					MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard,
 					typeof(void),
-					new[] { setFieldDelegateType });
+					new[] {setFieldDelegateType});
 
 				var setFieldDelegateIl = setFieldDelegateMethod.GetILGeneratorInternal();
 				setFieldDelegateIl.Ldarg_0();
@@ -175,7 +180,8 @@ namespace TypeKitchen
 
 				// At this point we've defined a static field to store our delegate setter and a method to set that field...
 
-				var getFieldDelegateMethod = tb.DefineMethod($"_get_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+				var getFieldDelegateMethod = tb.DefineMethod(
+					$"_get_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
 					MethodAttributes.Private | MethodAttributes.Static, CallingConventions.Standard,
 					setFieldDelegateType, null);
 
@@ -186,11 +192,12 @@ namespace TypeKitchen
 				getFieldDelegateMethods.Add(getFieldDelegateMethod);
 
 				// At this point we can get and set the static field delegates, and now we need to cache a method to invoke them...
-                
-				var invokeFieldDelegateMethod = tb.DefineMethod($"_invoke_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
+
+				var invokeFieldDelegateMethod = tb.DefineMethod(
+					$"_invoke_setFieldDelegate_{member.Type.Namespace}_{member.Type.Name}_{backingField.Name}",
 					MethodAttributes.Static | MethodAttributes.Private, CallingConventions.Standard,
 					typeof(void),
-					new[] { backingField.DeclaringType, backingField.FieldType });
+					new[] {backingField.DeclaringType, backingField.FieldType});
 
 				var invokeFieldDelegateIl = invokeFieldDelegateMethod.GetILGenerator();
 				invokeFieldDelegateIl.Emit(OpCodes.Ldsfld, setFieldDelegateField);
@@ -200,7 +207,7 @@ namespace TypeKitchen
 				invokeFieldDelegateIl.Emit(OpCodes.Ret);
 
 				invokeFieldDelegateMethods.Add(invokeFieldDelegateMethod);
-                callSwaps.Add(member, invokeFieldDelegateMethod);
+				callSwaps.Add(member, invokeFieldDelegateMethod);
 			}
 
 			//
@@ -213,7 +220,8 @@ namespace TypeKitchen
 					Type.EmptyTypes);
 				var il = getType.GetILGeneratorInternal();
 				il.Ldtoken(type);
-				il.CallOrCallvirt(type, typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
+				il.CallOrCallvirt(type,
+					typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), BindingFlags.Static | BindingFlags.Public));
 				il.Ret();
 
 				var getTypeProperty = tb.DefineProperty(nameof(ITypeWriteAccessor.Type), PropertyAttributes.None,
@@ -248,8 +256,8 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.Ldarg_2();											// key
-					il.GotoIfStringEquals(member.Name, branches[member]);   // if (key == "{member.Name}") goto found;
+					il.Ldarg_2(); // key
+					il.GotoIfStringEquals(member.Name, branches[member]); // if (key == "{member.Name}") goto found;
 				}
 
 				foreach (var member in members)
@@ -259,14 +267,14 @@ namespace TypeKitchen
 
 					il.MarkLabel(branches[member]); // found:
 
-					il.Ldarg_1();                               // target
-					il.CastOrUnbox(type);                       // ({Type}) target
-					il.Ldarg_3();                               // value
+					il.Ldarg_1(); // target
+					il.CastOrUnbox(type); // ({Type}) target
+					il.Ldarg_3(); // value
 
-					switch (member.MemberInfo)      // target.{member.Name} = value
+					switch (member.MemberInfo) // target.{member.Name} = value
 					{
 						case PropertyInfo property:
-							
+
 							il.CastOrUnboxAny(property.PropertyType);
 							il.CallOrCallvirt(type, GetOrSwapPropertySetter(property, callSwaps, member));
 							break;
@@ -276,15 +284,15 @@ namespace TypeKitchen
 							il.Stfld(field);
 							break;
 					}
-					
-					il.Ldc_I4_1();					//     1
-					il.Ret();						//     return 1 (true)
+
+					il.Ldc_I4_1(); //     1
+					il.Ret(); //     return 1 (true)
 				}
 
-				il.Ldnull();						//     null
-				il.Starg_S();						//     value = null
-				il.Ldc_I4_0();						//     0
-				il.Ret();							//     return 0 (false)
+				il.Ldnull(); //     null
+				il.Starg_S(); //     value = null
+				il.Ldc_I4_0(); //     0
+				il.Ret(); //     return 0 (false)
 
 				tb.DefineMethodOverride(trySetValue,
 					typeof(IWriteAccessor).GetMethod(nameof(IWriteAccessor.TrySetValue)));
@@ -323,16 +331,16 @@ namespace TypeKitchen
 					if (!member.CanWrite)
 						continue;
 
-					il.MarkLabel(branches[member]);     // found:
+					il.MarkLabel(branches[member]); // found:
 
-					il.Ldarg_1();           // target
-					il.CastOrUnbox(type);   // ({Type}) target
-					il.Ldarg_3();           // value
+					il.Ldarg_1(); // target
+					il.CastOrUnbox(type); // ({Type}) target
+					il.Ldarg_3(); // value
 
-					switch (member.MemberInfo)			// result = target.{member.Name}
+					switch (member.MemberInfo) // result = target.{member.Name}
 					{
 						case PropertyInfo property:
-                            il.CastOrUnboxAny(property.PropertyType);
+							il.CastOrUnboxAny(property.PropertyType);
 							il.CallOrCallvirt(type, GetOrSwapPropertySetter(property, callSwaps, member));
 							break;
 						case FieldInfo field:
@@ -341,7 +349,7 @@ namespace TypeKitchen
 							break;
 					}
 
-					il.Ret();							// return result;
+					il.Ret(); // return result;
 				}
 
 				il.Newobj(typeof(ArgumentNullException).GetConstructor(Type.EmptyTypes)).Throw();
@@ -363,7 +371,7 @@ namespace TypeKitchen
 				if (setFieldMethod == null)
 					continue;
 
-				setFieldMethod.Invoke(null, new object[] { entry.Value });
+				setFieldMethod.Invoke(null, new object[] {entry.Value});
 			}
 
 			// Test that we can access the static fields correctly...
@@ -389,13 +397,14 @@ namespace TypeKitchen
 					throw new NullReferenceException();
 
 				var test = Activator.CreateInstance(type);
-				invokeFieldMethod.Invoke(null, new[] { test, "Foo" });
+				invokeFieldMethod.Invoke(null, new[] {test, "Foo"});
 			}
 
 			return (ITypeWriteAccessor) Activator.CreateInstance(typeInfo.AsType(), false);
 		}
 
-		private static MethodInfo GetOrSwapPropertySetter(PropertyInfo property, Dictionary<AccessorMember, MethodInfo> callSwaps, AccessorMember member)
+		private static MethodInfo GetOrSwapPropertySetter(PropertyInfo property,
+			Dictionary<AccessorMember, MethodInfo> callSwaps, AccessorMember member)
 		{
 			var setMethod = property.GetSetMethod(true);
 			if (setMethod == null)
@@ -403,7 +412,8 @@ namespace TypeKitchen
 			return setMethod;
 		}
 
-		private static AccessorMembers CreateWriteAccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
+		private static AccessorMembers CreateWriteAccessorMembers(Type type, AccessorMemberTypes types,
+			AccessorMemberScope scope)
 		{
 			return AccessorMembers.Create(type, types, scope);
 		}

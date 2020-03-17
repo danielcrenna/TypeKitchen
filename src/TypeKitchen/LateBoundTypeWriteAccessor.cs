@@ -9,7 +9,7 @@ namespace TypeKitchen
 	internal sealed class LateBoundTypeWriteAccessor : ITypeWriteAccessor
 	{
 		private readonly IDictionary<string, Action<object, object>> _binding;
-		
+
 		public LateBoundTypeWriteAccessor(AccessorMembers members)
 		{
 			Type = members.DeclaringType;

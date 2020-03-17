@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -7,14 +10,6 @@ namespace TypeKitchen
 {
 	public sealed class AccessorMemberDisplay
 	{
-		public string Name { get; private set; }
-		public string Prompt { get; private set; }
-		public string CustomDataType { get; private set; }
-		public DataType DataType { get; private set; }
-		public string DateFormat { get; private set; }
-		public bool IsReadOnly { get; private set; }
-		public bool IsVisible { get; private set; }
-
 		public AccessorMemberDisplay(AccessorMember member, string profile)
 		{
 			member = MaybeUseMetadata(member, profile);
@@ -27,6 +22,14 @@ namespace TypeKitchen
 			ResolveVisible(member);
 		}
 
+		public string Name { get; private set; }
+		public string Prompt { get; private set; }
+		public string CustomDataType { get; private set; }
+		public DataType DataType { get; private set; }
+		public string DateFormat { get; private set; }
+		public bool IsReadOnly { get; private set; }
+		public bool IsVisible { get; private set; }
+
 		private static AccessorMember MaybeUseMetadata(AccessorMember member, string profile)
 		{
 			if (member.DeclaringType != null)
@@ -37,7 +40,8 @@ namespace TypeKitchen
 			return member;
 		}
 
-		private static AccessorMember MaybeSwapMetadataMember(ICustomAttributeProvider authority, AccessorMember member, string profile)
+		private static AccessorMember MaybeSwapMetadataMember(ICustomAttributeProvider authority, AccessorMember member,
+			string profile)
 		{
 			foreach (var attribute in authority.GetAttributes<MetadataTypeAttribute>())
 			{
@@ -72,7 +76,7 @@ namespace TypeKitchen
 			{
 				IsVisible = browsable.Browsable;
 			}
-			else if(member.TryGetAttribute(out DesignTimeVisibleAttribute visible))
+			else if (member.TryGetAttribute(out DesignTimeVisibleAttribute visible))
 			{
 				IsVisible = visible.Visible;
 			}
@@ -100,7 +104,7 @@ namespace TypeKitchen
 
 		private void ResolveDateFormat(AccessorMember member)
 		{
-			if(DataType == DataType.Date || DataType == DataType.DateTime)
+			if (DataType == DataType.Date || DataType == DataType.DateTime)
 			{
 				DateFormat = member.TryGetAttribute(out DisplayFormatAttribute displayFormat)
 					? displayFormat.DataFormatString
@@ -120,6 +124,7 @@ namespace TypeKitchen
 				DataType = DataType.Text;
 				return;
 			}
+
 			DataType = dataType.DataType;
 			if (DataType == DataType.Custom)
 				CustomDataType = dataType.CustomDataType;
@@ -133,7 +138,7 @@ namespace TypeKitchen
 				if (Name != null)
 					return;
 			}
-			
+
 			if (member.TryGetAttribute(out DisplayNameAttribute displayName))
 			{
 				Name = displayName.DisplayName;

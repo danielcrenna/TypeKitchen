@@ -12,16 +12,18 @@ namespace TypeKitchen
 {
 	public class ReflectionTypeResolver : ITypeResolver
 	{
-		private readonly string[] _skipRuntimeAssemblies;
 		private readonly Lazy<IEnumerable<MethodInfo>> _loadedMethods;
 		private readonly Lazy<IEnumerable<Type>> _loadedTypes;
+		private readonly string[] _skipRuntimeAssemblies;
 
-		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies, ILogger logger, IEnumerable<string> skipRuntimeAssemblies = null)
+		public ReflectionTypeResolver(IEnumerable<Assembly> assemblies, ILogger logger,
+			IEnumerable<string> skipRuntimeAssemblies = null)
 		{
-			_loadedTypes = new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, logger, typeof(object).GetTypeInfo().Assembly));
+			_loadedTypes =
+				new Lazy<IEnumerable<Type>>(() => LoadTypes(assemblies, logger, typeof(object).GetTypeInfo().Assembly));
 			_loadedMethods = new Lazy<IEnumerable<MethodInfo>>(LoadMethods);
-				
-			_skipRuntimeAssemblies = new []
+
+			_skipRuntimeAssemblies = new[]
 			{
 				"Microsoft.VisualStudio.ArchitectureTools.PEReader",
 				"Microsoft.IntelliTrace.Core, Version=16.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
@@ -103,7 +105,8 @@ namespace TypeKitchen
 				yield return method;
 		}
 
-		private IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, ILogger logger, params Assembly[] skipAssemblies)
+		private IEnumerable<Type> LoadTypes(IEnumerable<Assembly> assemblies, ILogger logger,
+			params Assembly[] skipAssemblies)
 		{
 			var types = new HashSet<Type>();
 
@@ -120,7 +123,8 @@ namespace TypeKitchen
 				}
 				catch (Exception e)
 				{
-					logger?.LogError(new EventId(500), e, "Failed to load types in assembly {AssemblyName}", assembly.GetName().Name);
+					logger?.LogError(new EventId(500), e, "Failed to load types in assembly {AssemblyName}",
+						assembly.GetName().Name);
 				}
 			}
 

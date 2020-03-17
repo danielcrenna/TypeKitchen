@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Copyright (c) Daniel Crenna & Contributors. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System.ComponentModel.DataAnnotations;
 
 namespace TypeKitchen
 {
@@ -37,7 +40,8 @@ namespace TypeKitchen
 			       member.Display(profile).IsVisible;
 		}
 
-		public static bool IsDataType(this AccessorMembers members, string memberName, DataType dataType, string profile = "Default")
+		public static bool IsDataType(this AccessorMembers members, string memberName, DataType dataType,
+			string profile = "Default")
 		{
 			return members.TryGetValue(memberName, out var member) &&
 			       member.Display(profile).DataType == dataType;

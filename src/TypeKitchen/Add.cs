@@ -12,7 +12,8 @@ namespace TypeKitchen
 	{
 		public static IServiceCollection AddTypeResolver(this IServiceCollection services, ILogger logger = null)
 		{
-			services.TryAddSingleton<ITypeResolver>(r => new ReflectionTypeResolver(AppDomain.CurrentDomain.GetAssemblies(), logger));
+			services.TryAddSingleton<ITypeResolver>(r =>
+				new ReflectionTypeResolver(AppDomain.CurrentDomain.GetAssemblies(), logger));
 			return services;
 		}
 	}

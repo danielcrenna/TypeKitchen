@@ -9,7 +9,7 @@ namespace TypeKitchen
 	internal sealed class LateBoundTypeReadAccessor : ITypeReadAccessor
 	{
 		private readonly IDictionary<string, Func<object, object>> _binding;
-		
+
 		public LateBoundTypeReadAccessor(AccessorMembers members)
 		{
 			Type = members.DeclaringType;
