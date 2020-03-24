@@ -10,7 +10,7 @@ However, rather than standardize on a single library that performs all of these 
 TypeKitchen replaces these libraries with a concise API to perform the following meta-programming tasks:
 
 #### Common Tasks
-- Field and Property Access: _getting and setting data members by name, including private members and anonymous types_
+- [Field and Property Access](https://daniel-crenna.gitbook.io/typekitchen/#field-and-property-access): _getting and setting data members by name, including private members and anonymous types_
 - Method Call Invocation: _calling methods on runtime types, when you know the arguments at runtime, and even when you don't_
 - Object Activation: _creating new instances of types, typically because `Activator.CreateInstance` is too slow_
 - Object Pooling: _when you want to avoid over-allocating memory that will be garbage collected later_
