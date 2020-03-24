@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TypeKitchen.Internal;
+using TypeKitchen.Reflection;
 
 namespace TypeKitchen.Composition
 {
@@ -15,7 +15,7 @@ namespace TypeKitchen.Composition
 		public uint CreateEntity(params Type[] componentTypes)
 		{
 			var entity = InitializeEntity(componentTypes);
-			foreach (var componentType in componentTypes.NetworkOrder(x => x.Name))
+			foreach (var componentType in componentTypes.StableOrder(x => x.Name))
 			{
 				if (!_componentsByEntity.TryGetValue(entity, out var list))
 					_componentsByEntity.Add(entity, list = new List<ValueType>());
@@ -27,7 +27,7 @@ namespace TypeKitchen.Composition
 		public uint CreateEntity(params object[] components)
 		{
 			var entity = InitializeEntity(components.Select(x => x.GetType()));
-			foreach (var component in components.NetworkOrder(x => x.GetType().Name))
+			foreach (var component in components.StableOrder(x => x.GetType().Name))
 			{
 				if (!_componentsByEntity.TryGetValue(entity, out var list))
 					_componentsByEntity.Add(entity, list = new List<ValueType>());

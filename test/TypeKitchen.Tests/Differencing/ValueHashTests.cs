@@ -11,8 +11,8 @@ namespace TypeKitchen.Tests.Differencing
 		[Fact]
 		public void Order_does_not_matter()
 		{
-			var a = "{ \"foo\":\"bar\", \"bar\":\"baz\" }";
-			var b = "{ \"bar\":\"baz\", \"foo\":\"bar\" }";
+			const string a = "{ \"foo\":\"bar\", \"bar\":\"baz\" }";
+			const string b = "{ \"bar\":\"baz\", \"foo\":\"bar\" }";
 
 			var ah = ValueHash.ComputeHash(a);
 			var bh = ValueHash.ComputeHash(b);

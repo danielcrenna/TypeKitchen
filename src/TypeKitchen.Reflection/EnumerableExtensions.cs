@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TypeKitchen.StateMachine
+namespace TypeKitchen.Reflection
 {
 	internal static class EnumerableExtensions
 	{
-		public static IEnumerable<T> NetworkOrder<T>(this IEnumerable<T> enumerator, Func<T, string> getName)
+		public static IEnumerable<T> StableOrder<T>(this IEnumerable<T> enumerable, Func<T, string> getName)
 		{
-			return enumerator.OrderBy(getName, StringComparer.Ordinal);
+			return enumerable.OrderBy(getName, StringComparer.Ordinal);
 		}
 	}
 }

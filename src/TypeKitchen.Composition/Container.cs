@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -11,9 +12,11 @@ using Microsoft.Extensions.Logging;
 using TypeKitchen.Composition.Internal;
 using TypeKitchen.Creation;
 using TypeKitchen.Internal;
+using TypeKitchen.Reflection;
 
 namespace TypeKitchen.Composition
 {
+	[SuppressMessage("ReSharper", "UseIndexFromEndExpression")] // can't do this in netstandard2.0
 	public partial class Container
 	{
 		private readonly Value128 _seed;
@@ -466,7 +469,7 @@ namespace TypeKitchen.Composition
 			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
 			const AccessorMemberScope scope = AccessorMemberScope.Public;
 			var members = AccessorMembers.Create(componentType, types, scope);
-			return members.NetworkOrder(x => x.Name).Reverse().ToDictionary(k => k.Name, v => v);
+			return members.StableOrder(x => x.Name).Reverse().ToDictionary(k => k.Name, v => v);
 		}
 
 		private static ITypeReadAccessor GetDataForComponentReader(Type dataType)
@@ -482,7 +485,7 @@ namespace TypeKitchen.Composition
 			const AccessorMemberTypes types = AccessorMemberTypes.Properties;
 			const AccessorMemberScope scope = AccessorMemberScope.All;
 			var members = AccessorMembers.Create(dataType, types, scope);
-			return members.NetworkOrder(x => x.Name).Reverse().ToDictionary(k => k.Name, v => v);
+			return members.StableOrder(x => x.Name).Reverse().ToDictionary(k => k.Name, v => v);
 		}
 	}
 }

@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using System.Threading;
+using TypeKitchen.Reflection;
 
 namespace TypeKitchen.StateMachine
 {
@@ -171,8 +172,8 @@ namespace TypeKitchen.StateMachine
 				SetupStateMachineTypeRecursive(stateMachinesToStates, stateMachinesToAbstractStates, type);
 
 			_allStatesByType = new Dictionary<Type, List<State>>();
-			foreach (var stateMachineAndStates in stateMachinesToStates.NetworkOrder(kvp => kvp.Key.ToString()))
-			foreach (var state in stateMachineAndStates.Value.NetworkOrder(kvp => kvp.Key.ToString()))
+			foreach (var stateMachineAndStates in stateMachinesToStates.StableOrder(kvp => kvp.Key.ToString()))
+			foreach (var state in stateMachineAndStates.Value.StableOrder(kvp => kvp.Key.ToString()))
 			{
 				_allStateInstances.Add(state.Value);
 
