@@ -31,7 +31,6 @@
     <ProjectReference Include="..\..\src\TypeKitchen.BuildHash\TypeKitchen.BuildHash.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.CacheLine\TypeKitchen.CacheLine.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.Composition\TypeKitchen.Composition.csproj" />
-    <ProjectReference Include="..\..\src\TypeKitchen.Differencing\TypeKitchen.Differencing.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.Scripting\TypeKitchen.Scripting.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.Serialization\TypeKitchen.Serialization.csproj" />
     <ProjectReference Include="..\..\src\TypeKitchen.StateMachine\TypeKitchen.StateMachine.csproj" />
