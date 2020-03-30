@@ -12,6 +12,7 @@ namespace TypeKitchen.Tests
 		{
 			IFoo foo = new Foo { Bar = "Baz" }.QuackLike<IFoo>();
 			Assert.Equal("Baz", foo.Bar);
+			Assert.True(foo.Baz());
 		}
 
 		[Fact]
@@ -52,6 +53,7 @@ namespace TypeKitchen.Tests
 		public class Foo
 		{
 			public string Bar { get; set; }
+			public bool Baz() => true;
 		}
 
 		public class Biff
@@ -77,11 +79,29 @@ namespace TypeKitchen.Tests
 		public interface IFoo
 		{
 			string Bar { get; }
+
+			bool Baz();
 		}
 
 		public interface IBar
 		{
 			int Bar { get; }
+		}
+
+		public class Example : IFoo
+		{
+			public string Bar { get; }
+
+			public bool Baz()
+			{
+				var target = new Foo();
+				var args = new object[] { };
+
+				var method = typeof(IFoo).GetMethod(nameof(IFoo.Baz));
+				var accessor = CallAccessor.Create(method);
+				accessor.Call(target, args);
+				return true;
+			}
 		}
 	}
 }
