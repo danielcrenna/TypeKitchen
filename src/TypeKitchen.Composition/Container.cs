@@ -159,7 +159,7 @@ namespace TypeKitchen.Composition
 						_context.States.Clear();
 
 						foreach (var s in states)
-							Tick(s, inactive, logger);
+							Update(s, strategy, inactive, logger);
 					}
 					break;
 				default:

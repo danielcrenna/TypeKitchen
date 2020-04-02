@@ -25,8 +25,8 @@ namespace TypeKitchen.Tests.Serialization
 			buffer.Add(a);
 			buffer.Add(b);
 
-			var length = 1 + sizeof(int) + 1 + /* A */
-			             1 + sizeof(int) + 1; /* B */
+			const int length = 1 + sizeof(int) + 1 + /* A */
+			                   1 + sizeof(int) + 1;
 
 			Assert.Equal(length, buffer.Length);
 			Assert.False(buffer.IsEmpty);

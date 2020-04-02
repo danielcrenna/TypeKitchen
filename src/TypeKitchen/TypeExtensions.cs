@@ -68,7 +68,9 @@ namespace TypeKitchen
 
 			//
 			// Aliases:
-			if (type == typeof(string))
+			if (type == typeof(StringValues))
+				typeName = "string";
+			else if (type == typeof(string))
 				typeName = "string";
 			else if (type == typeof(byte))
 				typeName = "byte";
@@ -288,6 +290,69 @@ namespace TypeKitchen
 			if (enumerable is IList<T> list)
 				return list;
 			return enumerable.ToList();
+		}
+
+		public static bool ImplementsGeneric(this Type type, Type generic)
+		{
+			while (true)
+			{
+				if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == generic)
+					return true;
+
+				var interfaces = type.GetTypeInfo().ImplementedInterfaces;
+
+				foreach (var @interface in interfaces)
+				{
+					if (@interface.IsConstructedGenericType && @interface.GetGenericTypeDefinition() == generic)
+						return true;
+				}
+
+				if (type.BaseType == null)
+					return false;
+
+				type = type.BaseType;
+			}
+		}
+		
+		public static IEnumerable<Type> GetImplementationsOfOpenGeneric(this Type openGenericType)
+		{
+			return GetImplementationsOfOpenGeneric(openGenericType, AppDomain.CurrentDomain.GetAssemblies());
+		}
+
+		public static IEnumerable<Type> GetImplementationsOfOpenGeneric(this Type openGenericType,
+			IEnumerable<Assembly> assemblies)
+		{
+			if (!openGenericType.IsGenericType)
+				throw new ArgumentException("The provided type is not an open generic type", nameof(openGenericType));
+
+			foreach (var assembly in assemblies)
+			{
+				foreach (var at in assembly.GetTypes())
+				{
+					foreach (var t in GetImplementationsOfOpenGeneric(openGenericType, at))
+						yield return t;
+				}
+			}
+		}
+
+		public static IEnumerable<Type> GetImplementationsOfOpenGeneric(this Type openGenericType, Type type)
+		{
+			if (type.ImplementsGeneric(openGenericType))
+				yield return type;
+
+			foreach (var member in type.GetMembers())
+			{
+				if (!(member is MethodBase ctorOrMethod))
+					continue;
+
+				foreach (var parameter in ctorOrMethod.GetParameters())
+				{
+					if (parameter.ParameterType.ImplementsGeneric(openGenericType))
+					{
+						yield return parameter.ParameterType;
+					}
+				}
+			}
 		}
 	}
 }

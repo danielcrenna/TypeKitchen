@@ -26,7 +26,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void GenerateCreateEntityTypes()
 		{
-			var code = Pooling.StringBuilderPool.Scoped(sb =>
+			var code = TypeKitchen.Pooling.StringBuilderPool.Scoped(sb =>
 			{
 				for (var i = 1; i <= 12; i++)
 				{
@@ -78,7 +78,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void GenerateCreateEntityInstances()
 		{
-			var code = Pooling.StringBuilderPool.Scoped(sb =>
+			var code = TypeKitchen.Pooling.StringBuilderPool.Scoped(sb =>
 			{
 				for (var i = 1; i <= 12; i++)
 				{
@@ -137,7 +137,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void GenerateSystemWithSignatures()
 		{
-			var code = Pooling.StringBuilderPool.Scoped(sb =>
+			var code = TypeKitchen.Pooling.StringBuilderPool.Scoped(sb =>
 			{
 				for (var i = 1; i <= 12; i++)
 				{
@@ -188,7 +188,7 @@ namespace TypeKitchen.Tests
 		[Fact]
 		public void GenerateSystemWithStateSignatures()
 		{
-			var code = Pooling.StringBuilderPool.Scoped(sb =>
+			var code = TypeKitchen.Pooling.StringBuilderPool.Scoped(sb =>
 			{
 				for (var i = 1; i <= 12; i++)
 				{
