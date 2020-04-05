@@ -354,5 +354,26 @@ namespace TypeKitchen
 				}
 			}
 		}
+
+		internal static bool NeedsLateBoundAccessor(this Type type, AccessorMembers members)
+		{
+			if (type.IsNotPublic)
+				return true;
+
+			if (type.IsNestedPublic && type.DeclaringType != null && type.DeclaringType.IsNotPublic)
+				return true;
+
+			foreach(var member in members)
+			{
+				switch (member.MemberInfo)
+				{
+					case FieldInfo field when !field.IsPublic:
+					case PropertyInfo property when !property.GetGetMethod(true).IsPublic:
+						return true;
+				}
+			}
+			
+			return false;
+		}
 	}
 }

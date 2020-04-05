@@ -114,7 +114,7 @@ namespace TypeKitchen
 		{
 			members = CreateWriteAccessorMembers(type, types, scope);
 
-			if (type.IsNotPublic)
+			if (type.NeedsLateBoundAccessor(members))
 				return new LateBoundTypeWriteAccessor(members);
 
 			var name = type.CreateNameForWriteAccessor(members.Types, members.Scope);

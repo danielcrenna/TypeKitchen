@@ -124,7 +124,7 @@ namespace TypeKitchen
 		{
 			members = CreateReadAccessorMembers(type, types, scope);
 
-			if (type.IsNotPublic)
+			if (type.NeedsLateBoundAccessor(members))
 				return new LateBoundTypeReadAccessor(members);
 
 			var name = type.CreateNameForReadAccessor(members.Types, members.Scope);
@@ -161,6 +161,7 @@ namespace TypeKitchen
 					MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 					MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(bool),
 					new[] {typeof(object), typeof(string), typeof(object).MakeByRefType()});
+
 				var il = tryGetValue.GetILGeneratorInternal();
 
 				var branches = new Dictionary<AccessorMember, Label>();
@@ -185,7 +186,8 @@ namespace TypeKitchen
 					switch (member.MemberInfo) // result = target.{member.Name}
 					{
 						case PropertyInfo property:
-							il.Callvirt(property.GetGetMethod(true));
+							var getMethod = property.GetGetMethod(true);
+							il.Callvirt(getMethod);
 							break;
 						case FieldInfo field:
 							il.Ldfld(field);
@@ -217,6 +219,7 @@ namespace TypeKitchen
 					MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 					MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(object),
 					new[] {typeof(object), typeof(string)});
+
 				var il = getItem.GetILGeneratorInternal();
 
 				var branches = new Dictionary<AccessorMember, Label>();
@@ -238,7 +241,8 @@ namespace TypeKitchen
 					switch (member.MemberInfo) // result = target.Foo
 					{
 						case PropertyInfo property:
-							il.Callvirt(property.GetGetMethod(true));
+							var getMethod = property.GetGetMethod(true);
+							il.Callvirt(getMethod);
 							break;
 						case FieldInfo field:
 							il.Ldfld(field);
@@ -289,6 +293,7 @@ namespace TypeKitchen
 			var tb = DynamicAssembly.Module.DefineType(name,
 				TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit |
 				TypeAttributes.AutoClass | TypeAttributes.AnsiClass);
+
 			tb.AddInterfaceImplementation(typeof(ITypeReadAccessor));
 
 			//
@@ -312,11 +317,9 @@ namespace TypeKitchen
 				dmIl.Ret();
 				var backingFieldDelegate = (Func<object, object>) dm.CreateDelegate(typeof(Func<object, object>));
 
-				var getField = tb.DefineField($"_Get{member.Name}", typeof(Func<object, object>),
-					FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly);
-				var setField = tb.DefineMethod($"_SetGet{member.Name}",
-					MethodAttributes.Static | MethodAttributes.Private, CallingConventions.Standard, typeof(void),
-					new[] {typeof(Func<object, object>)});
+				var getField = tb.DefineField($"_Get{member.Name}", typeof(Func<object, object>), FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly);
+				var setField = tb.DefineMethod($"_SetGet{member.Name}", MethodAttributes.Static | MethodAttributes.Private, CallingConventions.Standard, typeof(void), new[] {typeof(Func<object, object>)});
+
 				var setFieldIl = setField.GetILGeneratorInternal();
 				setFieldIl.Ldarg_0();
 				setFieldIl.Stsfld(getField);
@@ -342,11 +345,13 @@ namespace TypeKitchen
 					MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 					MethodAttributes.Virtual | MethodAttributes.NewSlot, typeof(bool),
 					new[] {typeof(object), typeof(string), typeof(object).MakeByRefType()});
+
 				var il = tryGetValue.GetILGeneratorInternal();
 
 				var branches = new Dictionary<AccessorMember, Label>();
 				foreach (var member in members)
 					branches.Add(member, il.DefineLabel());
+
 				var fail = il.DefineLabel();
 
 				foreach (var member in members)
@@ -390,6 +395,7 @@ namespace TypeKitchen
 					MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
 					MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.SpecialName, typeof(object),
 					new[] {typeof(object), typeof(string)});
+
 				var il = getItem.GetILGeneratorInternal();
 
 				var branches = new Dictionary<AccessorMember, Label>();
@@ -439,14 +445,11 @@ namespace TypeKitchen
 				{
 					var memberName = setter.Key.Name.Replace("_SetGet", string.Empty);
 
-					var staticFieldFunc =
-						(Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
+					var staticFieldFunc = (Func<object, object>) typeInfo.GetField($"_Get{memberName}").GetValue(debugObject);
 					if (staticFieldFunc != setter.Value)
-						throw new ArgumentException(
-							$"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
+						throw new ArgumentException($"replacing _Get{memberName} with function from _SetGet{memberName} was unsuccessful");
 
-					var backingField = type.GetField($"<{memberName}>i__Field",
-						BindingFlags.NonPublic | BindingFlags.Instance);
+					var backingField = type.GetField($"<{memberName}>i__Field", BindingFlags.NonPublic | BindingFlags.Instance);
 					if (backingField == null)
 						throw new NullReferenceException("backing field was not found");
 
@@ -454,8 +457,7 @@ namespace TypeKitchen
 					var cachedDelegateValue = setter.Value(debugObject);
 
 					if (backingFieldValue != null && !backingFieldValue.Equals(cachedDelegateValue))
-						throw new ArgumentException(
-							$"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
+						throw new ArgumentException($"{memberName} backing field value '{backingFieldValue}' does not agree with cached delegate value {cachedDelegateValue}");
 				}
 			}
 
