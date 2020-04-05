@@ -7,15 +7,20 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
 namespace TypeKitchen
 {
+	[DebuggerDisplay("{DeclaringType}: Types={Types}, Scope={Scope}")]
 	public sealed class AccessorMembers : IEnumerable<AccessorMember>
 	{
 		private static readonly ConcurrentDictionary<AccessorMembersKey, AccessorMembers> Cache =
 			new ConcurrentDictionary<AccessorMembersKey, AccessorMembers>();
+		
+		public ITypeReadAccessor Reads { get; }
+		public ITypeWriteAccessor Writes { get; }
 
 		private AccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
@@ -42,9 +47,11 @@ namespace TypeKitchen
 			var properties = PropertyInfo ?? Enumerable.Empty<PropertyInfo>();
 			var methods = MethodInfo ?? Enumerable.Empty<MethodInfo>();
 
-			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(TryOrderMemberInfo)
-				.ToArray();
+			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(TryOrderMemberInfo).ToArray();
 			Members = NameToMember.Values.OrderBy(TryOrderMember).ToList();
+
+			Reads = ReadAccessor.Create(type, types, scope);
+			Writes = WriteAccessor.Create(type, types, scope);
 		}
 
 		public string DisplayName { get; }
@@ -137,7 +144,7 @@ namespace TypeKitchen
 		{
 			return scope switch
 			{
-				AccessorMemberScope.Public => (property.CanRead && property.GetGetMethod(true).IsPublic),
+				AccessorMemberScope.Public => property.CanRead && property.GetGetMethod(true).IsPublic,
 				AccessorMemberScope.All => true,
 				AccessorMemberScope.Private => true,
 				AccessorMemberScope.None => false,

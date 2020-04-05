@@ -10,7 +10,7 @@ using System.Reflection;
 namespace TypeKitchen
 {
 	[DebuggerDisplay("{" + nameof(MemberInfo) + "}")]
-	public sealed class AccessorMember
+	public sealed class AccessorMember : IEquatable<AccessorMember>, IComparable<AccessorMember>, IComparable
 	{
 		private readonly bool _canWrite;
 
@@ -154,6 +154,72 @@ namespace TypeKitchen
 		public IEnumerable<T> GetAttributes<T>(bool canInherit = true) where T : Attribute
 		{
 			return Attribute.GetCustomAttributes(MemberInfo, typeof(T), canInherit).Cast<T>();
+		}
+
+		public int CompareTo(AccessorMember other)
+		{
+			return ReferenceEquals(this, other) ? 0 :
+				ReferenceEquals(null, other) ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
+		}
+
+		public int CompareTo(object obj)
+		{
+			if (ReferenceEquals(null, obj)) return 1;
+			if (ReferenceEquals(this, obj)) return 0;
+			return obj is AccessorMember other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(AccessorMember)}");
+		}
+
+		public static bool operator <(AccessorMember left, AccessorMember right)
+		{
+			return Comparer<AccessorMember>.Default.Compare(left, right) < 0;
+		}
+
+		public static bool operator >(AccessorMember left, AccessorMember right)
+		{
+			return Comparer<AccessorMember>.Default.Compare(left, right) > 0;
+		}
+
+		public static bool operator <=(AccessorMember left, AccessorMember right)
+		{
+			return Comparer<AccessorMember>.Default.Compare(left, right) <= 0;
+		}
+
+		public static bool operator >=(AccessorMember left, AccessorMember right)
+		{
+			return Comparer<AccessorMember>.Default.Compare(left, right) >= 0;
+		}
+
+		public bool Equals(AccessorMember other)
+		{
+			if (ReferenceEquals(null, other)) return false;
+			if (ReferenceEquals(this, other)) return true;
+			return Name == other.Name && DeclaringType == other.DeclaringType && Type == other.Type;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return ReferenceEquals(this, obj) || obj is AccessorMember other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = (Name != null ? Name.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (DeclaringType != null ? DeclaringType.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
+				return hashCode;
+			}
+		}
+
+		public static bool operator ==(AccessorMember left, AccessorMember right)
+		{
+			return Equals(left, right);
+		}
+
+		public static bool operator !=(AccessorMember left, AccessorMember right)
+		{
+			return !Equals(left, right);
 		}
 	}
 }
