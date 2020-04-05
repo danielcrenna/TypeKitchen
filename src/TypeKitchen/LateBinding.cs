@@ -74,9 +74,10 @@ namespace TypeKitchen
 			{
 				case PropertyInfo property:
 				{
-					var getMethod = property.GetGetMethod();
+					var getMethod = property.GetGetMethod(true);
 					if (getMethod == null)
 						throw new ArgumentNullException();
+
 					il.Emit(OpCodes.Ldarg_0);
 					il.Emit(getMethod.IsFinal || !getMethod.IsVirtual ? OpCodes.Call : OpCodes.Callvirt, getMethod);
 					if (property.PropertyType.IsValueType)
@@ -132,7 +133,7 @@ namespace TypeKitchen
 			switch (member.MemberInfo)
 			{
 				case PropertyInfo property:
-					var setMethod = property.GetSetMethod();
+					var setMethod = property.GetSetMethod(true);
 					il.Emit(setMethod.IsFinal || !setMethod.IsVirtual ? OpCodes.Call : OpCodes.Callvirt, setMethod);
 					break;
 				case FieldInfo field:

@@ -97,10 +97,44 @@ namespace TypeKitchen.Tests
 			Assert.Equal(999, get[target, nameof(FooStruct.Baz)]);
 		}
 
+		[Fact]
+		public void SetTests_can_write_non_public_members()
+		{
+			object target = new FooStructNonPublicMembers { Foo = "Bar", Baz = 123 };
+			
+			var get = ReadAccessor.Create(target);
+			
+			var foo = get[target, nameof(FooStructNonPublicMembers.Foo)];
+			var baz = get[target, nameof(FooStructNonPublicMembers.Baz)];
+
+			Assert.Equal("Bar", foo);
+			Assert.Equal(123, baz);
+
+			var set = WriteAccessor.Create(target);
+
+			Assert.True(set.TrySetValue(target, nameof(FooStructNonPublicMembers.Foo), "Baz"));
+			Assert.True(set.TrySetValue(target, nameof(FooStructNonPublicMembers.Baz), 321));
+
+			Assert.Equal("Baz", get[target, nameof(FooStructNonPublicMembers.Foo)]);
+			Assert.Equal(321, get[target, nameof(FooStructNonPublicMembers.Baz)]);
+
+			set[target, nameof(FooStructNonPublicMembers.Foo)] = "Biff";
+			set[target, nameof(FooStructNonPublicMembers.Baz)] = 999;
+
+			Assert.Equal("Biff", get[target, nameof(FooStructNonPublicMembers.Foo)]);
+			Assert.Equal(999, get[target, nameof(FooStructNonPublicMembers.Baz)]);
+		}
+
 		public struct FooStruct
 		{
 			public string Foo { get; set; }
 			public int Baz;
+		}
+
+		public struct FooStructNonPublicMembers
+		{
+			internal string Foo { get; set; }
+			internal int Baz;
 		}
 	}
 }
