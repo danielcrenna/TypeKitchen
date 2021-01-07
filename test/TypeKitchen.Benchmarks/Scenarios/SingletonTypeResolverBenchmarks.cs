@@ -10,7 +10,7 @@ namespace TypeKitchen.Benchmarks.Scenarios
 {
 	[SimpleJob(RuntimeMoniker.NetCoreApp31)]
 	[MemoryDiagnoser]
-	[DisassemblyDiagnoser(false, true)]
+	[DisassemblyDiagnoser(exportDiff: true)]
 	[CsvMeasurementsExporter]
 	[RPlotExporter]
 	public class SingletonTypeResolverBenchmarks

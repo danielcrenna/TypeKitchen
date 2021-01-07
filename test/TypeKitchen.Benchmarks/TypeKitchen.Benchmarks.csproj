@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.1.2" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.0" />
-    <PackageReference Include="DotLiquid" Version="2.0.325" />
+    <PackageReference Include="Autofac" Version="6.1.0" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="DotLiquid" Version="2.0.366" />
     <PackageReference Include="FastMember" Version="1.5.0" />
     <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
   </ItemGroup>

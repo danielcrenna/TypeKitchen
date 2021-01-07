@@ -13,6 +13,29 @@ namespace TypeKitchen
 {
 	public static class TypeExtensions
 	{
+		private static readonly HashSet<Type> BooleanTypes = new HashSet<Type>
+		{
+			typeof(bool),
+			typeof(bool?)
+		};
+
+		private static readonly HashSet<Type> DateTypes = new HashSet<Type>
+		{
+			typeof(DateTime),
+			typeof(DateTimeOffset),
+			typeof(DateTime?),
+			typeof(DateTimeOffset?)
+		};
+
+		private static readonly HashSet<Type> TextTypes = new HashSet<Type>
+		{
+			typeof(char),
+			typeof(char?),
+			typeof(string),
+			typeof(StringValues),
+			typeof(StringValues?)
+		};
+
 		private static readonly HashSet<Type> IntegerTypes = new HashSet<Type>
 		{
 			typeof(sbyte),
@@ -30,17 +53,32 @@ namespace TypeKitchen
 			typeof(ulong),
 			typeof(ulong?),
 			typeof(long),
-			typeof(long?)
+			typeof(long?),
+			typeof(BigInteger),
+			typeof(BigInteger?)
 		};
 
 		private static readonly HashSet<Type> RealNumberTypes = new HashSet<Type>
 		{
-			typeof(float),
-			typeof(double),
-			typeof(decimal),
-			typeof(Complex),
-			typeof(BigInteger)
+			typeof (float),
+			typeof (float?),
+			typeof (double),
+			typeof (double?),
+			typeof (decimal),
+			typeof (decimal?),
+			typeof (Complex),
+			typeof (Complex?)
 		};
+
+		public static bool IsRealNumber(this Type type)
+		{
+			return RealNumberTypes.Contains(type);
+		}
+
+		public static bool IsText(this Type type)
+		{
+			return TextTypes.Contains(type);
+		}
 
 		public static bool IsInteger(this Type type)
 		{
@@ -49,7 +87,7 @@ namespace TypeKitchen
 
 		public static bool IsNumeric(this Type type)
 		{
-			return RealNumberTypes.Contains(type) || type.IsInteger();
+			return type.IsRealNumber() || type.IsInteger();
 		}
 
 		public static bool IsTruthy(this Type type)
@@ -172,7 +210,7 @@ namespace TypeKitchen
 			       type == typeof(DateTime) ||
 			       type == typeof(DateTimeOffset) ||
 			       type == typeof(TimeSpan) ||
-			       type == typeof(Guid);
+				   type == typeof(Guid);
 		}
 
 		public static bool IsNullableValueType(this Type type)
@@ -199,6 +237,7 @@ namespace TypeKitchen
 		public static bool IsPrimitive(this Type type)
 		{
 			return type == typeof(string) ||
+			       type == typeof(char) ||
 			       type == typeof(byte) ||
 			       type == typeof(bool) ||
 			       type == typeof(short) ||
@@ -211,7 +250,8 @@ namespace TypeKitchen
 
 		public static bool IsNullablePrimitive(this Type type)
 		{
-			return type == typeof(byte?) ||
+			return type == typeof(char?) ||
+			       type == typeof(byte?) ||
 			       type == typeof(bool?) ||
 			       type == typeof(short?) ||
 			       type == typeof(int?) ||

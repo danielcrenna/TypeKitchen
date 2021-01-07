@@ -19,9 +19,6 @@ namespace TypeKitchen
 		private static readonly ConcurrentDictionary<AccessorMembersKey, AccessorMembers> Cache =
 			new ConcurrentDictionary<AccessorMembersKey, AccessorMembers>();
 		
-		public ITypeReadAccessor Reads { get; }
-		public ITypeWriteAccessor Writes { get; }
-
 		private AccessorMembers(Type type, AccessorMemberTypes types, AccessorMemberScope scope)
 		{
 			DeclaringType = type;
@@ -49,9 +46,6 @@ namespace TypeKitchen
 
 			MemberInfo = fields.Cast<MemberInfo>().Concat(properties).Concat(methods).OrderBy(TryOrderMemberInfo).ToArray();
 			Members = NameToMember.Values.OrderBy(TryOrderMember).ToList();
-
-			Reads = ReadAccessor.Create(type, types, scope);
-			Writes = WriteAccessor.Create(type, types, scope);
 		}
 
 		public string DisplayName { get; }

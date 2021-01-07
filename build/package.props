@@ -11,8 +11,8 @@
     <RepositoryUrl>https://github.com/danielcrenna/TypeKitchen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>fast reflection dotnet-standard metaprogramming</PackageTags>
-    <Version>1.2.12</Version>
-    <PackageReleaseNotes>Added generic type query extensions.</PackageReleaseNotes>
+    <Version>1.2.14</Version>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
